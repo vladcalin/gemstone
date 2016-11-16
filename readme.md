@@ -29,17 +29,17 @@ I want to obtain a framework that will allow someone to develop a microservice i
 		process_worker_pool = ProcessWorkerPool(worker_count=5, threads_per_worker=5)
 		thread_worker_pool = ThreadWorkerPool(worker_count=5)
 
-		@http_endpoint("POST")
-		@async_http_endpoint("POST")
+		@handle
+		@async_handle
 		def compute_stuff(self, job_name):
 			pass
 
-		@http_endpoint("POST")
-		@async_http_endpoint("POST")
+		@handle
+		@async_handle
 		def store_data(self, entity_name, entity_data):
 			pass
 
-		@http_endpoint("GET")
+		@handle
 		def get_stored_data(self, entity_name):
 			pass
 
