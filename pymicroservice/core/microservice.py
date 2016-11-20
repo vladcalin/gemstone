@@ -4,6 +4,10 @@ from multiprocessing.pool import ThreadPool
 from pymicroservice.util import init_default_logger
 from pymicroservice.errors import ConfigurationError
 
+__all__ = [
+    'PyMicroService'
+]
+
 
 class PyMicroService(ABC):
     name = None
@@ -26,6 +30,10 @@ class PyMicroService(ABC):
         self.gather_endpoints()
         self._thread_pool = ThreadPool(len(self._adapters))
         for adapter in self._adapters:
+
+            for endpoint in self._endpoints:
+                adapter.register_endpoint(endpoint)
+
             async_result = self._thread_pool.apply_async(adapter.serve)
             self._adapter_threads.append(async_result)
 
@@ -41,7 +49,7 @@ class PyMicroService(ABC):
             item = getattr(self, item_name)
             if getattr(item, "__is_endpoint__", False) is True:
                 self.logger.debug("\tDiscovered endpoint {}".format(item.__name__))
-                self._endpoints = item
+                self._endpoints.append(item)
 
     def validate_state(self):
         if len(self._adapters) == 0:

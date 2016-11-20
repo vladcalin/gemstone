@@ -1,5 +1,6 @@
 from pymicroservice.core.microservice import PyMicroService
-from pymicroservice.core.decorators import endpoint, async_endpoint
+from pymicroservice.core.decorators import endpoint
+from pymicroservice.adapters.flask_adapter import FlaskAdapter
 
 
 class HelloWorldService(PyMicroService):
@@ -25,4 +26,7 @@ class HelloWorldService(PyMicroService):
 
 if __name__ == '__main__':
     service = HelloWorldService()
+    service.add_adapter(FlaskAdapter("127.0.0.1", 8080))
+    service.add_adapter(FlaskAdapter("127.0.0.1", 8081))
+    service.add_adapter(FlaskAdapter("127.0.0.1", 8082))
     service.start()
