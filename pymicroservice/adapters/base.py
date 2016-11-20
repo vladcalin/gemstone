@@ -17,5 +17,5 @@ class BaseAdapter(ABC):
         pass
 
     @abstractmethod
-    def handle_error(self, error_class, error_instance, traceback):
+    def handle_error(self, *args, **kwargs):
         pass

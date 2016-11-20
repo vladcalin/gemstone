@@ -39,18 +39,27 @@ class FlaskAdapter(BaseAdapter):
         self.host = host
         self.port = port
         self.api_root = api_root
-        self.doc = {}
+        self.doc = {"methods": {}}
         self.endpoints = {}
 
     def register_endpoint(self, endpoint):
         name = endpoint.__name__
-        parameters = inspect.getargspec(endpoint)
+        param_sig = self._generate_argument_signature(endpoint)
 
         self.endpoints[name] = endpoint
-        self.doc[self.api_root.rstrip("/") + "/" + name] = {
+        self.doc["methods"][name] = {
             "description": endpoint.__doc__ or "",
-            "parameters": parameters
+            "parameters": param_sig
         }
+
+    def _generate_argument_signature(self, endpoint):
+        parameters = inspect.getargspec(endpoint)
+        param_sig = ", ".join(parameters[0][1:])
+        if parameters[1]:
+            param_sig += ", *" + parameters[1]
+        if parameters[2]:
+            param_sig += ", **" + parameters[2]
+        return param_sig
 
     def handle_request(self):
         req_json = request.json
@@ -79,7 +88,7 @@ class FlaskAdapter(BaseAdapter):
         def return_help():
             return jsonify(self.doc)
 
-        self.app.route(self.api_root.rstrip("/") + "/", methods=["get"])(return_help)
+        self.app.route(self.api_root.rstrip("/") + "/api", methods=["get"])(return_help)
 
     def init_handle_error(self):
         self.app.errorhandler(Exception)(self.handle_error)

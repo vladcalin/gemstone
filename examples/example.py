@@ -25,12 +25,22 @@ class HelloWorldService(PyMicroService):
 
     @endpoint
     def store_value(self, name, value):
+        """
+        Stores the value internally.
+        """
         self._values[name] = value
         return "ok"
 
     @endpoint
     def retrieve_value(self, name):
+        """
+        Retrieves a value that was previously stored.
+        """
         return self._values[name]
+
+    @endpoint
+    def more_stuff(self, x, y, k=3, *args, **kwargs):
+        return "ok"
 
 
 if __name__ == '__main__':
