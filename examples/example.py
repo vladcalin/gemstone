@@ -5,6 +5,15 @@ from pymicroservice.adapters.flask_adapter import FlaskAdapter
 
 class HelloWorldService(PyMicroService):
     name = "hello.world.service"
+    adapters = [
+        FlaskAdapter("127.0.0.1", 8080),
+        FlaskAdapter("127.0.0.1", 8081),
+        FlaskAdapter("127.0.0.1", 8082),
+    ]
+
+    extras = [
+        # RegisterWithServiceRegistryExtra(("127.0.0.1", 8000))
+    ]
 
     def __init__(self):
         super(HelloWorldService, self).__init__()
@@ -26,7 +35,4 @@ class HelloWorldService(PyMicroService):
 
 if __name__ == '__main__':
     service = HelloWorldService()
-    service.add_adapter(FlaskAdapter("127.0.0.1", 8080))
-    service.add_adapter(FlaskAdapter("127.0.0.1", 8081))
-    service.add_adapter(FlaskAdapter("127.0.0.1", 8082))
     service.start()

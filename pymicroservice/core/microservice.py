@@ -11,9 +11,11 @@ __all__ = [
 
 class PyMicroService(ABC):
     name = None
+    adapters = []
+    daemons = []
 
     def __init__(self):
-        self._adapters = []
+        self._adapters = self.adapters
         self._thread_pool = None
         self._adapter_threads = []
 

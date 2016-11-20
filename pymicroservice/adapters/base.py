@@ -16,3 +16,6 @@ class BaseAdapter(ABC):
     def serve(self):
         pass
 
+    @abstractmethod
+    def handle_error(self, error_class, error_instance, traceback):
+        pass

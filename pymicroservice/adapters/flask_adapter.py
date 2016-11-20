@@ -12,37 +12,67 @@ __all__ = [
 
 
 class FlaskAdapter(BaseAdapter):
+    """
+
+    Usage:
+
+    Each method will be processed so that it can be called via
+
+    POST /api
+    {
+        "method": "say_hello",
+        "args": {
+            "name": "world"
+        }
+    }
+
+    {
+        "success": true,
+        "result": "hello world",
+        "error": null
+    }
+
+    """
+
     def __init__(self, host, port, api_root="/"):
         self.app = Flask(__name__)
         self.host = host
         self.port = port
         self.api_root = api_root
         self.doc = {}
+        self.endpoints = {}
 
     def register_endpoint(self, endpoint):
         name = endpoint.__name__
         parameters = inspect.getargspec(endpoint)
 
-        endpoint = self._wrap_endpoint(endpoint)
-        self.app.route(self.api_root.rstrip("/") + "/" + name, methods=["post"])(endpoint)
+        self.endpoints[name] = endpoint
         self.doc[self.api_root.rstrip("/") + "/" + name] = {
             "description": endpoint.__doc__ or "",
             "parameters": parameters
         }
 
-    def _wrap_endpoint(self, endpoint):
-        @functools.wraps(endpoint)
-        def wrapper(*args, **kwargs):
-            args_, kwargs_ = self.extract_args(*args, **kwargs)
-            result = endpoint(*args_, **kwargs_)
-            self.extract_args()
-            return result
+    def handle_request(self):
+        req_json = request.json
+        method_name = req_json.get("method")
+        args = req_json.get("args")
+        if not method_name:
+            raise KeyError("Missing 'method_name' field from request body")
+        if not args:
+            raise KeyError("Missing 'args' field from request body")
 
-        return wrapper
+        endpoint = self.endpoints.get(method_name)
+        if not endpoint:
+            raise KeyError("Method not found")
+
+        result = self.endpoints[method_name](**args)
+        return self.make_result(to_return=result)
 
     def serve(self):
         self._register_help()
+        self.init_handle_error()
 
+        self.app.route(self.api_root.rstrip("/") + "/api", methods=["post"])(self.handle_request)
         self.app.run(self.host, self.port)
 
     def _register_help(self):
@@ -50,17 +80,17 @@ class FlaskAdapter(BaseAdapter):
             return jsonify(self.doc)
 
         self.app.route(self.api_root.rstrip("/") + "/", methods=["get"])(return_help)
-        # pass
 
-    def extract_args(self, *args, **kwargs):
-        post_data = self._extract_post_data()
-        to_return = dict(post_data)
-        for k, v in to_return.items():
-            print(k, v)
-            if isinstance(v, list) and len(v) == 1:
-                to_return[k] = v[0]
-        return (), to_return
+    def init_handle_error(self):
+        self.app.errorhandler(Exception)(self.handle_error)
 
-    def _extract_post_data(self):
-        post_data = request.form
-        return post_data
+    def handle_error(self, *args, **kwargs):
+        exc_instance = args[0]
+        return self.make_result(None, error=str(exc_instance))
+
+    def make_result(self, to_return, error=None):
+        return jsonify({
+            "error": error,
+            "success": error is None,
+            "result": to_return
+        })
