@@ -1,14 +1,14 @@
 from pymicroservice.core.microservice import PyMicroService
 from pymicroservice.core.decorators import endpoint
-from pymicroservice.adapters.flask_adapter import FlaskAdapter
+from pymicroservice.adapters.flask_adapter import FlaskJsonRpcAdapter
 
 
 class HelloWorldService(PyMicroService):
     name = "hello.world.service"
     adapters = [
-        FlaskAdapter("127.0.0.1", 8080),
-        FlaskAdapter("127.0.0.1", 8081),
-        FlaskAdapter("127.0.0.1", 8082),
+        FlaskJsonRpcAdapter("127.0.0.1", 8080),
+        FlaskJsonRpcAdapter("127.0.0.1", 8081),
+        FlaskJsonRpcAdapter("127.0.0.1", 8082),
     ]
 
     extras = [

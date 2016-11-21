@@ -7,11 +7,11 @@ from flask import Flask, jsonify, request
 from pymicroservice.adapters.base import BaseAdapter
 
 __all__ = [
-    'FlaskAdapter'
+    'FlaskJsonRpcAdapter'
 ]
 
 
-class FlaskAdapter(BaseAdapter):
+class FlaskJsonRpcAdapter(BaseAdapter):
     """
 
     Usage:
