@@ -1,13 +1,26 @@
 from setuptools import setup, find_packages
 
+
+def read_dependencies(req_file):
+    with open(req_file) as req:
+        return [line.strip() for line in req]
+
+
+def get_file_content(filename):
+    with open(filename) as f:
+        return f.read()
+
+
 setup(
     name="pymicroservice",
     version="0.0.1",
-    description="Build microservices with Python",
+    description=get_file_content("readme.md"),
+    short_description="Build microservices with Python",
+
     packages=find_packages(),
-    extras_require={
-        "flask": ["flask"]
-    },
+
+    install_requires=read_dependencies("requirements.txt"),
+
     entry_points={
         "console_scripts": [
             "pymicroservice_builtin = pymicroservice.builtin.cli:main"

@@ -1,23 +1,20 @@
-from pymicroservice.core.microservice import PyMicroService
+from pymicroservice.core.microservice import BaseMicroService
 from pymicroservice.core.decorators import endpoint
-from pymicroservice.adapters.flask_adapter import FlaskJsonRpcAdapter
+from pymicroservice.concrete.tornado_json_rpc_service import TornadoJsonRpcService
 
 
-class HelloWorldService(PyMicroService):
+class HelloWorldService(TornadoJsonRpcService):
     name = "hello.world.service"
-    adapters = [
-        FlaskJsonRpcAdapter("127.0.0.1", 8080),
-        FlaskJsonRpcAdapter("127.0.0.1", 8081),
-        FlaskJsonRpcAdapter("127.0.0.1", 8082),
-    ]
+    host = "127.0.0.1"
+    port = 5000
 
     extras = [
         # RegisterWithServiceRegistryExtra(("127.0.0.1", 8000))
     ]
 
     def __init__(self):
-        super(HelloWorldService, self).__init__()
         self._values = {}
+        super(HelloWorldService, self).__init__()
 
     @endpoint
     def say_hello(self, name):
