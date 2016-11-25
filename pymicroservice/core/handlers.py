@@ -34,6 +34,7 @@ class TornadoJsonRpcHandler(RequestHandler):
         error = None
         result = None
         id_ = None
+        is_notification = False
 
         # validate json structure
         try:
@@ -44,29 +45,46 @@ class TornadoJsonRpcHandler(RequestHandler):
             return
 
         # validate keys
-        if "method" not in req_body or "args" not in req_body:
+        if not self.validate_jsonrpc_structure(req_body):
             err = self.make_error_object(self._ErrorCodes.INVALID_REQUEST, self._ErrorMessages.INVALID_REQUEST)
             self.write_response(None, err, None)
             return
 
+        # check if it is a notification or the client waits a response
         if "id" not in req_body or req_body["id"] is None:
             self.write_response("received")
+            is_notification = True
+        else:
+            id_ = req_body["id"]
 
         # validate method name
         if req_body["method"] not in self.methods:
-            err = self.make_error_object(self._ErrorCodes.METHOD_NOT_FOUND, self._ErrorMessages.METHOD_NOT_FOUND)
-            self.write_response(error=err)
-            return
+            if not is_notification:
+                err = self.make_error_object(self._ErrorCodes.METHOD_NOT_FOUND, self._ErrorMessages.METHOD_NOT_FOUND)
+                self.write_response(error=err)
+                return
 
-        method = self.methods[req_body["method"]]
+        method = self.methods.get(req_body["method"])
         method = self.prepare_method_call(method, req_body["args"])
         if not method:
-            err = self.make_error_object(self._ErrorCodes.INVALID_REQUEST, self._ErrorMessages.INVALID_REQUEST)
-            self.write_response(error=err)
-            return
+            if not is_notification:
+                err = self.make_error_object(self._ErrorCodes.INVALID_REQUEST, self._ErrorMessages.INVALID_REQUEST)
+                self.write_response(error=err)
+                return
         result = yield self.call_method(method)
 
-        self.write(self.make_response_dict(result, error, id_))
+        if not is_notification:
+            self.write(self.make_response_dict(result, error, id_))
+
+    def validate_jsonrpc_structure(self, body):
+        for mandatory_key in ["jsonrpc", "method", "args"]:
+            if mandatory_key not in body:
+                return False
+
+        if body["jsonrpc"] != "2.0":
+            return False
+
+        return True
 
     def make_response_dict(self, result=None, error=None, id=None):
         response = {

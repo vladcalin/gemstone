@@ -20,6 +20,20 @@ __all__ = [
 
 
 class PyMicroService(ABC):
+    """
+
+    The base class for fast building a microservice. The microservice must:
+
+    - define a name attribute for easy identification (must be a string)
+    - max_parallel_blocking_tasks must be a positive integer
+    - a bunch of exposed methods decorated with the :py:class:`pymicroservice.exposed_method` decorator
+
+    The default implementation spawns a Tornado JSON RPC HTTP server.
+
+    The service exposes the default rpc function **get_service_specs** which returns the running parameters of
+    the service.
+
+    """
     name = None
 
     host = "127.0.0.1"
@@ -51,8 +65,13 @@ class PyMicroService(ABC):
         self._executor = ThreadPoolExecutor(self.max_parallel_blocking_tasks)
 
     @exposed_method
-    def help(self):
-        return "hello there"
+    def get_service_specs(self):
+        return {
+            "host": self.host,
+            "port": self.port,
+            "name": self.name,
+            "max_parallel_blocking_tasks": self.max_parallel_blocking_tasks
+        }
 
     def start(self):
         self.app = self.make_tornado_app()
