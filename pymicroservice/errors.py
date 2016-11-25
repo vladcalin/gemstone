@@ -4,3 +4,7 @@ class PyMicroServiceError(Exception):
 
 class ServiceConfigurationError(PyMicroServiceError):
     pass
+
+
+class AccessDeniedError(PyMicroServiceError):
+    pass

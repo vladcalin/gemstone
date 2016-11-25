@@ -2,6 +2,7 @@ import inspect
 from abc import ABC, abstractmethod
 import os
 from concurrent.futures import ThreadPoolExecutor
+import functools
 
 from tornado.web import RequestHandler
 from tornado.gen import coroutine
@@ -10,12 +11,12 @@ from tornado.web import Application
 from tornado.log import enable_pretty_logging
 
 from pymicroservice.util import init_default_logger
-from pymicroservice.errors import ServiceConfigurationError
+from pymicroservice.errors import ServiceConfigurationError, AccessDeniedError
 from pymicroservice.core.handlers import TornadoJsonRpcHandler
-from pymicroservice.core.decorators import exposed_method
+from pymicroservice.core.decorators import public_method
 
 __all__ = [
-    'TornadoJsonRpcHandler'
+    'PyMicroService'
 ]
 
 
@@ -39,10 +40,13 @@ class PyMicroService(ABC):
     host = "127.0.0.1"
     port = 8000
 
+    api_token_header = "X-Api-Token"
+
     max_parallel_blocking_tasks = os.cpu_count()
     _executor = None
 
     methods = {}
+    private_methods = {}
 
     def __init__(self):
         self.app = None
@@ -64,7 +68,7 @@ class PyMicroService(ABC):
 
         self._executor = ThreadPoolExecutor(self.max_parallel_blocking_tasks)
 
-    @exposed_method
+    @public_method
     def get_service_specs(self):
         return {
             "host": self.host,
@@ -84,8 +88,13 @@ class PyMicroService(ABC):
             (r"/api", TornadoJsonRpcHandler, {"methods": self.methods, "executor": self._executor})
         ])
 
+    def check_api_token(self, api_token):
+        return True
+
     def gather_exposed_methods(self):
         for itemname in dir(self):
             item = getattr(self, itemname)
             if getattr(item, "__is_exposed_method__", False) is True:
                 self.methods[item.__name__] = item
+            if getattr(item, "__private_api_method__", False) is True:
+                self.private_methods[item.__name__] = item

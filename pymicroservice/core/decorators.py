@@ -1,8 +1,12 @@
 __all__ = [
-    'exposed_method'
+    'public_method'
 ]
 
 
-def exposed_method(func):
+def public_method(func):
     func.__is_exposed_method__ = True
     return func
+
+
+def private_api_method(func):
+    func.__private_api_method__ = True

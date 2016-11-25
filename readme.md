@@ -11,78 +11,55 @@ or by building a web application that acts like a microservice. I started develo
 to provide a tool for creating and managing such systems with ease, and that are capable of being specialized in
 a certain role, be it entity management, data storage or just computing.
 
-What I want to accomplish
--------------------------
+Example basic usage
+-------------------
 
 I want to obtain a framework that will allow someone to develop a microservice in a manner similat to this
 ```python
 
-	from pymicroservice.core import PyMicroService
-	from pymicroservice.gw_adapters import HttpGatewayAdapter, BinaryStreamGatewayAdapter
-	from pymicroservice.constants import HTTP_JSON, HTTP_REST
+	from pymicroservice.core.microservice import PyMicroService
+from pymicroservice.core.decorators import public_method, private_api_method
 
-	class MyMicroservice(PyMicroService):
 
-		name = "test.microservice.basic"
+class HelloWorldService(PyMicroService):
+    name = "hello.world.service"
+    host = "127.0.0.1"
+    port = 5000
 
-		database = create_database("mongodb://127.0.0.1:27017")
-		process_worker_pool = ProcessWorkerPool(worker_count=5, threads_per_worker=5)
-		thread_worker_pool = ThreadWorkerPool(worker_count=5)
+    def __init__(self):
+        self._values = {}
+        super(HelloWorldService, self).__init__()
 
-		@handle
-		@async_handle
-		def compute_stuff(self, job_name):
-			pass
+    @public_method
+    def say_hello(self, name):
+        return "hello {}".format(name)
 
-		@handle
-		@async_handle
-		def store_data(self, entity_name, entity_data):
-			pass
+    @public_method
+    def store_value(self, name, value):
+        """
+        Stores the value internally.
+        """
+        self._values[name] = value
+        return "ok"
 
-		@handle
-		def get_stored_data(self, entity_name):
-			pass
+    @private_api_method
+    def retrieve_value(self, name):
+        """
+        Retrieves a value that was previously stored.
+        """
+        return self._values[name]
 
-	if __name__ == '__main__':
-		microservice = MyMicroservice(("0.0.0.0", 5533))
+    @public_method
+    def more_stuff(self, x, y, k=3, *args, **kwargs):
+        return "ok"
 
-		# register with the ServiceIdentifierService at http://svc-identify.myserver.com:80/ 
-		# so that other services can easily locate it
-		microservice.set_identifier_database(("svc-identify.myserver.com", 80))
 
-		microservice.add_gateway_adapter(HttpGatewayAdapter(HTTP_JSON_RPC))
-		microservice.add_gateway_adapter(HttpGatewayAdapter(HTTP_REST))
-		microservice.add_gateway_adapter(BinaryStreamGatewayAdapter())
-
-		microservice.serve()
-		# Spawining workers...
-		# Spawining worker threads...
-		# Spawining HttpGatewayAdapter with HTTP_JSON_RPC...
-		#     Listening on http://0.0.0.0/api/json_rpc
-		# Spawining HttpGatewayAdapter with HTTP_REST...
-		# 	  Listening on http://0.0.0.0/api/rest
-		# Spawining BinaryStreamGatewayAdapter...
-		# 	  Listening on socket://0.0.0.0
+if __name__ == '__main__':
+    service = HelloWorldService()
+    service.start()
 
 ```
 
-And maybe a tool for easily generating documentation for the APIs
-
-```python
-
-	from pymicroservice.utils.docs import generate_documentation
-
-	generate_documentation(MyMicroservice, HttpGatewayAdapter(HTTP_JSON_RPC), "docs/html")
-	# Generating documentation for endpoint /api/json_rpc
-	# Generating documentation for endpoint /api/json_rpc/compute_stuff
-	# Generating documentation for endpoint /api/json_rpc/compute_stuff/async
-	# Generating documentation for endpoint /api/json_rpc/store_data
-	# Generating documentation for endpoint /api/json_rpc/store_data/async
-	# Generating documentation for endpoint /api/json_rpc/get_stored_data
-	# Done.
-	# Documentation generated in 
-
-```
 
 Project status
 --------------
