@@ -19,11 +19,5 @@ setup(
 
     packages=find_packages(),
 
-    install_requires=read_dependencies("requirements.txt"),
-
-    entry_points={
-        "console_scripts": [
-            "pymicroservice_builtin = pymicroservice.builtin.cli:main"
-        ]
-    }
+    install_requires=read_dependencies("requirements.txt")
 )

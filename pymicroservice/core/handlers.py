@@ -62,15 +62,15 @@ class TornadoJsonRpcHandler(RequestHandler):
             if not is_notification:
                 err = self.make_error_object(self._ErrorCodes.METHOD_NOT_FOUND, self._ErrorMessages.METHOD_NOT_FOUND)
                 self.write_response(error=err)
-                return
+            return
 
-        method = self.methods.get(req_body["method"])
+        method = self.methods[req_body["method"]]
         method = self.prepare_method_call(method, req_body["args"])
         if not method:
             if not is_notification:
                 err = self.make_error_object(self._ErrorCodes.INVALID_REQUEST, self._ErrorMessages.INVALID_REQUEST)
                 self.write_response(error=err)
-                return
+            return
         result = yield self.call_method(method)
 
         if not is_notification:
