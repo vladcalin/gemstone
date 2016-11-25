@@ -23,16 +23,18 @@ __all__ = [
 class PyMicroService(ABC):
     """
 
-    The base class for fast building a microservice. The microservice must:
+    The base class for defining a microservice.
+    A microservice must define:
 
-    - define a name attribute for easy identification (must be a string)
-    - max_parallel_blocking_tasks must be a positive integer
-    - a bunch of exposed methods decorated with the :py:class:`pymicroservice.exposed_method` decorator
+    Service parameters that can be defined:
 
-    The default implementation spawns a Tornado JSON RPC HTTP server.
-
-    The service exposes the default rpc function **get_service_specs** which returns the running parameters of
-    the service.
+    - [Required] ``name`` : a string representing an identifier of the service
+    - ``host`` : a string representing an address to bind to (defaults to 127.0.0.1)
+    - ``port`` : an integer representing the port to which to bind
+    - ``api_token_header`` : the HTTP header to be used for authorized API access
+    - ``max_parallel_blocking_tasks`` :the maximum number of blocking tasks that can be executed at
+        the same moment (using a :py:class:`concurrent.futures.ThreadPoolExecutor` instance). Defaults
+        to :py:func:`os.cpu_count`.
 
     """
     name = None
@@ -78,6 +80,10 @@ class PyMicroService(ABC):
         }
 
     def start(self):
+        """
+        The main method that starts the service. This is blocking.
+
+        """
         self.app = self.make_tornado_app()
         enable_pretty_logging()
         self.app.listen(self.port, address=self.host)
