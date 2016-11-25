@@ -1,26 +1,21 @@
-from pymicroservice.core.microservice import BaseMicroService
-from pymicroservice.core.decorators import endpoint
-from pymicroservice.concrete.tornado_json_rpc_service import TornadoJsonRpcService
+from pymicroservice.core.microservice import PyMicroService
+from pymicroservice.core.decorators import exposed_method
 
 
-class HelloWorldService(TornadoJsonRpcService):
+class HelloWorldService(PyMicroService):
     name = "hello.world.service"
     host = "127.0.0.1"
     port = 5000
-
-    extras = [
-        # RegisterWithServiceRegistryExtra(("127.0.0.1", 8000))
-    ]
 
     def __init__(self):
         self._values = {}
         super(HelloWorldService, self).__init__()
 
-    @endpoint
+    @exposed_method
     def say_hello(self, name):
         return "hello {}".format(name)
 
-    @endpoint
+    @exposed_method
     def store_value(self, name, value):
         """
         Stores the value internally.
@@ -28,14 +23,14 @@ class HelloWorldService(TornadoJsonRpcService):
         self._values[name] = value
         return "ok"
 
-    @endpoint
+    @exposed_method
     def retrieve_value(self, name):
         """
         Retrieves a value that was previously stored.
         """
         return self._values[name]
 
-    @endpoint
+    @exposed_method
     def more_stuff(self, x, y, k=3, *args, **kwargs):
         return "ok"
 

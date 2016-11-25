@@ -1,8 +1,8 @@
 __all__ = [
-    'endpoint'
+    'exposed_method'
 ]
 
 
-def endpoint(func):
-    func.__is_endpoint__ = True
+def exposed_method(func):
+    func.__is_exposed_method__ = True
     return func

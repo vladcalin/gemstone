@@ -1,45 +1,72 @@
 import inspect
 from abc import ABC, abstractmethod
+import os
+from concurrent.futures import ThreadPoolExecutor
+
+from tornado.web import RequestHandler
+from tornado.gen import coroutine
+from tornado.ioloop import IOLoop
+from tornado.web import Application
+from tornado.log import enable_pretty_logging
 
 from pymicroservice.util import init_default_logger
-from pymicroservice.errors import ConfigurationError
+from pymicroservice.errors import ServiceConfigurationError
+from pymicroservice.core.handlers import TornadoJsonRpcHandler
+from pymicroservice.core.decorators import exposed_method
 
 __all__ = [
-    'BaseMicroService'
+    'TornadoJsonRpcHandler'
 ]
 
 
-class BaseMicroService(ABC):
+class PyMicroService(ABC):
     name = None
-    daemons = []
+
+    host = "127.0.0.1"
+    port = 8000
+
+    max_parallel_blocking_tasks = os.cpu_count()
+    _executor = None
+
+    methods = {}
 
     def __init__(self):
-        self.endpoints = {}
+        self.app = None
+        init_default_logger()
 
-        self.logger = init_default_logger()
-        self.logger.info("Starting")
+        # name
+        if self.name is None:
+            raise ServiceConfigurationError("No name defined for the microservice")
+
+        # methods
+        self.gather_exposed_methods()
+
+        if len(self.methods) == 0:
+            raise ServiceConfigurationError("No exposed methods for the microservice")
+
+        # executor
+        if self.max_parallel_blocking_tasks <= 0:
+            raise ServiceConfigurationError("Invalid max_parallel_blocking_tasks value")
+
+        self._executor = ThreadPoolExecutor(self.max_parallel_blocking_tasks)
+
+    @exposed_method
+    def help(self):
+        return "hello there"
 
     def start(self):
-        self.validate_state()
-        self.gather_endpoints()
+        self.app = self.make_tornado_app()
+        enable_pretty_logging()
+        self.app.listen(self.port, address=self.host)
+        IOLoop.current().start()
 
-    def gather_endpoints(self):
-        self.logger.debug("Gathering endpoints")
-        for item_name in dir(self):
-            if not hasattr(self, item_name):
-                continue
+    def make_tornado_app(self):
+        return Application([
+            (r"/api", TornadoJsonRpcHandler, {"methods": self.methods, "executor": self._executor})
+        ])
 
-            item = getattr(self, item_name)
-            if getattr(item, "__is_endpoint__", False) is True:
-                self.logger.debug("\tDiscovered endpoint {}".format(item.__name__))
-                endpoint_name = item.__name__
-                endpoint_func = item
-                endpoint_params = inspect.getargspec(item)
-                self.endpoints[endpoint_name] = {
-                    "func": endpoint_func,
-                    "params": endpoint_params
-                }
-
-    def validate_state(self):
-        if self.name is None:
-            raise ConfigurationError("Name of the microservice not set")
+    def gather_exposed_methods(self):
+        for itemname in dir(self):
+            item = getattr(self, itemname)
+            if getattr(item, "__is_exposed_method__", False) is True:
+                self.methods[item.__name__] = item

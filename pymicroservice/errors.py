@@ -2,5 +2,5 @@ class PyMicroServiceError(Exception):
     pass
 
 
-class ConfigurationError(PyMicroServiceError):
+class ServiceConfigurationError(PyMicroServiceError):
     pass
