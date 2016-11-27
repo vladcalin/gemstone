@@ -18,6 +18,12 @@ setup(
     short_description="Build microservices with Python",
 
     packages=find_packages(),
+    include_package_data=True,
 
-    install_requires=read_dependencies("requirements.txt")
+    install_requires=read_dependencies("requirements.txt"),
+    entry_points={
+        "console_scripts": [
+            "pymicroservice-cli = pymicroservice.cli:main"
+        ]
+    }
 )
