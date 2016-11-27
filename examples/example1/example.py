@@ -1,11 +1,31 @@
+import os
+
+from tornado.web import RequestHandler
+from tornado.gen import coroutine
+
 from pymicroservice.core.microservice import PyMicroService
 from pymicroservice.core.decorators import public_method, private_api_method
+
+
+class IndexHandler(RequestHandler):
+    @coroutine
+    def get(self):
+        self.render("index.html")
 
 
 class HelloWorldService(PyMicroService):
     name = "hello.world.service"
     host = "127.0.0.1"
     port = 5000
+
+    extra_handlers = [
+        (r"/app", IndexHandler),
+    ]
+    template_dir = "templates"
+
+    static_dirs = [
+        (r"/static", "static"),
+    ]
 
     def __init__(self):
         self._values = {}
@@ -33,6 +53,9 @@ class HelloWorldService(PyMicroService):
     @public_method
     def more_stuff(self, x, y, k=3, *args, **kwargs):
         return "ok"
+
+    def api_token_is_valid(self, api_token):
+        return api_token == "test"
 
 
 if __name__ == '__main__':

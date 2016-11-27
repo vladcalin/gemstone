@@ -8,6 +8,8 @@ from tornado.gen import coroutine
 class TornadoJsonRpcHandler(RequestHandler):
     methods = None
     executor = None
+    api_token_header = None
+    api_token_handler = None
 
     class _ErrorCodes:
         PARSE_ERROR = -32700
@@ -16,6 +18,7 @@ class TornadoJsonRpcHandler(RequestHandler):
         INVALID_PARAMS = -32602
         INTERNAL_ERROR = -32603
         OTHERS = -32000
+        ACCESS_DENIED = -32001
 
     class _ErrorMessages:
         PARSE_ERROR = "Parse error"
@@ -23,11 +26,14 @@ class TornadoJsonRpcHandler(RequestHandler):
         METHOD_NOT_FOUND = "Method not found"
         INVALID_PARAMS = "Invalid params"
         INTERNAL_ERROR = "Internal error"
+        ACCESS_DENIED = "Access denied"
 
     # noinspection PyMethodOverriding
-    def initialize(self, methods, executor):
+    def initialize(self, methods, executor, api_token_header, api_token_handler):
         self.methods = methods
         self.executor = executor
+        self.api_token_header = api_token_header
+        self.api_token_handler = api_token_handler
 
     @coroutine
     def post(self):
@@ -50,6 +56,22 @@ class TornadoJsonRpcHandler(RequestHandler):
             self.write_response(None, err, None)
             return
 
+        # validate method name
+        if req_body["method"] not in self.methods:
+            if not is_notification:
+                err = self.make_error_object(self._ErrorCodes.METHOD_NOT_FOUND,
+                                             self._ErrorMessages.METHOD_NOT_FOUND)
+                self.write_response(error=err)
+            return
+
+        # check for private access
+        method = self.methods[req_body["method"]]
+        if method.is_private:
+            if not self.api_token_handler(self.request.headers.get(self.api_token_header, None)):
+                err = self.make_error_object(self._ErrorCodes.ACCESS_DENIED, self._ErrorMessages.ACCESS_DENIED)
+                self.write_response(error=err)
+                return
+
         # check if it is a notification or the client waits a response
         if "id" not in req_body or req_body["id"] is None:
             self.write_response("received")
@@ -57,14 +79,6 @@ class TornadoJsonRpcHandler(RequestHandler):
         else:
             id_ = req_body["id"]
 
-        # validate method name
-        if req_body["method"] not in self.methods:
-            if not is_notification:
-                err = self.make_error_object(self._ErrorCodes.METHOD_NOT_FOUND, self._ErrorMessages.METHOD_NOT_FOUND)
-                self.write_response(error=err)
-            return
-
-        method = self.methods[req_body["method"]]
         method = self.prepare_method_call(method, req_body["args"])
         if not method:
             if not is_notification:

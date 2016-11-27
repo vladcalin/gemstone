@@ -4,7 +4,7 @@ import os
 from concurrent.futures import ThreadPoolExecutor
 import functools
 
-from tornado.web import RequestHandler
+from tornado.web import RequestHandler, StaticFileHandler
 from tornado.gen import coroutine
 from tornado.ioloop import IOLoop
 from tornado.web import Application
@@ -41,6 +41,10 @@ class PyMicroService(ABC):
 
     host = "127.0.0.1"
     port = 8000
+
+    template_dir = "."
+    static_dirs = []
+    extra_handlers = []
 
     api_token_header = "X-Api-Token"
 
@@ -90,17 +94,36 @@ class PyMicroService(ABC):
         IOLoop.current().start()
 
     def make_tornado_app(self):
-        return Application([
-            (r"/api", TornadoJsonRpcHandler, {"methods": self.methods, "executor": self._executor})
-        ])
 
-    def check_api_token(self, api_token):
+        handlers = [
+            (r"/api", TornadoJsonRpcHandler,
+             {
+                 "methods": self.methods,
+                 "executor": self._executor,
+                 "api_token_header":
+                     self.api_token_header,
+                 "api_token_handler": self.api_token_is_valid
+             })
+        ]
+
+        self.add_extra_handlers(handlers)
+        self.add_static_handlers(handlers)
+
+        return Application(handlers, template_path=self.template_dir)
+
+    def add_extra_handlers(self, handlers):
+        handlers.extend(self.extra_handlers)
+
+    def add_static_handlers(self, handlers):
+        for url, path in self.static_dirs:
+            handlers.append((url.rstrip("/") + "/(.*)", StaticFileHandler, {"path": path}))
+
+    def api_token_is_valid(self, api_token):
         return True
 
     def gather_exposed_methods(self):
         for itemname in dir(self):
             item = getattr(self, itemname)
-            if getattr(item, "__is_exposed_method__", False) is True:
+            if getattr(item, "__is_exposed_method__", False) is True or \
+                            getattr(item, "__private_api_method__", False) is True:
                 self.methods[item.__name__] = item
-            if getattr(item, "__private_api_method__", False) is True:
-                self.private_methods[item.__name__] = item
