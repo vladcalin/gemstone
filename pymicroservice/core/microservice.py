@@ -80,7 +80,8 @@ class PyMicroService(ABC):
             "host": self.host,
             "port": self.port,
             "name": self.name,
-            "max_parallel_blocking_tasks": self.max_parallel_blocking_tasks
+            "max_parallel_blocking_tasks": self.max_parallel_blocking_tasks,
+            "methods": {m.__name__: m.__doc__ for m in self.methods}
         }
 
     def start(self):

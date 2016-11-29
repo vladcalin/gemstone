@@ -129,6 +129,11 @@ class TornadoJsonRpcHandler(RequestHandler):
         self.write(json.dumps(self.make_response_dict(result, error, id)))
 
     def write_error(self, status_code, **kwargs):
+        if status_code == 405:
+            self.set_status(405)
+            self.write_response(None, {"message": "Method not allowed"})
+            return
+
         exc_info = kwargs["exc_info"]
         err = self.make_error_object(self._ErrorCodes.INTERNAL_ERROR, self._ErrorMessages.INTERNAL_ERROR, data={
             "class": str(exc_info[0].__name__),

@@ -14,15 +14,17 @@ class TestService(PyMicroService):
 
     @public_method
     def test_method_no_params(self):
-        pass
+        return "success_1"
 
     @public_method
     def test_method_params(self, param1, param2):
-        pass
+        return "this {} is a {}".format(param1, param2)
 
     @public_method
-    def test_method_var_params(self, *args, **kwargs):
-        pass
+    def test_method_var_params(self, **kwargs):
+        return {
+            "kwargs": kwargs
+        }
 
     @private_api_method
     def test_method_priv_no_params(self):
@@ -94,7 +96,7 @@ class JsonRpcSpecTestCase(AsyncHTTPTestCase):
     def test_bad_http_verb(self):
         """
         Handle this case
-        
+
         :return:
         """
         payload = {
@@ -103,6 +105,70 @@ class JsonRpcSpecTestCase(AsyncHTTPTestCase):
             "method": "test_method_params",
             "args": {}
         }
-        resp = self.fetch("/api", method="UPDATE", headers={"Content-Type": "application/json"}, body=json.dumps(payload))
-        print(resp)
-        print(resp.code)
+        resp = self.fetch("/api", method="PUT", headers={"Content-Type": "application/json"}, body=json.dumps(payload))
+        self.assertEqual(resp.code, 405)
+
+        resp = json.loads(resp.body.decode())
+        self.assertEqual(resp["result"], None)
+        self.assertEqual(resp["error"]["message"].lower(), "method not allowed")
+
+    def test_notification(self):
+        payload = {
+            "jsonrpc": "2.0",
+            "id": None,
+            "method": "test_method_no_params",
+            "args": {}
+        }
+        resp = self.fetch("/api", method="POST", headers={"Content-Type": "application/json"}, body=json.dumps(payload))
+        resp = json.loads(resp.body.decode())
+        self.assertEqual(resp["result"], "received")
+        self.assertEqual(resp["error"], None)
+
+    def test_public_method_with_no_params(self):
+        payload = {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "test_method_no_params",
+            "args": {}
+        }
+        resp = self.fetch("/api", method="POST", headers={"Content-Type": "application/json"}, body=json.dumps(payload))
+        resp = json.loads(resp.body.decode())
+        self.assertEqual(resp["result"], "success_1")
+        self.assertEqual(resp["error"], None)
+
+    def test_public_method_with_params(self):
+        payload = {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "test_method_params",
+            "args": {
+                "param1": "test",
+                "param2": "success"
+            }
+        }
+        resp = self.fetch("/api", method="POST", headers={"Content-Type": "application/json"}, body=json.dumps(payload))
+        resp = json.loads(resp.body.decode())
+        self.assertEqual(resp["result"], "this test is a success")
+        self.assertEqual(resp["error"], None)
+
+    def test_public_method_with_variable_params(self):
+        payload = {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "test_method_var_params",
+            "args": {
+                "param1": "test",
+                "param2": "success",
+                "param3": 3,
+                "param4": False
+            }
+        }
+        resp = self.fetch("/api", method="POST", headers={"Content-Type": "application/json"}, body=json.dumps(payload))
+        resp = json.loads(resp.body.decode())
+        self.assertEqual(resp["result"], {"kwargs": {
+            "param1": "test",
+            "param2": "success",
+            "param3": 3,
+            "param4": False
+        }})
+        self.assertEqual(resp["error"], None)
