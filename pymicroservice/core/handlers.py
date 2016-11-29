@@ -42,6 +42,11 @@ class TornadoJsonRpcHandler(RequestHandler):
         id_ = None
         is_notification = False
 
+        if self.request.headers.get("Content-type") != "application/json":
+            error = self.make_error_object(self._ErrorCodes.INVALID_REQUEST, self._ErrorMessages.INVALID_REQUEST)
+            self.write_response(None, error, None)
+            return
+
         # validate json structure
         try:
             req_body = json.loads(self.request.body.decode())
