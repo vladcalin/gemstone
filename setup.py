@@ -20,6 +20,9 @@ setup(
     packages=find_packages(),
     include_package_data=True,
 
+    # tests
+    test_suite="tests",
+
     install_requires=read_dependencies("requirements.txt"),
     entry_points={
         "console_scripts": [

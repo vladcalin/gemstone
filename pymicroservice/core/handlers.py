@@ -107,6 +107,7 @@ class TornadoJsonRpcHandler(RequestHandler):
 
     def make_response_dict(self, result=None, error=None, id=None):
         response = {
+            "jsonrpc": "2.0",
             "result": result,
             "error": error,
         }

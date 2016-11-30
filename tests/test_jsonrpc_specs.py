@@ -53,6 +53,7 @@ class JsonRpcSpecTestCase(AsyncHTTPTestCase):
         resp = json.loads(resp.body.decode())
 
         self.assertEqual(resp["result"], None)
+        self.assertEqual(resp["jsonrpc"], "2.0")
         self.assertEqual(resp["error"]["code"], -32600)
         self.assertEqual(resp["error"]["message"].lower(), "invalid request")
 
@@ -61,6 +62,7 @@ class JsonRpcSpecTestCase(AsyncHTTPTestCase):
                           body="{this_is_not_valid")
         resp = json.loads(resp.body.decode())
         self.assertEqual(resp["result"], None)
+        self.assertEqual(resp["jsonrpc"], "2.0")
         self.assertEqual(resp["error"]["code"], -32700)
         self.assertEqual(resp["error"]["message"].lower(), "parse error")
 
@@ -76,6 +78,7 @@ class JsonRpcSpecTestCase(AsyncHTTPTestCase):
         resp = self.fetch("/api", method="POST", headers={"Content-Type": "application/json"}, body=json.dumps(payload))
         resp = json.loads(resp.body.decode())
         self.assertEqual(resp["result"], None)
+        self.assertEqual(resp["jsonrpc"], "2.0")
         self.assertEqual(resp["error"]["code"], -32601)
         self.assertEqual(resp["error"]["message"].lower(), "method not found")
 
@@ -89,6 +92,7 @@ class JsonRpcSpecTestCase(AsyncHTTPTestCase):
         resp = self.fetch("/api", method="POST", headers={"Content-Type": "application/xxx-form-url-encoded"},
                           body=json.dumps(payload))
         resp = json.loads(resp.body.decode())
+        self.assertEqual(resp["jsonrpc"], "2.0")
         self.assertEqual(resp["result"], None)
         self.assertEqual(resp["error"]["code"], -32600)
         self.assertEqual(resp["error"]["message"].lower(), "invalid request")
@@ -109,6 +113,7 @@ class JsonRpcSpecTestCase(AsyncHTTPTestCase):
         self.assertEqual(resp.code, 405)
 
         resp = json.loads(resp.body.decode())
+        self.assertEqual(resp["jsonrpc"], "2.0")
         self.assertEqual(resp["result"], None)
         self.assertEqual(resp["error"]["message"].lower(), "method not allowed")
 
@@ -121,6 +126,7 @@ class JsonRpcSpecTestCase(AsyncHTTPTestCase):
         }
         resp = self.fetch("/api", method="POST", headers={"Content-Type": "application/json"}, body=json.dumps(payload))
         resp = json.loads(resp.body.decode())
+        self.assertEqual(resp["jsonrpc"], "2.0")
         self.assertEqual(resp["result"], "received")
         self.assertEqual(resp["error"], None)
 
@@ -133,6 +139,7 @@ class JsonRpcSpecTestCase(AsyncHTTPTestCase):
         }
         resp = self.fetch("/api", method="POST", headers={"Content-Type": "application/json"}, body=json.dumps(payload))
         resp = json.loads(resp.body.decode())
+        self.assertEqual(resp["jsonrpc"], "2.0")
         self.assertEqual(resp["result"], "success_1")
         self.assertEqual(resp["error"], None)
 
@@ -148,6 +155,7 @@ class JsonRpcSpecTestCase(AsyncHTTPTestCase):
         }
         resp = self.fetch("/api", method="POST", headers={"Content-Type": "application/json"}, body=json.dumps(payload))
         resp = json.loads(resp.body.decode())
+        self.assertEqual(resp["jsonrpc"], "2.0")
         self.assertEqual(resp["result"], "this test is a success")
         self.assertEqual(resp["error"], None)
 
@@ -165,6 +173,7 @@ class JsonRpcSpecTestCase(AsyncHTTPTestCase):
         }
         resp = self.fetch("/api", method="POST", headers={"Content-Type": "application/json"}, body=json.dumps(payload))
         resp = json.loads(resp.body.decode())
+        self.assertEqual(resp["jsonrpc"], "2.0")
         self.assertEqual(resp["result"], {"kwargs": {
             "param1": "test",
             "param2": "success",
