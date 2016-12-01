@@ -1,1 +1,4 @@
 include pymicroservice/data/*
+include LICENSE
+include requirements.txt
+include readme.md
