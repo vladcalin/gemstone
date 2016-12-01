@@ -70,7 +70,6 @@ class TornadoJsonRpcHandler(RequestHandler):
         elif isinstance(req_body, list):
             results = yield self.handle_batch_request(req_body)
             valid_results = list(filter(lambda x: x is not None, results))
-            print(valid_results)
             self.write_batch_response(*valid_results)
         else:
             self.write_response(error=self.get_generic_jsonrpc_response(self._GenericErrorId.INVALID_REQUEST))
@@ -115,7 +114,7 @@ class TornadoJsonRpcHandler(RequestHandler):
                 err = self.get_generic_jsonrpc_response(self._GenericErrorId.ACCESS_DENIED)
                 return self.make_response_dict(error=err, id=id_)
 
-        method = self.prepare_method_call(method, single_request["args"])
+        method = self.prepare_method_call(method, single_request.get("params", {}))
         if not method:
             if not is_notification:
                 err = self.get_generic_jsonrpc_response(self._GenericErrorId.INVALID_REQUEST)
@@ -136,7 +135,7 @@ class TornadoJsonRpcHandler(RequestHandler):
         )
 
     def validate_jsonrpc_structure(self, body):
-        for mandatory_key in ["jsonrpc", "method", "args"]:
+        for mandatory_key in ["jsonrpc", "method"]:
             if mandatory_key not in body:
                 return False
 
@@ -204,5 +203,4 @@ class TornadoJsonRpcHandler(RequestHandler):
     @coroutine
     def handle_batch_request(self, req_body):
         responses = yield [self.handle_single_request(single_req) for single_req in req_body]
-        print(responses)
         return responses

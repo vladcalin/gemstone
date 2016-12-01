@@ -71,7 +71,7 @@ class JsonRpcSpecTestCase(AsyncHTTPTestCase):
             "jsonrpc": "2.0",
             "id": 7,
             "method": "method_does_not_exist",
-            "args": {
+            "params": {
                 "does": "not exist"
             }
         }
@@ -88,7 +88,7 @@ class JsonRpcSpecTestCase(AsyncHTTPTestCase):
             "jsonrpc": "2.0",
             "id": 1,
             "method": "test_method_params",
-            "args": {}
+            "params": {}
         }
         resp = self.fetch("/api", method="POST", headers={"Content-Type": "application/xxx-form-url-encoded"},
                           body=json.dumps(payload))
@@ -108,7 +108,7 @@ class JsonRpcSpecTestCase(AsyncHTTPTestCase):
             "jsonrpc": "2.0",
             "id": 7,
             "method": "test_method_params",
-            "args": {}
+            "params": {}
         }
         resp = self.fetch("/api", method="PUT", headers={"Content-Type": "application/json"}, body=json.dumps(payload))
         self.assertEqual(resp.code, 405)
@@ -123,7 +123,7 @@ class JsonRpcSpecTestCase(AsyncHTTPTestCase):
             "jsonrpc": "2.0",
             "id": None,
             "method": "test_method_no_params",
-            "args": {}
+            "params": {}
         }
         resp = self.fetch("/api", method="POST", headers={"Content-Type": "application/json"}, body=json.dumps(payload))
         resp = json.loads(resp.body.decode())
@@ -137,7 +137,7 @@ class JsonRpcSpecTestCase(AsyncHTTPTestCase):
             "jsonrpc": "2.0",
             "id": 33,
             "method": "test_method_no_params",
-            "args": {}
+            "params": {}
         }
         resp = self.fetch("/api", method="POST", headers={"Content-Type": "application/json"}, body=json.dumps(payload))
         resp = json.loads(resp.body.decode())
@@ -146,15 +146,42 @@ class JsonRpcSpecTestCase(AsyncHTTPTestCase):
         self.assertEqual(resp["error"], None)
         self.assertEqual(resp["id"], 33)
 
-    def test_public_method_with_params(self):
+    def test_public_method_with_no_params_field(self):
+        payload = {
+            "jsonrpc": "2.0",
+            "id": 37,
+            "method": "test_method_no_params"
+        }
+        resp = self.fetch("/api", method="POST", headers={"Content-Type": "application/json"}, body=json.dumps(payload))
+        resp = json.loads(resp.body.decode())
+        self.assertEqual(resp["jsonrpc"], "2.0")
+        self.assertEqual(resp["result"], "success_1")
+        self.assertEqual(resp["error"], None)
+        self.assertEqual(resp["id"], 37)
+
+    def test_public_method_with_keyword_params(self):
         payload = {
             "jsonrpc": "2.0",
             "id": 1,
             "method": "test_method_params",
-            "args": {
+            "params": {
                 "param1": "test",
                 "param2": "success"
             }
+        }
+        resp = self.fetch("/api", method="POST", headers={"Content-Type": "application/json"}, body=json.dumps(payload))
+        resp = json.loads(resp.body.decode())
+        self.assertEqual(resp["jsonrpc"], "2.0")
+        self.assertEqual(resp["result"], "this test is a success")
+        self.assertEqual(resp["error"], None)
+        self.assertEqual(resp["id"], 1)
+
+    def test_public_method_with_positional_params(self):
+        payload = {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "test_method_params",
+            "params": ["test", "success"]
         }
         resp = self.fetch("/api", method="POST", headers={"Content-Type": "application/json"}, body=json.dumps(payload))
         resp = json.loads(resp.body.decode())
@@ -168,7 +195,7 @@ class JsonRpcSpecTestCase(AsyncHTTPTestCase):
             "jsonrpc": "2.0",
             "id": 1,
             "method": "test_method_var_params",
-            "args": {
+            "params": {
                 "param1": "test",
                 "param2": "success",
                 "param3": 3,
@@ -187,7 +214,6 @@ class JsonRpcSpecTestCase(AsyncHTTPTestCase):
         self.assertEqual(resp["error"], None)
 
     def _get_response_by_id(self, batch_response, id_):
-        print(batch_response)
         filtered = [x for x in batch_response if x.get("id", None) == id_]
         if not filtered:
             return None
@@ -197,9 +223,9 @@ class JsonRpcSpecTestCase(AsyncHTTPTestCase):
     def test_batch_req_resp(self):
 
         payload = [
-            {"jsonrpc": "2.0", "id": 1, "method": "test_method_no_params", "args": {}},
-            {"jsonrpc": "2.0", "id": 2, "method": "test_method_params", "args": {"param1": "test", "param2": "test2"}},
-            {"jsonrpc": "2.0", "id": 3, "method": "test_method_no_params", "args": {}}
+            {"jsonrpc": "2.0", "id": 1, "method": "test_method_no_params", "params": {}},
+            {"jsonrpc": "2.0", "id": 2, "method": "test_method_params", "params": {"param1": "test", "param2": "test2"}},
+            {"jsonrpc": "2.0", "id": 3, "method": "test_method_no_params", "params": {}}
         ]
         resp = self.fetch("/api", method="POST", headers={"Content-Type": "application/json"}, body=json.dumps(payload))
         resp = json.loads(resp.body.decode())
@@ -221,9 +247,9 @@ class JsonRpcSpecTestCase(AsyncHTTPTestCase):
 
     def test_batch_bad_request_parse_error(self):
         payload = [
-            {"jsonrpc": "2.0", "id": 1, "method": "test_method_no_params", "args": {}},
-            {"jsonrpc": "2.0", "id": 2, "method": "test_method_params", "args": {"param1": "test", "param2": "test2"}},
-            {"jsonrpc": "2.0", "id": 3, "method": "test_method_no_params", "args": {}}
+            {"jsonrpc": "2.0", "id": 1, "method": "test_method_no_params", "params": {}},
+            {"jsonrpc": "2.0", "id": 2, "method": "test_method_params", "params": {"param1": "test", "param2": "test2"}},
+            {"jsonrpc": "2.0", "id": 3, "method": "test_method_no_params", "params": {}}
         ]
         resp = self.fetch("/api", method="POST", headers={"Content-Type": "application/json"},
                           body=json.dumps(payload)[:-10])
@@ -235,9 +261,9 @@ class JsonRpcSpecTestCase(AsyncHTTPTestCase):
 
     def test_batch_one_bad_request(self):
         payload = [
-            {"jsonrpc": "2.0", "id": 1, "method": "method_not_found", "args": {}},
-            {"jsonrpc": "2.0", "id": 2, "method": "test_method_params", "args": {"param1": "test", "param2": "test2"}},
-            {"jsonrpc": "2.0", "id": 3, "method": "test_method_no_params", "args": {}}
+            {"jsonrpc": "2.0", "id": 1, "method": "method_not_found", "params": {}},
+            {"jsonrpc": "2.0", "id": 2, "method": "test_method_params", "params": {"param1": "test", "param2": "test2"}},
+            {"jsonrpc": "2.0", "id": 3, "method": "test_method_no_params", "params": {}}
         ]
         resp = self.fetch("/api", method="POST", headers={"Content-Type": "application/json"},
                           body=json.dumps(payload))
