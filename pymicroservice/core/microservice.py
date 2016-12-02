@@ -120,6 +120,13 @@ class PyMicroService(ABC):
             handlers.append((url.rstrip("/") + "/(.*)", StaticFileHandler, {"path": path}))
 
     def api_token_is_valid(self, api_token):
+        """
+        Method that must be overridden by subclasses in order to implement the API token validation logic.
+        Should return ``True`` if the api token is valid, or ``False`` otherwise.
+
+        :param api_token: a string representing the received api token value
+        :return:
+        """
         return True
 
     def gather_exposed_methods(self):
