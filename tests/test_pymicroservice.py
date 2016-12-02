@@ -109,7 +109,7 @@ class PyMicroServiceBehaviourTestCase(AsyncHTTPTestCase):
         payload = {
             "jsonrpc": "2.0",
             "method": "test_raises",
-            "id": 1
+            "id": 77
         }
         response = self.fetch("/api", method="POST", body=json.dumps(payload),
                               headers={"Content-Type": "application/json"})
@@ -118,5 +118,4 @@ class PyMicroServiceBehaviourTestCase(AsyncHTTPTestCase):
         self.assertEqual(response["error"]["code"], -32603)
         self.assertEqual(response["error"]["message"].lower(), "internal error")
         self.assertEqual(response["error"]["data"], {"class": "ValueError", "info": "This is a test"})
-        # TODO: Should return an id
-        # self.assertEqual(response["id"], 1)
+        self.assertEqual(response["id"], 77)

@@ -120,7 +120,15 @@ class TornadoJsonRpcHandler(RequestHandler):
                 err = self.get_generic_jsonrpc_response(self._GenericErrorId.INVALID_REQUEST)
                 return self.make_response_dict(error=err, id=id_)
             return
-        result = yield self.call_method(method)
+        try:
+            result = yield self.call_method(method)
+        except Exception as e:
+            err = self.get_generic_jsonrpc_response(self._GenericErrorId.INTERNAL_ERROR)
+            err["data"] = {
+                "class": type(e).__name__,
+                "info": str(e)
+            }
+            return self.make_response_dict(None, err, id_)
 
         if not is_notification:
             return self.make_response_dict(result, error, id_)
