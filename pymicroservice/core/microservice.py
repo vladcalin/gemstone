@@ -24,17 +24,6 @@ class PyMicroService(ABC):
     """
 
     The base class for defining a microservice.
-    A microservice must define:
-
-    Service parameters that can be defined:
-
-    - [Required] ``name`` : a string representing an identifier of the service
-    - ``host`` : a string representing an address to bind to (defaults to 127.0.0.1)
-    - ``port`` : an integer representing the port to which to bind
-    - ``api_token_header`` : the HTTP header to be used for authorized API access
-    - ``max_parallel_blocking_tasks`` :the maximum number of blocking tasks that can be executed at
-        the same moment (using a :py:class:`concurrent.futures.ThreadPoolExecutor` instance). Defaults
-        to :py:func:`os.cpu_count`.
 
     """
     name = None
@@ -44,6 +33,7 @@ class PyMicroService(ABC):
 
     template_dir = "."
     static_dirs = []
+
     extra_handlers = []
 
     api_token_header = "X-Api-Token"
@@ -52,7 +42,6 @@ class PyMicroService(ABC):
     _executor = None
 
     methods = {}
-    private_methods = {}
 
     def __init__(self):
         self.app = None
@@ -76,6 +65,26 @@ class PyMicroService(ABC):
 
     @public_method
     def get_service_specs(self):
+        """
+        A default exposed method that returns the current microservice specifications. The returned information is
+        in the format:
+
+        ::
+
+            {
+                "host": "127.0.0.1",
+                "port": 9000.
+                "name": "service.example",
+                "max_parallel_blocking_tasks": 8,
+                "methods": {
+                    "get_service_specs": "...",
+                    "method1": "method1's docstring",
+                    ...
+                }
+            }
+
+        :return:
+        """
         return {
             "host": self.host,
             "port": self.port,
@@ -125,7 +134,7 @@ class PyMicroService(ABC):
         Should return ``True`` if the api token is valid, or ``False`` otherwise.
 
         :param api_token: a string representing the received api token value
-        :return:
+        :return: ``True`` if the api_token is valid, ``False`` otherwise
         """
         return True
 
