@@ -101,4 +101,4 @@ There are some basic features, such as:
 TODO
 ----
 
-See [./TODO.md]
+See [TODO](TODO.md)
