@@ -41,8 +41,6 @@ class PyMicroService(ABC):
     max_parallel_blocking_tasks = os.cpu_count()
     _executor = None
 
-    methods = {}
-
     def __init__(self):
         self.app = None
         init_default_logger()
@@ -52,6 +50,7 @@ class PyMicroService(ABC):
             raise ServiceConfigurationError("No name defined for the microservice")
 
         # methods
+        self.methods = {}
         self.gather_exposed_methods()
 
         if len(self.methods) == 0:
