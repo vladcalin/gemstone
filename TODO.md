@@ -1,7 +1,7 @@
 - [ ] Add proper logging
 - [ ] Add more configurable access validation logic (through sessions?)
 - [ ] Add service discovery mechanism
-- [ ] Add possibility to communcicate with other ``pymicroservice`` based
+- [ ] Add possibility to communicate with other ``pymicroservice`` based
 services.
 
 - [ ] host documentation

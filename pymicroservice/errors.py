@@ -8,3 +8,7 @@ class ServiceConfigurationError(PyMicroServiceError):
 
 class AccessDeniedError(PyMicroServiceError):
     pass
+
+
+class CalledServiceError(PyMicroServiceError):
+    pass

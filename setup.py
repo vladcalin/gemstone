@@ -26,11 +26,26 @@ setup(
     # project metadata
     name="pymicroservice",
     version=get_meta_attr_from_string("__version__", module_content),
+    license="MIT",
 
     author=get_meta_attr_from_string("__author__", module_content),
     author_email=get_meta_attr_from_string("__email__", module_content),
-    description=get_file_content("readme.md"),
-    short_description="Build microservices with Python",
+
+    maintainer=get_meta_attr_from_string("__author__", module_content),
+    maintainer_email=get_meta_attr_from_string("__email__", module_content),
+
+    long_description=get_file_content("readme.md"),
+    description="Build microservices with Python",
+    keywords=["microservice", "cloud", "rpc", "compute", "service"],
+    classifiers=[
+        "Development Status :: 2 - Pre-Alpha",
+        "License :: OSI Approved :: MIT License",
+        "Operating System :: OS Independent",
+        "Programming Language :: Python :: 3 :: Only",
+        "Topic :: Software Development :: Libraries"
+    ],
+
+    zip_safe=False,
 
     # packages
     packages=find_packages(),
