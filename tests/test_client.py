@@ -3,7 +3,7 @@ import threading
 import re
 
 from pymicroservice.client.remote_service import RemoteService
-from pymicroservice import PyMicroService, public_method
+from pymicroservice import PyMicroService, public_method, private_api_method
 from pymicroservice.errors import CalledServiceError
 
 HOST, PORT = "127.0.0.1", 6799
@@ -33,6 +33,13 @@ class Service1(PyMicroService):
     def method4(self, arg1, arg2):
         return {"arg1": arg1, "arg2": arg2}
 
+    @private_api_method
+    def method5(self, name):
+        return "private {}".format(name)
+
+    def api_token_is_valid(self, api_token):
+        return api_token == "test-token"
+
 
 class ClientTestCase(TestCase):
     service_thread = None
@@ -48,7 +55,7 @@ class ClientTestCase(TestCase):
 
         self.assertEqual(client.name, "test.service.client.1")
         self.assertCountEqual(client.get_available_methods(),
-                              ["get_service_specs", "method1", "method2", "method3", "method4"])
+                              ["get_service_specs", "method1", "method2", "method3", "method4", "method5"])
 
     def test_method_call_no_args(self):
         client = RemoteService(self.service_url)
@@ -83,6 +90,34 @@ class ClientTestCase(TestCase):
 
         result = client.methods.method4("test", "success")
         self.assertEqual(result, {"arg1": "test", "arg2": "success"})
+
+    def test_method_call_method_does_not_exist(self):
+        client = RemoteService(self.service_url)
+        with self.assertRaises(AttributeError):
+            result = client.methods.does_not_exist()
+
+    def test_method_call_wrong_params(self):
+        client = RemoteService(self.service_url)
+        with self.assertRaises(CalledServiceError):
+            result = client.methods.method1(param="should_not_be_here")
+
+        with self.assertRaises(CalledServiceError):
+            result = client.methods.method1(1, 2, 3)
+
+    def test_method_call_private_token_missing(self):
+        client = RemoteService(self.service_url)  # no api token
+        with self.assertRaises(CalledServiceError):
+            result = client.methods.method5("test")
+
+    def test_method_call_private_token_ok(self):
+        client = RemoteService(self.service_url, api_key="test-token")
+        result = client.methods.method5("test")
+        self.assertEqual(result, "private test")
+
+    def test_method_call_private_token_incorrect(self):
+        client = RemoteService(self.service_url, api_key="wrong-token")
+        with self.assertRaises(CalledServiceError):
+            result = client.methods.method5("test")
 
 
 if __name__ == '__main__':

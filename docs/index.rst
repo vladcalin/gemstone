@@ -15,6 +15,7 @@ This library offers support for writing a microservice that:
 
 - exposes a public Json RPC 2.0 HTTP API (see `The Jsonrpc 2.0 specifications <http://www.jsonrpc.org/specification>`_ )
 - can protect API access based on API token identification
+- can communicate with other microservices through JSONRPC.
 
 .. warning::
 
@@ -26,7 +27,6 @@ Contents:
 .. toctree::
     :maxdepth: 2
 
-    intro
     usage
     reference
 
