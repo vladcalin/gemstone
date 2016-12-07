@@ -1,4 +1,4 @@
-import inspect
+import logging
 from abc import ABC, abstractmethod
 import os
 from concurrent.futures import ThreadPoolExecutor
@@ -10,7 +10,6 @@ from tornado.ioloop import IOLoop
 from tornado.web import Application
 from tornado.log import enable_pretty_logging
 
-from pymicroservice.util import init_default_logger
 from pymicroservice.errors import ServiceConfigurationError, AccessDeniedError
 from pymicroservice.core.handlers import TornadoJsonRpcHandler
 from pymicroservice.core.decorators import public_method
@@ -46,7 +45,7 @@ class PyMicroService(ABC):
                         multiple microservices running from the same process.
         """
         self.app = None
-        init_default_logger()
+        self.logger = self.get_logger()
 
         # name
         if self.name is None:
@@ -98,11 +97,15 @@ class PyMicroService(ABC):
             "methods": {m: self.methods[m].__doc__ for m in self.methods}
         }
 
+    def on_service_start(self):
+        pass
+
     def start(self):
         """
         The main method that starts the service. This is blocking.
 
         """
+        self.on_service_start()
         self.app = self.make_tornado_app()
         enable_pretty_logging()
         self.app.listen(self.port, address=self.host)
@@ -152,3 +155,11 @@ class PyMicroService(ABC):
             if getattr(item, "__is_exposed_method__", False) is True or \
                             getattr(item, "__private_api_method__", False) is True:
                 self.methods[item.__name__] = item
+
+    def get_logger(self):
+        """
+        Override this method to designate the logger for the application
+
+        :return: a :py:class:`logging.Logger` instance
+        """
+        return logging.getLogger()
