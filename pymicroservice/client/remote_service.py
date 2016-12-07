@@ -27,12 +27,20 @@ class CallableMethod(object):
         if self.service.api_key:
             request_headers.setdefault(self.service.api_header or "X-Api-Token", self.service.api_key)
 
-        response = self.service.make_request_sync(self.url, json_body={
+        # construct the request body
+        request_body = {
             "jsonrpc": "2.0",
             "method": self.method,
             "params": params,
-            "id": self.req_id
-        }, headers=request_headers)
+        }
+        if self.req_id:
+            request_body["id"] = self.req_id
+
+        response = self.service.make_request_sync(self.url, json_body=request_body, headers=request_headers)
+
+        if not self.req_id:
+            return  # it is a notification and we do not care about the response
+
         response = json.loads(response)
         if response["error"]:
             raise CalledServiceError(response["error"])
@@ -41,16 +49,18 @@ class CallableMethod(object):
 
 
 class ServiceMethodProxy(object):
-    def __init__(self, methods, remote_service):
+    def __init__(self, methods, remote_service, is_notification=False):
         self._methods = methods
         self._remote_service = remote_service
+        self._is_notification = is_notification
 
     def __getattribute__(self, item):
         if item.startswith("_"):
             return super(ServiceMethodProxy, self).__getattribute__(item)
         if item in self._methods:
 
-            return CallableMethod(self._remote_service, item, self._remote_service.req_id)
+            return CallableMethod(self._remote_service, item,
+                                  None if self._is_notification else self._remote_service.req_id)
         else:
             return super(ServiceMethodProxy, self).__getattribute__(item)
 
@@ -76,10 +86,15 @@ class RemoteService(object):
         self.get_services_info()
 
         self._method_proxy = ServiceMethodProxy(self._methods, self)
+        self._notification_proxy = ServiceMethodProxy(self._methods, self, is_notification=True)
 
     @property
     def methods(self):
         return self._method_proxy
+
+    @property
+    def notifications(self):
+        return self._notification_proxy
 
     def make_request_sync(self, url, json_body=None, headers=None):
         request = urllib.request.Request(url)

@@ -145,6 +145,22 @@ class ClientTestCase(TestCase):
         result = client.methods.test()
         self.assertTrue(result)
 
+    def test_notifications(self):
+        client = RemoteService(self.service_url)
+        response = client.notifications.method1()
+        self.assertIsNone(response)
+
+    def test_notifications_method_not_found(self):
+        client = RemoteService(self.service_url)
+        with self.assertRaises(AttributeError):
+            response = client.notifications.does_not_exist()
+
+    def test_notifications_bad_params(self):
+        client = RemoteService(self.service_url)
+        response = client.notifications.method1(1, 2, 3)
+        self.assertTrue(response is None)  # every notification should return None because
+                                           # do not care about the answer
+
 
 if __name__ == '__main__':
     Service1().start()
