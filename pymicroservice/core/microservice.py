@@ -98,6 +98,11 @@ class PyMicroService(ABC):
         }
 
     def on_service_start(self):
+        """
+        Override this method to do a set of actions when the service starts
+
+        :return: ``None``
+        """
         pass
 
     def start(self):

@@ -70,7 +70,7 @@ class RemoteService(object):
         """
         Class used to interact with other services
 
-        :param url: The endpoint where the service listens. Must be a valid URL (ex: ``"http://127.0.0.1:5000/api")
+        :param url: The endpoint where the service listens. Must be a valid URL (ex: ``"http://127.0.0.1:5000/api"``)
         :param threads:
         :param api_key: The api key to be used for requests
         :param api_header: The custom api header that is used by the service
@@ -125,4 +125,9 @@ class RemoteService(object):
         return res
 
     def get_available_methods(self):
+        """
+        Returns a list with all the available methods exposed by the remote service.
+
+        :return: a :py:class:`list` with :py:class:`str` representing the names of the exposed methods
+        """
         return self._methods

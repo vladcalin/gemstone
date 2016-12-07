@@ -209,9 +209,19 @@ Other options
   will handle blocking actions (function calls). Defaults to :py:func:`os.cpu_count`.
 
 
-- :py:data:`pymicroservice.PyMicroService.static_dirs`
+- :py:data:`pymicroservice.PyMicroService.static_dirs` - a list of ``(str, str)`` tuples that represent the
+  URL to which the static directory will be mapped, and the path of the directory that contain the static files.
+  For example, if the directory ``/home/user/www/static`` contains the file ``index.html``, and we specify the static dir
+  attribute with the value ``[("/static", "/home/user/www/static")]``, the service will serve ``index.html`` at the
+  URL ``/static/index.html``.
 
-- :py:data:`pymicroservice.PyMicroService.extra_handlers`
+- :py:data:`pymicroservice.PyMicroService.extra_handlers` - a list of tuples of URLs and Tornado request handlers to
+  be included in the service.
 
-- :py:data:`pymicroservice.PyMicroService.template_dir`
+  .. note::
+
+        The ``/api`` endpoint is reserved for the JSON RPC service.
+
+- :py:data:`pymicroservice.PyMicroService.template_dir` - a directory where templates will be searched in, when, in a
+  custom handler we render a template via :py:meth:`tornado.web.RequestHandler.render`.
 

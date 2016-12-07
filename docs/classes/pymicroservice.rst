@@ -44,3 +44,21 @@ The ``pymicroservice`` module
 .. autoclass:: pymicroservice.RemoteService
     :members:
 
+    .. autoattribute:: pymicroservice.RemoteService.methods
+        :annotation: = A proxy object through which methods from the remote service can be invoked. Example usage
+
+                        ::
+
+                           client = RemoteService(api_url)
+                           result = client.methods.method_to_call(arguments)
+
+    .. autoattribute:: pymicroservice.RemoteService.notifications
+        :annotation: = A proxy object through which methods from the remote service can be invoked as notifications.
+                       (no answer is expected). Example usage:
+
+                        ::
+
+                           client = RemoteService(api_url)
+                           client.notifications.method_to_call(arguments)  # returns None
+
+
