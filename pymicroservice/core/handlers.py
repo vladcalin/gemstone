@@ -5,6 +5,9 @@ import asyncio
 from tornado.web import RequestHandler
 from tornado.gen import coroutine
 
+__all__ = [
+    'TornadoJsonRpcHandler'
+]
 
 class TornadoJsonRpcHandler(RequestHandler):
     methods = None
@@ -81,10 +84,11 @@ class TornadoJsonRpcHandler(RequestHandler):
 
         - A valid response object if it is a regular request (with ID)
         - ``None`` if it was a notification (if None is returned, a response object with "received" body
-        was already sent to the client.
+          was already sent to the client.
 
         :param single_request: A :py:class:`dict` object representing a Request object
         :return: A :py:class:`dict` object representing a Response object or None
+
         """
         is_notification = False
         error = None
@@ -143,6 +147,14 @@ class TornadoJsonRpcHandler(RequestHandler):
         )
 
     def validate_jsonrpc_structure(self, body):
+        """
+        Makes sure the **body** contains the right keys in order to
+        respect the JSON RPC specifications. The request must contain: ``"jsonrpc"`` key with the ``"2.0"`` value,
+        a ``"method"`` key.
+
+        :param body: :py:class:`dict` representing a JSON RPC request
+        :return:
+        """
         for mandatory_key in ["jsonrpc", "method"]:
             if mandatory_key not in body:
                 return False
@@ -173,6 +185,16 @@ class TornadoJsonRpcHandler(RequestHandler):
         return err_obj
 
     def write_response(self, result=None, error=None, id=None):
+        """
+        Writes a json rpc response ``{"result": result, "error": error, "id": id}``.
+        If the ``id`` is ``None``, the response will not contain an ``id`` field.
+        The response is sent to the client as an ``application/json`` response.
+
+        :param result: :py:class:`dict` representing the method call result, ``None`` if an error occurred.
+        :param error: :py:class:`dict` representing the error resulted in the method call, ``None`` if no error occurred
+        :param id: the ``id`` of the request that generated this response
+        :return:
+        """
         self.set_header("Content-Type", "application/json")
         self.write(json.dumps(self.make_response_dict(result, error, id)))
 
@@ -205,6 +227,12 @@ class TornadoJsonRpcHandler(RequestHandler):
 
     @coroutine
     def call_method(self, method):
+        """
+        Calls a blocking method in an executor, in order to preserve the non-blocking behaviour
+
+        :param method: The method to be called (with no arguments).
+        :return: the result of the method call
+        """
         result = yield self.executor.submit(method)
         return result
 

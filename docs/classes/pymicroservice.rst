@@ -1,4 +1,4 @@
-pymicroservice.PyMicroService
+The ``pymicroservice`` module
 =============================
 
 
@@ -37,4 +37,10 @@ pymicroservice.PyMicroService
 .. autofunction:: pymicroservice.public_method
 
 .. autofunction:: pymicroservice.private_api_method
+
+.. autoclass:: pymicroservice.TornadoJsonRpcHandler
+    :members:
+
+.. autoclass:: pymicroservice.RemoteService
+    :members:
 

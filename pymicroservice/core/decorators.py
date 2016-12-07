@@ -1,5 +1,6 @@
 __all__ = [
-    'public_method'
+    'public_method',
+    'private_api_method'
 ]
 
 

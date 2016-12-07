@@ -25,7 +25,7 @@ class CallableMethod(object):
         # construct the request headers
         request_headers = {"Content-Type": "application/json"}
         if self.service.api_key:
-            request_headers.setdefault("X-Api-Token", self.service.api_key)
+            request_headers.setdefault(self.service.api_header or "X-Api-Token", self.service.api_key)
 
         response = self.service.make_request_sync(self.url, json_body={
             "jsonrpc": "2.0",
@@ -56,11 +56,20 @@ class ServiceMethodProxy(object):
 
 
 class RemoteService(object):
-    def __init__(self, url, threads=os.cpu_count(), api_key=None):
+    def __init__(self, url, *, threads=os.cpu_count(), api_key=None, api_header=None):
+        """
+        Class used to interact with other services
+
+        :param url: The endpoint where the service listens. Must be a valid URL (ex: ``"http://127.0.0.1:5000/api")
+        :param threads:
+        :param api_key: The api key to be used for requests
+        :param api_header: The custom api header that is used by the service
+        """
         self.url = url
         self._executor = ThreadPoolExecutor(threads)
         self.req_id = 1
         self.api_key = api_key
+        self.api_header = api_header
 
         self._methods = []
         self.name = None

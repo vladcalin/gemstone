@@ -7,6 +7,7 @@ from pymicroservice import PyMicroService, public_method, private_api_method
 from pymicroservice.errors import CalledServiceError
 
 HOST, PORT = "127.0.0.1", 6799
+PORT2 = PORT + 1
 
 
 class Service1(PyMicroService):
@@ -41,14 +42,34 @@ class Service1(PyMicroService):
         return api_token == "test-token"
 
 
+class Service2(PyMicroService):
+    name = "test.service.client.2"
+    api_token_header = "Custom-Header"
+    host = HOST
+    port = PORT2
+
+    @private_api_method
+    def test(self):
+        return True
+
+    def api_token_is_valid(self, api_token):
+        return api_token == "test-token"
+
+
 class ClientTestCase(TestCase):
     service_thread = None
     service_url = "http://127.0.0.1:6799/api"
+    service_url2 = "http://127.0.0.1:6800/api"
 
     @classmethod
     def setUpClass(cls):
-        cls.service_thread = threading.Thread(target=Service1().start, daemon=True)
+        service1 = Service1()
+        service2 = Service2(io_loop=service1.io_loop)
+        cls.service_thread = threading.Thread(target=service1.start, daemon=True)
         cls.service_thread.start()
+
+        cls.service_thread2 = threading.Thread(target=service2.start, daemon=True)
+        cls.service_thread2.start()
 
     def test_client_connection(self):
         client = RemoteService(self.service_url)
@@ -118,6 +139,11 @@ class ClientTestCase(TestCase):
         client = RemoteService(self.service_url, api_key="wrong-token")
         with self.assertRaises(CalledServiceError):
             result = client.methods.method5("test")
+
+    def test_method_call_custom_api_token_header(self):
+        client = RemoteService(self.service_url2, api_header="Custom-Header", api_key="test-token")
+        result = client.methods.test()
+        self.assertTrue(result)
 
 
 if __name__ == '__main__':

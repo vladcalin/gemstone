@@ -5,7 +5,8 @@ Usage
 Creating a microservice
 -----------------------
 
-In order to create a simple microservice, you have to subclass the :py:class:`pymicroservice.PyMicroService` base class:
+In order to create a simple microservice, you have to subclass the :py:class:`pymicroservice.PyMicroService`
+base class:
 
 ::
 
@@ -40,6 +41,46 @@ In order to create a template for your service, use the following command to cre
 
 
 After you created your service, run the script that contains it and enjoy.
+
+Exposing public methods
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Public methods can be exposed by decorating them with the :py:func:`pymicroservice.public_method` decorator
+
+::
+
+    class MyMicroService(PyMicroService):
+
+        # stuff
+
+        @public_method
+        def exposed_public_method(self):
+            return "it works!"
+
+        # more stuff
+
+
+Exposing private methods
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+In order to expose private methods, we have to decorate them with the :py:func:`pymicroservice.private_api_method`.
+These methods can be accessed only by providing a valid Api Token with the request. In addition, we must override the
+:py:meth:`pymicroservice.PyMicroService.api_token_is_valid` method to implement the token validation logic
+
+::
+
+    class MyMicroService(PyMicroService):
+
+        # stuff
+
+        @private_api_method
+        def exposed_private_method(self):
+            return "it works!"
+
+        def api_token_is_valid(self, api_token):
+            return api_token == "correct_token"
+
+        # more stuff
 
 
 Communicating with microservices through HTTP requests
@@ -108,16 +149,16 @@ The response should be
 If we do not include a correct api token or do not include an api token at all, calling a private method
 will result in an ``Access denied`` error.
 
-Communicating with microservices through a :py:class:`pymicroservice.RemoteClient` instance
--------------------------------------------------------------------------------------------
+Communicating with microservices through a :py:class:`pymicroservice.RemoteService` instance
+--------------------------------------------------------------------------------------------
 
 This library provides a programmatic way to interact with microservices, through the
-:py:class:`pymicroservice.RemoteClient`. In order to create an instance, we must know the location of the
+:py:class:`pymicroservice.RemoteService`. In order to create an instance, we must know the location of the
 service
 
 ::
 
-    client = RemoteClient("http://127.0.0.1:5000/api")
+    client = RemoteService("http://127.0.0.1:5000/api")
 
     print(client.methods.say_hello("world"))  # "hello world"
     print(client.methods.say_private_hello("world"))  # raises pymicroservice.errors.CalledServiceError because we did not provide
@@ -127,34 +168,50 @@ In order to be able to call private methods, we have to provide a valid api toke
 
 ::
 
-    client = RemoteClient("http://127.0.0.1:5000/api", api_token="hello_world_token")
+    client = RemoteService("http://127.0.0.1:5000/api", api_token="hello_world_token")
     print(client.methods.say_private_hello("world"))
 
 
 
-The microservice specifications
--------------------------------
+Customize the microservice
+--------------------------
 
-We can define various specifications for our microservice. The following class attributes can be overridden:
+We can define various specifications for our microservice. The following class attributes can be overridden
 
-- :py:data:`pymicroservice.PyMicroService.name` - defines the name of the microservice. **MUST** be defined by the user
-- :py:data:`pymicroservice.PyMicroService.host` - specifies the address to bind to (hostname or IP address). Defaults to ``127.0.0.1``.
-- :py:data:`pymicroservice.PyMicroService.port` - an :py:class:`int` that specifies the port to bind to. Defaults to ``8000``
-- :py:data:`pymicroservice.PyMicroService.api_token_header` - a :py:class:`str` that specifies the HTTP header that will be used for API access (See more in the next section).
-- :py:data:`pymicroservice.PyMicroService.max_parallel_blocking_tasks` - the number of threads that will handle blocking actions (function calls). Defaults to :py:func:`os.cpu_count`.
+Required attributes
+~~~~~~~~~~~~~~~~~~~
+
+- :py:data:`pymicroservice.PyMicroService.name` is required and defines the name of the microservice.
+  **MUST** be defined by the concrete implementation, otherwise an error will be thrown at startup
+
+Specifying different host and port
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- :py:data:`pymicroservice.PyMicroService.host` - specifies the address to bind to (hostname or IP address).
+  Defaults to ``127.0.0.1``.
+- :py:data:`pymicroservice.PyMicroService.port` - an :py:class:`int` that specifies the port to bind to.
+  Defaults to ``8000``
+
+Other options
+~~~~~~~~~~~~~
+
+- :py:data:`pymicroservice.PyMicroService.api_token_header` - a :py:class:`str` that specifies the HTTP
+  header that will be used for API access. Defaults to ``X-Api-Token``.
+
+  In order to interact with a service that uses a custom ``api_token_header``, we have to specify it in the
+  :py:class:`pymicroservice.RemoteService` constructor
+
+  ::
+
+        client = RemoteService(url, api_token="Custom-Token", api_key="my-api-key")
+
+- :py:data:`pymicroservice.PyMicroService.max_parallel_blocking_tasks` - the number of threads that
+  will handle blocking actions (function calls). Defaults to :py:func:`os.cpu_count`.
 
 
-Exposing public methods
------------------------
+- :py:data:`pymicroservice.PyMicroService.static_dirs`
 
-In order to expose a public method, we have to decorate it with the :py:func:`pymicroservice.public_method` decorator, as seen
-in the example.
+- :py:data:`pymicroservice.PyMicroService.extra_handlers`
 
-Exposing private methods
-------------------------
+- :py:data:`pymicroservice.PyMicroService.template_dir`
 
-In order to expose a private method, we have to decorate it with the :py:func:`pymicroservice.private_api_method` decorator.
-and override the :py:meth:`pymicroservice.PyMicroService.api_token_is_valid` method in order to validate the submitted api token.
-
-When we want to call a private method, we have to include an extra HTTP header with the name denoted by
-:py:data:`pymicroservice.PyMicroService.api_token_header` so that the :py:meth:`pymicroservice.PyMicroService.api_token_is_valid` method evaluates it to ``True``.

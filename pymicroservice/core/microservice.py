@@ -21,11 +21,6 @@ __all__ = [
 
 
 class PyMicroService(ABC):
-    """
-
-    The base class for defining a microservice.
-
-    """
     name = None
 
     host = "127.0.0.1"
@@ -41,7 +36,15 @@ class PyMicroService(ABC):
     max_parallel_blocking_tasks = os.cpu_count()
     _executor = None
 
-    def __init__(self):
+    def __init__(self, io_loop=None):
+        """
+
+        The base class for implementing microservices.
+
+        :param io_loop: A :py:class:`tornado.ioloop.IOLoop` instance -
+                        can be used to share the same io loop between
+                        multiple microservices running from the same process.
+        """
         self.app = None
         init_default_logger()
 
@@ -61,6 +64,9 @@ class PyMicroService(ABC):
             raise ServiceConfigurationError("Invalid max_parallel_blocking_tasks value")
 
         self._executor = ThreadPoolExecutor(self.max_parallel_blocking_tasks)
+
+        # ioloop
+        self.io_loop = io_loop or IOLoop.current()
 
     @public_method
     def get_service_specs(self):
@@ -100,7 +106,10 @@ class PyMicroService(ABC):
         self.app = self.make_tornado_app()
         enable_pretty_logging()
         self.app.listen(self.port, address=self.host)
-        IOLoop.current().start()
+        try:
+            self.io_loop.start()
+        except RuntimeError:
+            pass
 
     def make_tornado_app(self):
 
