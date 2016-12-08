@@ -1,6 +1,10 @@
 The **pymicroservice** framework
 ================================
 
+[![Build Status](https://travis-ci.org/vladcalin/pymicroservice.svg?branch=master)](https://travis-ci.org/vladcalin/pymicroservice)
+[![Documentation Status](https://readthedocs.org/projects/pymicroservice/badge/?version=latest)](http://pymicroservice.readthedocs.io/en/latest/?badge=latest)
+[![PyPI version](https://badge.fury.io/py/pymicroservice.svg)](https://badge.fury.io/py/pymicroservice)
+
 Motivation
 ----------
 
@@ -16,22 +20,18 @@ Installation
 
 In order to install this library, run the command
 
-::
-
     pip install pymicroservice
 
 or to install it manually from sources
 
-```
+
     git clone https://github.com/vladcalin/pymicroservice.git
     cd pymicroservice
     python setup.py install
-```
+
 To run the tests, run the command
 
-```
     python setup.py test
-```
 
 Few words ahead
 ---------------
@@ -112,7 +112,7 @@ Project status
 --------------
 
 This project is under development, and although it can be used to develop stable services, it will receive constant
-updates and new features. Check the `Github issue tracker <https://github.com/vladcalin/pymicroservice/issues>`_
+updates and new features. Check the [Github issue tracker](https://github.com/vladcalin/pymicroservice/issues)
 for more details.
 
 TODO
