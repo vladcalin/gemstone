@@ -111,7 +111,7 @@ Project status
 --------------
 
 This project is under development, and although it can be used to develop stable services, it will receive constant
-updates and new features. Check the `Github issue tracker <https://github.com/vladcalin/pymicroservice/issues>`_
+updates and new features. Check the [Github issue tracker](https://github.com/vladcalin/pymicroservice/issues)
 for more details.
 
 TODO
