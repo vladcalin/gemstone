@@ -44,6 +44,7 @@ setup(
         "Programming Language :: Python :: 3 :: Only",
         "Topic :: Software Development :: Libraries"
     ],
+    url="https://github.com/vladcalin/pymicroservice",
 
     zip_safe=False,
 
