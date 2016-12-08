@@ -1,6 +1,6 @@
 from unittest import TestCase
 import threading
-import re
+import time
 
 from pymicroservice.client.remote_service import RemoteService
 from pymicroservice import PyMicroService, public_method, private_api_method
@@ -58,6 +58,7 @@ class Service2(PyMicroService):
 
 class ClientTestCase(TestCase):
     service_thread = None
+    service_thread2 = None
     service_url = "http://127.0.0.1:6799/api"
     service_url2 = "http://127.0.0.1:6800/api"
 
@@ -70,6 +71,8 @@ class ClientTestCase(TestCase):
 
         cls.service_thread2 = threading.Thread(target=service2.start, daemon=True)
         cls.service_thread2.start()
+
+        time.sleep(1)  # wait for the servers to be ready to accept connections
 
     def test_client_connection(self):
         client = RemoteService(self.service_url)
