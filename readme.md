@@ -1,6 +1,8 @@
 The **pymicroservice** framework
 ================================
 
+[![Build Status](https://travis-ci.org/vladcalin/pymicroservice.svg?branch=master)](https://travis-ci.org/vladcalin/pymicroservice)
+
 Motivation
 ----------
 
@@ -16,22 +18,18 @@ Installation
 
 In order to install this library, run the command
 
-::
-
     pip install pymicroservice
 
 or to install it manually from sources
 
-```
+
     git clone https://github.com/vladcalin/pymicroservice.git
     cd pymicroservice
     python setup.py install
-```
+
 To run the tests, run the command
 
-```
     python setup.py test
-```
 
 Few words ahead
 ---------------
