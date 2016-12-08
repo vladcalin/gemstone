@@ -22,30 +22,12 @@ This library offers support for writing a microservice that:
     This project is under heavy development and is not ready for production use.
 
 
-How it works
-------------
-
-This library uses the asynchronous features of the Tornado web framework for creating a JSON RPC endpoint through which
-one can call exposed methods. The method calls are treated asynchronously. If you have no knowledge about asynchronous
-programming in Python, I suggest to read a few words from the
-`Tornado documentation <http://www.tornadoweb.org/en/stable/>`_ .
-
-Basically, the steps in developing a microservice is:
-
-1. you write a microservice class
-2. you expose some methods to the public (in order to be called through the JSON RPC protocol)
-3. you can define some static file directories (you can skip this).
-4. you can add some extra Tornado handlers to handle various URLs (you can skip this).
-5. you specify the service parameters (name, host, port and others)
-6. based on the above steps, a Tornado application is generated with :py:class:`pymicroservice.TornadoJsonRpcHandler`
-   handlers to handle POST requests at ``/api`` and with the custom handlers defined in step 4.
-
-
 Contents:
 
 .. toctree::
     :maxdepth: 2
 
+    intro
     usage
     reference
 

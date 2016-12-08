@@ -1,15 +1,5 @@
-The **pymicroservice** framework
-================================
-
-Motivation
-----------
-
-In the past years, the microservice-based architecture became very popular in the computing field. 
-Although this architecture grew more and more popular, there are a few tools that can help an
-individual to build such systems. The current alternatives are using [nameko](https://github.com/nameko/nameko) 
-or by building a web application that acts like a microservice. I started developing this framework in order
-to provide a tool for creating and managing such systems with ease, and that are capable of being specialized in
-a certain role, be it entity management, data storage or just computing.
+Introduction
+============
 
 Installation
 ------------
@@ -22,16 +12,18 @@ In order to install this library, run the command
 
 or to install it manually from sources
 
-```
+::
+
     git clone https://github.com/vladcalin/pymicroservice.git
     cd pymicroservice
     python setup.py install
-```
+
 To run the tests, run the command
 
-```
+::
+
     python setup.py test
-```
+
 
 Few words ahead
 ---------------
@@ -44,17 +36,16 @@ programming in Python, I suggest to read a few words from the
 Although it is not required for you to know about all that coroutines and event loop theory, it sure helps to understand
 what happens *under the hood*.
 
+Simple usage
+------------
 
-Example basic usage
--------------------
-Write into a ``hello_world_service.py`` file the following code:
+In order to create a simple ``HelloWordService`` microservice, you have to subclass the
+:py:class:`pymicroservice.PyMicroService` base class:
 
-```python
+::
 
-	from pymicroservice.core.microservice import PyMicroService, \
-	    public_method, private_api_method
-    
-    
+    # inside hello_world_service.py
+
     class HelloWorldService(PyMicroService):
         name = "hello.world.service"
         host = "127.0.0.1"
@@ -76,37 +67,13 @@ Write into a ``hello_world_service.py`` file the following code:
         service = HelloWorldService()
         service.start()
 
-```
+Then, start the service with the command
 
-After running the ``hello_world_service.py`` script, we will have a running microservice at
-http://localhost:5000/api . In order to interact with it, we have to use
- the JSONRPC protocol as follows:
- 
-```
-    POST /api
-    {
-        "jsonrpc": "2.0",
-        "method": "say_hello",
-        "params": {
-            "name": "world"
-        },
-        "id": 1
-    }
-```
+::
 
-The response will be
+    python hello_world_service.py
 
-```
-    {
-        "error": null,
-        "id": 1,
-        "response": "hello world"
-    }
-```
-
-In order to access the private method, we have to include in the HTTP
-request an ``X-Api-Token`` header with the value ``hello_world``, so that the
-method ``api_token_is_valid`` will return ``True``.
+The server will start and will listen on http://localhost5000/api .
 
 Project status
 --------------
@@ -114,11 +81,6 @@ Project status
 This project is under development, and although it can be used to develop stable services, it will receive constant
 updates and new features. Check the `Github issue tracker <https://github.com/vladcalin/pymicroservice/issues>`_
 for more details.
-
-TODO
-----
-
-See [TODO](TODO.md)
 
 Collaborate
 -----------
