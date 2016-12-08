@@ -2,6 +2,7 @@ The **pymicroservice** framework
 ================================
 
 [![Build Status](https://travis-ci.org/vladcalin/pymicroservice.svg?branch=master)](https://travis-ci.org/vladcalin/pymicroservice)
+[![Documentation Status](https://readthedocs.org/projects/pymicroservice/badge/?version=latest)](http://pymicroservice.readthedocs.io/en/latest/?badge=latest)
 
 Motivation
 ----------
