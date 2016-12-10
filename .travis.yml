@@ -6,6 +6,6 @@ install:
     - "pip install ."
     - "pip install coverage python-coveralls"
 script:
-    - "coverage run -m unittest discover tests"
+    - "coverage run --source=pymicroservice -m unittest discover tests"
 after_success:
     - "coveralls -i ."
