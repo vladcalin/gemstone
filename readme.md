@@ -124,3 +124,9 @@ Collaborate
 -----------
 
 Any collaboration is welcome. Feel free to create new issues, make suggestions, open pull requests.
+
+Changes
+-------
+
+See [CHANGES.md](CHANGES.md)
+
