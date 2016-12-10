@@ -33,6 +33,16 @@ The ``pymicroservice`` module
     .. autoattribute:: pymicroservice.PyMicroService.static_dirs
         :annotation: = A list of directory paths in which the default Tornado app will search for static files.
 
+    .. autoattribute:: pymicroservice.PyMicroService.periodic_tasks
+        :annotation: = A list of tuples of functions and an integer, that schedules the function to be executed every
+                given seconds in an asynchronous manner (there might be a slight delay in the function execution,
+                depending on the io loop availability).
+
+    .. autoattribute:: pymicroservice.PyMicroService.service_registry_urls
+        :annotation: = A list of strings that represent the urls where the service registries are located. Pings them
+                on service startup. The service registry must expose a ping(name, host, port) method and
+                a locate_service(name) method via JSON RPC.
+
 
 .. autofunction:: pymicroservice.public_method
 

@@ -3,16 +3,18 @@ from abc import ABC, abstractmethod
 import os
 from concurrent.futures import ThreadPoolExecutor
 import functools
+import random
 
 from tornado.web import RequestHandler, StaticFileHandler
 from tornado.gen import coroutine
-from tornado.ioloop import IOLoop
+from tornado.ioloop import IOLoop, PeriodicCallback
 from tornado.web import Application
 from tornado.log import enable_pretty_logging
 
 from pymicroservice.errors import ServiceConfigurationError, AccessDeniedError
 from pymicroservice.core.handlers import TornadoJsonRpcHandler
 from pymicroservice.core.decorators import public_method
+from pymicroservice.client.remote_service import RemoteService
 
 __all__ = [
     'PyMicroService'
@@ -25,13 +27,23 @@ class PyMicroService(ABC):
     host = "127.0.0.1"
     port = 8000
 
+    # extra Tornado configuration
     template_dir = "."
     static_dirs = []
-
     extra_handlers = []
 
+    # protocol specs
     api_token_header = "X-Api-Token"
 
+    # service registry integration
+    service_registry_urls = []
+    service_registry_ping_interval = 30
+
+    # periodic tasks
+    periodic_tasks = []
+    default_periodic_tasks = []
+
+    # io event related
     max_parallel_blocking_tasks = os.cpu_count()
     _executor = None
 
@@ -45,7 +57,9 @@ class PyMicroService(ABC):
                         multiple microservices running from the same process.
         """
         self.app = None
+        self._periodic_tasks_objs = []
         self.logger = self.get_logger()
+        self.registries = []
 
         # name
         if self.name is None:
@@ -114,6 +128,11 @@ class PyMicroService(ABC):
         self.app = self.make_tornado_app()
         enable_pretty_logging()
         self.app.listen(self.port, address=self.host)
+
+        for periodic_task in self.periodic_task_iter():
+            self.logger.debug("Starting periodic task {}".format(periodic_task))
+            periodic_task.start()
+
         try:
             self.io_loop.start()
         except RuntimeError:
@@ -167,4 +186,55 @@ class PyMicroService(ABC):
 
         :return: a :py:class:`logging.Logger` instance
         """
-        return logging.getLogger()
+        return logging.getLogger("tornado.application")
+
+    def ping_to_service_registry(self, servreg_remote_service):
+        servreg_remote_service.notifications.ping(name=self.name, host=self.host, port=self.port)
+
+    def periodic_task_iter(self):
+        for url in self.service_registry_urls:
+            registry = RemoteService(url)
+            self.registries.append(registry)
+            periodic_servreg_ping = functools.partial(self.ping_to_service_registry, registry)
+            periodic_servreg_ping()  # initial ping
+            self.default_periodic_tasks.append(
+                (periodic_servreg_ping, self.service_registry_ping_interval)
+            )
+
+        all_periodic_tasks = self.default_periodic_tasks + self.periodic_tasks
+        for func, timer_in_seconds in all_periodic_tasks:
+            timer_milisec = timer_in_seconds * 1000
+            yield PeriodicCallback(func, timer_milisec)
+
+    def get_service(self, name):
+        """
+        Locates a remote service by name. The name can be a glob-like pattern (``"project.worker.*"``). If multiple
+        services match the given name, a random instance will be chosen. There might be multiple services that match
+        a given name if there are multiple services with the same name running, or when the pattern matches
+        multiple different services.
+
+        .. todo::
+
+            Make this use self.io_loop to resolve the request. The current implementation is blocking and slow
+
+        :param name: a pattern for the searched service.
+        :return: a :py:class:`pymicroservice.RemoteService` instance
+        :raises ValueError: when the service can not be located
+        :raises ServiceConfigurationError: when there is no configured service registry
+        """
+        if not self.registries:
+            raise ServiceConfigurationError("No service registry available")
+
+        for service_reg in self.registries:
+            services = service_reg.methods.locate_service(name)
+            if not services:
+                continue
+            random.shuffle(services)
+            for service in services:
+                url = "http://" + service["host"] + ":" + str(service["port"]) + "/api"
+                try:
+                    return RemoteService(url)
+                except ConnectionError:
+                    continue  # could not establish connection, try next
+
+        raise ValueError("Service could not be located")

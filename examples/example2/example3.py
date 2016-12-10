@@ -12,13 +12,13 @@ def print_stuff():
 
 
 class ExampleService2(PyMicroService):
-    name = "service.2"
+    name = "service.3"
     host = "127.0.0.1"
-    port = 10000
+    port = 30002
 
     api_token_header = "X-Api-Token"
     max_parallel_blocking_tasks = os.cpu_count()
-#    periodic_tasks = [(print_stuff, 1)]
+
 
     service_registry_urls = [
         "http://localhost:8000/api"
@@ -27,13 +27,6 @@ class ExampleService2(PyMicroService):
     @public_method
     def say_hello(self, name):
         return "hello {}".format(name)
-
-    @public_method
-    def remote(self, name):
-        service3 = self.get_service("service.3")
-        resp = service3.methods.say_hello(name)
-        return "Service 3 said {}".format(resp)
-
 
 
 if __name__ == '__main__':

@@ -25,13 +25,14 @@ This library offers support for writing a microservice that:
 Contents:
 
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 3
 
     intro
     usage
     reference
 
 
+.. todoList::
 
 Indices and tables
 ==================

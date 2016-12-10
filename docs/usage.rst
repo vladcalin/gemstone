@@ -225,3 +225,60 @@ Other options
 - :py:data:`pymicroservice.PyMicroService.template_dir` - a directory where templates will be searched in, when, in a
   custom handler we render a template via :py:meth:`tornado.web.RequestHandler.render`.
 
+
+Periodic tasks
+~~~~~~~~~~~~~~
+
+- :py:data:`pymicroservice.PyMicroService.periodic_tasks` - a list of function - interval (in seconds) mappings that
+  schedules the given function to be executed every given seconds
+
+  ::
+
+      def periodic_func():
+          print("hello there")
+
+      class MyService(PyMicroService):
+
+          # stuff
+
+          peirodic_tasks = [(periodic_func, 1)]
+
+          # stuff
+
+
+  In te above example, the ``periodic_func`` will be executed every second.
+
+  .. note::
+
+        There might be a little delay in the execution of the function, depending on the main event loop availability.
+        See `the Tornado documentation on PeriodicCallback  <http://www.tornadoweb.org/en/stable/ioloop.html#tornado.ioloop.PeriodicCallback>`_
+        for more details.
+
+  .. note::
+
+        If you want to pass parameters to a function, you can use the :py:func:`functools.partial` to specify the
+        parameters for the function to be called with.
+
+Using a service registry
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+A service registry is a remote service that keeps mappings of service names and network locations, so that each
+microservice will be able to locate another one dynamically. A service can be a service registry if it exposes
+via JSON RPC a ``ping(name, host, port)`` method and a ``locate_service(name)`` method.
+
+- :py:data:`pymicroservice.PyMicroService.service_registry_urls` - a list of URLS where a service registry is located and
+  accessible via JSON RPC.
+
+  ::
+
+      service_registry_urls = ["http://registry.domain.com:8000/api", "http://registry.domain2.com"]
+
+  On service startup, a ping will be sent to the registry, and after that, a ping will be sent periodically.
+
+- :py:data:`pymicroservice.PyMicroService.service_registry_ping_interval` - the interval (in seconds) when the
+  service will ping the registry. Defaults to 30 seconds.
+
+  ::
+
+      service_registry_ping_interval = 120  # ping every two minutes
+
