@@ -8,4 +8,4 @@ install:
 script:
     - "coverage run -m unittest discover tests"
 after_success:
-    - "coveralls"
+    - "coveralls -i"
