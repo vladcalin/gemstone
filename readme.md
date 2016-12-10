@@ -4,6 +4,7 @@ The **pymicroservice** framework
 [![Build Status](https://travis-ci.org/vladcalin/pymicroservice.svg?branch=master)](https://travis-ci.org/vladcalin/pymicroservice)
 [![Documentation Status](https://readthedocs.org/projects/pymicroservice/badge/?version=latest)](http://pymicroservice.readthedocs.io/en/latest/?badge=latest)
 [![PyPI version](https://badge.fury.io/py/pymicroservice.svg)](https://badge.fury.io/py/pymicroservice)
+[![Coverage Status](https://coveralls.io/repos/github/vladcalin/pymicroservice/badge.svg?branch=master)](https://coveralls.io/github/vladcalin/pymicroservice?branch=master)
 
 Motivation
 ----------
