@@ -1,9 +1,9 @@
-Usage
-=====
-
-
 Creating a microservice
------------------------
+=======================
+
+
+Basic example
+-------------
 
 In order to create a simple microservice, you have to subclass the :py:class:`pymicroservice.PyMicroService`
 base class:

@@ -13,13 +13,9 @@ the asynchronous features of Python by using `Tornado <http://www.tornadoweb.org
 
 This library offers support for writing a microservice that:
 
-- exposes a public Json RPC 2.0 HTTP API (see `The Jsonrpc 2.0 specifications <http://www.jsonrpc.org/specification>`_ )
-- can protect API access based on API token identification
-- can communicate with other microservices through JSONRPC.
-
-.. warning::
-
-    This project is under heavy development and is not ready for production use.
+- exposes a public Json RPC 2.0 HTTP API (see `The JSON RPC 2.0 specifications <http://www.jsonrpc.org/specification>`_ )
+- can protect API access based on API token identification.
+- can communicate with other microservices through the JSON RPC protocol.
 
 
 Contents:
@@ -28,7 +24,9 @@ Contents:
     :maxdepth: 3
 
     intro
-    usage
+    installation
+    creating_a_service
+    interacting_with_services
     reference
 
 

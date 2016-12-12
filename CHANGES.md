@@ -1,4 +1,6 @@
-0.0.3 (soon)
-============
+0.0.3
+=====
 
-- will be announced
+- added ``pymicroservice.RemoteService`` class
+- added the ``pymicroservice.PyMicroService.get_service(name)``
+- improved documentation

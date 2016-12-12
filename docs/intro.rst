@@ -75,12 +75,11 @@ Then, start the service with the command
 
 The server will start and will listen on http://localhost5000/api .
 
-Project status
---------------
+Issues
+------
 
-This project is under development, and although it can be used to develop stable services, it will receive constant
-updates and new features. Check the `Github issue tracker <https://github.com/vladcalin/pymicroservice/issues>`_
-for more details.
+Check the `Github issue tracker <https://github.com/vladcalin/pymicroservice/issues>`_.
+
 
 Collaborate
 -----------

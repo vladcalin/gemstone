@@ -16,24 +16,6 @@ or by building a web application that acts like a microservice. I started develo
 to provide a tool for creating and managing such systems with ease, and that are capable of being specialized in
 a certain role, be it entity management, data storage or just computing.
 
-Installation
-------------
-
-In order to install this library, run the command
-
-    pip install pymicroservice
-
-or to install it manually from sources
-
-
-    git clone https://github.com/vladcalin/pymicroservice.git
-    cd pymicroservice
-    python setup.py install
-
-To run the tests, run the command
-
-    python setup.py test
-
 Few words ahead
 ---------------
 
@@ -44,6 +26,24 @@ programming in Python, I suggest to read a few words from the
 
 Although it is not required for you to know about all that coroutines and event loop theory, it sure helps to understand
 what happens *under the hood*.
+
+Installation
+------------
+
+In order to install this library, run the command
+
+    pip install pymicroservice
+
+or to install it from sources
+
+
+    git clone https://github.com/vladcalin/pymicroservice.git
+    cd pymicroservice
+    python setup.py install
+
+To run the tests, run the command
+
+    python setup.py test
 
 
 Example basic usage
@@ -109,12 +109,21 @@ In order to access the private method, we have to include in the HTTP
 request an ``X-Api-Token`` header with the value ``hello_world``, so that the
 method ``api_token_is_valid`` will return ``True``.
 
-Project status
---------------
+This library offers a class through which you can interact with various services:
 
-This project is under development, and although it can be used to develop stable services, it will receive constant
-updates and new features. Check the [Github issue tracker](https://github.com/vladcalin/pymicroservice/issues)
-for more details.
+```python
+
+    client = pymicroservice.RemoteClien("http://localhost:5000/api")
+    print(client.name)  # "service.hello.world"
+    print(client.methods.say_hello("world"))  # "hello world"
+    
+```
+
+
+Issues
+------
+
+Check the [Github issue tracker](https://github.com/vladcalin/pymicroservice/issues).
 
 TODO
 ----
