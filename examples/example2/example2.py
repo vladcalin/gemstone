@@ -12,7 +12,7 @@ def print_stuff():
 
 
 class ExampleService2(PyMicroService):
-    name = "service.2"
+    name = "service.hellworld"
     host = "127.0.0.1"
     port = 10000
 
