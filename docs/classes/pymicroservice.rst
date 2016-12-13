@@ -43,6 +43,9 @@ The ``pymicroservice`` module
                 on service startup. The service registry must expose a ping(name, host, port) method and
                 a locate_service(name) method via JSON RPC.
 
+    .. autoattribute:: pymicroservice.PyMicroService.service_registry_ping_interval
+        :annotation: = The number of seconds between ``ping`` requests to the service registries.
+
 
 .. autofunction:: pymicroservice.public_method
 
