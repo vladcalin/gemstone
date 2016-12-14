@@ -204,7 +204,7 @@ class PyMicroService(ABC):
         all_periodic_tasks = self.default_periodic_tasks + self.periodic_tasks
         for func, timer_in_seconds in all_periodic_tasks:
             timer_milisec = timer_in_seconds * 1000
-            yield PeriodicCallback(func, timer_milisec)
+            yield PeriodicCallback(func, timer_milisec, io_loop=self.io_loop)
 
     def get_service(self, name):
         """
