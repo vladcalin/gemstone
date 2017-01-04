@@ -1,3 +1,12 @@
+0.0.4
+=====
+
+- fixed bug when sending a notification that would result in an error 
+was causing the microservice to respond abnormally (see #10)
+- fixed a bug that was causing the service to never respond with the
+invalid parameters status when calling a method with invalid parameters
+
+
 0.0.3
 =====
 
