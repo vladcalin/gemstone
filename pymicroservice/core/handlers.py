@@ -9,6 +9,7 @@ __all__ = [
     'TornadoJsonRpcHandler'
 ]
 
+
 class TornadoJsonRpcHandler(RequestHandler):
     methods = None
     executor = None
@@ -42,12 +43,17 @@ class TornadoJsonRpcHandler(RequestHandler):
         INTERNAL_ERROR = "Internal error"
         ACCESS_DENIED = "Access denied"
 
+    def __init__(self, *args, **kwargs):
+        self.request_is_finished = False
+        super(TornadoJsonRpcHandler, self).__init__(*args, **kwargs)
+
     # noinspection PyMethodOverriding
     def initialize(self, methods, executor, api_token_header, api_token_handler):
         self.methods = methods
         self.executor = executor
         self.api_token_header = api_token_header
         self.api_token_handler = api_token_handler
+        self.request_is_finished = False
 
     @coroutine
     def post(self):
@@ -126,6 +132,15 @@ class TornadoJsonRpcHandler(RequestHandler):
             return
         try:
             result = yield self.call_method(method)
+        except TypeError as e:
+            # TODO: find a proper way to check that the function got the wrong parameters (with **kwargs)
+            if "got an unexpected keyword argument" in e.args[0]:
+                err = self.get_generic_jsonrpc_response(self._GenericErrorId.INVALID_PARAMS)
+                return self.make_response_dict(None, err, id_)
+            # TODO: find a proper way to check that the function got the wrong parameters (with *args)
+            if "takes" in e.args[0] and "positional argument" in e.args[0] and "were given" in e.args[0]:
+                err = self.get_generic_jsonrpc_response(self._GenericErrorId.INVALID_PARAMS)
+                return self.make_response_dict(None, err, id_)
         except Exception as e:
             err = self.get_generic_jsonrpc_response(self._GenericErrorId.INTERNAL_ERROR)
             err["data"] = {
@@ -188,15 +203,19 @@ class TornadoJsonRpcHandler(RequestHandler):
         """
         Writes a json rpc response ``{"result": result, "error": error, "id": id}``.
         If the ``id`` is ``None``, the response will not contain an ``id`` field.
-        The response is sent to the client as an ``application/json`` response.
+        The response is sent to the client as an ``application/json`` response. Only one call per
+        response is allowed
 
         :param result: :py:class:`dict` representing the method call result, ``None`` if an error occurred.
         :param error: :py:class:`dict` representing the error resulted in the method call, ``None`` if no error occurred
         :param id: the ``id`` of the request that generated this response
         :return:
         """
-        self.set_header("Content-Type", "application/json")
-        self.write(json.dumps(self.make_response_dict(result, error, id)))
+        if not self.request_is_finished:
+            self.set_header("Content-Type", "application/json")
+            self.write(json.dumps(self.make_response_dict(result, error, id)))
+            self.request_is_finished = True
+
 
     def write_batch_response(self, *results):
         self.set_header("Content-Type", "application/json")

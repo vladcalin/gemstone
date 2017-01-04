@@ -81,6 +81,46 @@ class JsonRpcSpecTestCase(AsyncHTTPTestCase):
         self.assertEqual(resp["error"]["code"], -32600)
         self.assertEqual(resp["error"]["message"].lower(), "invalid request")
 
+    def test_bad_parameters_names(self):
+        payload = {
+            "jsonrpc": "2.0",
+            "id": 8,
+            "method": "test_method_params",
+            "params": {
+                "param_invalid_name": "invalid_name",
+                "param1": "test"
+            }
+        }
+        resp = self.fetch("/api", method="POST", headers={"Content-Type": "application/json"}, body=json.dumps(payload))
+        resp = json.loads(resp.body.decode())
+        self.assertEqual(resp["result"], None)
+        self.assertEqual(resp["id"], 8)
+        self.assertEqual(resp["jsonrpc"], "2.0")
+        self.assertEqual(resp["error"]["code"], -32602)
+        self.assertEqual(resp["error"]["message"].lower(), "invalid params")
+
+    def test_bad_parameters_count(self):
+        payload = {
+            "jsonrpc": "2.0",
+            "id": 8,
+            "method": "test_method_params",
+            "params": {
+                "param0": "invalid_name",
+                "param1": "test",
+                "param2": "test",
+                "param3": "test",
+                "param4": "test",
+                "param5": "test"
+            }
+        }
+        resp = self.fetch("/api", method="POST", headers={"Content-Type": "application/json"}, body=json.dumps(payload))
+        resp = json.loads(resp.body.decode())
+        self.assertEqual(resp["result"], None)
+        self.assertEqual(resp["id"], 8)
+        self.assertEqual(resp["jsonrpc"], "2.0")
+        self.assertEqual(resp["error"]["code"], -32602)
+        self.assertEqual(resp["error"]["message"].lower(), "invalid params")
+
     def test_bad_jsonrpc_version(self):
         payload = {
             "jsonrpc": "1.0",
@@ -154,6 +194,26 @@ class JsonRpcSpecTestCase(AsyncHTTPTestCase):
             "id": None,
             "method": "test_method_no_params",
             "params": {}
+        }
+        resp = self.fetch("/api", method="POST", headers={"Content-Type": "application/json"}, body=json.dumps(payload))
+        resp = json.loads(resp.body.decode())
+        self.assertEqual(resp["jsonrpc"], "2.0")
+        self.assertEqual(resp["result"], "received")
+        self.assertEqual(resp["error"], None)
+        self.assertTrue("id" not in resp)
+
+    def test_notification_with_error(self):
+        """
+
+        :return:
+        """
+        payload = {
+            "jsonrpc": "2.0",
+            "id": None,
+            "method": "test_method_no_params",
+            "params": {
+                "param_1": True
+            }
         }
         resp = self.fetch("/api", method="POST", headers={"Content-Type": "application/json"}, body=json.dumps(payload))
         resp = json.loads(resp.body.decode())
