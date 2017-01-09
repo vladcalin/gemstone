@@ -35,7 +35,6 @@ class CallableMethod(object):
         }
         if self.req_id:
             request_body["id"] = self.req_id
-
         response = self.service.make_request_sync(self.url, json_body=request_body, headers=request_headers)
 
         if not self.req_id:
@@ -44,7 +43,6 @@ class CallableMethod(object):
         response = json.loads(response)
         if response["error"]:
             raise CalledServiceError(response["error"])
-
         return response["result"]
 
 
