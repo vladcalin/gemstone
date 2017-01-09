@@ -194,3 +194,8 @@ via JSON RPC a ``ping(name, host, port)`` method and a ``locate_service(name)`` 
 
       service_registry_ping_interval = 120  # ping every two minutes
 
+
+Generating a command-line interface
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+See :py:meth:`pymicroservice.PyMicroService.get_cli()` for more details.

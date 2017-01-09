@@ -4,6 +4,7 @@ import os
 from concurrent.futures import ThreadPoolExecutor
 import functools
 import random
+import argparse
 
 from tornado.web import RequestHandler, StaticFileHandler
 from tornado.gen import coroutine
@@ -238,3 +239,83 @@ class PyMicroService(ABC):
                     continue  # could not establish connection, try next
 
         raise ValueError("Service could not be located")
+
+    @classmethod
+    def get_cli(cls):
+        """
+        Creates a command line interface through which the user
+        can override specific options of the microservice. Useful when
+        the user might want to dynamically change the configuration
+        of the microservice.
+
+        For example, having another script that dynamically starts instances
+        of our microservice that each listen to different ports.
+
+        The returned value is a function than when called, parses the arguments,
+        overrides the defaults and then starts the microservice.
+
+        Example usage
+
+        .. code-block:: python
+
+            # in service.py
+
+            cli = MyMicroService.get_cli()
+            cli()
+
+        After that, from the command line, we can do the following
+
+        .. code-block:: bash
+
+            python service.py --help    # show the help
+            python service.py start     # start the microservice with the default parameters
+            python service.py start --help  # show the configurable parameters
+            python service.py start --port=8000 --host=0.0.0.0 --service_registry http://127.0.0.1/api http://192.168.0.11/api  # override some parameters
+
+
+        :return: a function that can override and start the microservice, depending on the command line arguments
+
+        .. versionadded:: 0.1.0
+        """
+        parser = argparse.ArgumentParser()
+
+        subparser = parser.add_subparsers()
+
+        # myservice.py start [--opt=val]*
+        start_parser = subparser.add_parser("start")
+        start_parser.add_argument("--name", help="The name of the microservice. Currently {}".format(cls.name))
+        start_parser.add_argument("--host", help="The address to bind to. Currently {}".format(cls.host))
+        start_parser.add_argument("--port", help="The port to bind to. Currently {}".format(cls.port), type=int)
+        start_parser.add_argument("--api_token_header", help="The header to be used for access validation."
+                                                             "Currently {}".format(cls.api_token_header))
+        start_parser.add_argument("--max_parallel_tasks", help="Maximum number of methods to be"
+                                                               "executed concurrently. Currently {}".format(
+            cls.max_parallel_blocking_tasks))
+        start_parser.add_argument("--service_registry", nargs="*",
+                                  help="A url where a service registry can be found. Currently {}".format(
+                                      cls.service_registry_urls))
+
+        def start():
+            cls().start()
+
+        start_parser.set_defaults(func=start)
+
+        def call_argument_parser():
+            args = parser.parse_args()
+
+            cls._set_option_if_available(args, "name")
+            cls._set_option_if_available(args, "host")
+            cls._set_option_if_available(args, "port")
+            cls._set_option_if_available(args, "api_token_header")
+            cls._set_option_if_available(args, "max_parallel_tasks")
+            if getattr(args, "service_registry", None):
+                cls.service_registry_urls = args.service_registry
+
+            args.func()
+
+        return call_argument_parser
+
+    @classmethod
+    def _set_option_if_available(cls, args, name):
+        if hasattr(args, name) and getattr(args, name) is not None:
+            setattr(cls, name, getattr(args, name))
