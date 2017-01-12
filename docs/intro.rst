@@ -8,14 +8,14 @@ In order to install this library, run the command
 
 ::
 
-    pip install pymicroservice
+    pip install gemstone
 
 or to install it manually from sources
 
 ::
 
-    git clone https://github.com/vladcalin/pymicroservice.git
-    cd pymicroservice
+    git clone https://github.com/vladcalin/gemstone.git
+    cd gemstone
     python setup.py install
 
 To run the tests, run the command
@@ -40,13 +40,13 @@ Simple usage
 ------------
 
 In order to create a simple ``HelloWordService`` microservice, you have to subclass the
-:py:class:`pymicroservice.PyMicroService` base class:
+:py:class:`gemstone.MicroService` base class:
 
 ::
 
     # inside hello_world_service.py
 
-    class HelloWorldService(PyMicroService):
+    class HelloWorldService(MicroService):
         name = "hello.world.service"
         host = "127.0.0.1"
         port = 5000

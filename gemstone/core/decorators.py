@@ -6,7 +6,7 @@ __all__ = [
 
 def public_method(func):
     """
-    Decorates a method to be exposed from a :py:class:`pymicroservice.PyMicroService` concrete
+    Decorates a method to be exposed from a :py:class:`gemstone.PyMicroService` concrete
     implementation. The exposed method will be public.
     """
     func.__is_exposed_method__ = True
@@ -16,7 +16,7 @@ def public_method(func):
 
 def private_api_method(func):
     """
-    Decorates a method to be exposed (privately) from a :py:class:`pymicroservice.PyMicroService` concrete
+    Decorates a method to be exposed (privately) from a :py:class:`gemstone.PyMicroService` concrete
     implementation. The exposed method will be private.
     """
     func.__private_api_method__ = True

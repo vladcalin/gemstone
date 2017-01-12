@@ -50,10 +50,10 @@ making a ``POST`` request to ``http://service_ip:service_port/api`` with:
 
     See the `JSON RPC 2.0 specifications <http://www.jsonrpc.org/specification>`_ for more details.
 
-Through the :py:class:`pymicroservice.RemoteService` class
+Through the :py:class:`gemstone.RemoteService` class
 ----------------------------------------------------------
 
-This library offers the :py:class:`pymicroservice.RemoteService` class to interact with other
+This library offers the :py:class:`gemstone.RemoteService` class to interact with other
 services programmatically.
 
 Example ::
@@ -75,10 +75,10 @@ A service registry can be a client that exposes via JSON RPC 2.0 the methods: ``
 and ``locate_service(name)``.
 
 In order for a service to make use of a service registry, we must override the
-:py:data:`pymicroservice.PyMicroService.service_registry_urls` class attribute.
+:py:data:`gemstone.MicroService.service_registry_urls` class attribute.
 
 When we do that, a `periodic task <Periodic tasks>`_ will spawn when the service starts that calls the ``ping`` method
-of the remote service, every :py:data:`pymicroservice.PyMicroService.service_registry_ping_interval` seconds.
+of the remote service, every :py:data:`gemstone.MicroService.service_registry_ping_interval` seconds.
 
 .. note::
 
@@ -87,7 +87,7 @@ of the remote service, every :py:data:`pymicroservice.PyMicroService.service_reg
 
 Example::
 
-    class ExampleService(PyMicroService):
+    class ExampleService(MicroService):
         name = "example.1"
 
         # stuff
@@ -102,6 +102,6 @@ Example::
 
         # even more stuff
 
-When at least one service registry is used, we can use the :py:meth:`pymicroservice.PyMicroService.get_service` method
+When at least one service registry is used, we can use the :py:meth:`gemstone.MicroService.get_service` method
 to identify a service by name (or glob pattern). For example, if we call the method with the ``"myservice.workers.*"``
 pattern, it will match ``"myservice.workers.01"``, ``"myservice.workers.02"`` and ``"myservice.workers.03"``.

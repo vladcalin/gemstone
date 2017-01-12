@@ -2,12 +2,12 @@ import json
 
 from tornado.testing import AsyncHTTPTestCase
 
-from pymicroservice import PyMicroService, public_method, private_api_method
+from gemstone import MicroService, public_method, private_api_method
 
 TEST_HOST, TEST_PORT = ("localhost", 65503)
 
 
-class TestService(PyMicroService):
+class TestService(MicroService):
     name = "service.test.2"
 
     host = TEST_HOST

@@ -12,17 +12,17 @@ from tornado.ioloop import IOLoop, PeriodicCallback
 from tornado.web import Application
 from tornado.log import enable_pretty_logging
 
-from pymicroservice.errors import ServiceConfigurationError, AccessDeniedError
-from pymicroservice.core.handlers import TornadoJsonRpcHandler
-from pymicroservice.core.decorators import public_method
-from pymicroservice.client.remote_service import RemoteService
+from gemstone.errors import ServiceConfigurationError, AccessDeniedError
+from gemstone.core.handlers import TornadoJsonRpcHandler
+from gemstone.core.decorators import public_method
+from gemstone.client.remote_service import RemoteService
 
 __all__ = [
-    'PyMicroService'
+    'MicroService'
 ]
 
 
-class PyMicroService(ABC):
+class MicroService(ABC):
     name = None
 
     host = "127.0.0.1"
@@ -219,7 +219,7 @@ class PyMicroService(ABC):
             Make this use self.io_loop to resolve the request. The current implementation is blocking and slow
 
         :param name: a pattern for the searched service.
-        :return: a :py:class:`pymicroservice.RemoteService` instance
+        :return: a :py:class:`gemstone.RemoteService` instance
         :raises ValueError: when the service can not be located
         :raises ServiceConfigurationError: when there is no configured service registry
         """

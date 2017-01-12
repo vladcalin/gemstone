@@ -3,7 +3,7 @@ import pkg_resources
 
 import click
 
-import pymicroservice.data
+import gemstone.data
 
 
 @click.group()
@@ -15,7 +15,7 @@ def cli():
 @click.argument("classname", required=True)
 @click.argument("filename", required=True)
 def new_service(classname, filename):
-    template = os.path.join(os.path.dirname(os.path.abspath(pymicroservice.data.__file__)), "newservice.tmpl")
+    template = os.path.join(os.path.dirname(os.path.abspath(gemstone.data.__file__)), "newservice.tmpl")
     with open(template, "r") as tmpl, open(filename, "w") as output:
         output.write(tmpl.read() % {"classname": classname})
 

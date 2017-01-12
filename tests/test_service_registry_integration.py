@@ -2,14 +2,14 @@ from unittest import TestCase
 from unittest.mock import patch
 from io import BytesIO
 
-from pymicroservice import PyMicroService
+from gemstone import MicroService
 
 
-class TestServiceNoServiceRegistries(PyMicroService):
+class TestServiceNoServiceRegistries(MicroService):
     name = "test.service.1"
 
 
-class TestServiceOneServiceRegistry(PyMicroService):
+class TestServiceOneServiceRegistry(MicroService):
     name = "test.service.1"
     service_registry_urls = ["http://localhost:9999/api"]
 
@@ -23,7 +23,7 @@ class ServiceRegistryIntegrationTestCase(TestCase):
     def tearDownClass(cls):
         pass
 
-    @patch("pymicroservice.core.microservice.PeriodicCallback")
+    @patch("gemstone.core.microservice.PeriodicCallback")
     @patch("urllib.request.urlopen")
     def test_periodic_callback_init(self, urlopen, PeriodicCallback):
         callbacks = list(TestServiceNoServiceRegistries().periodic_task_iter())

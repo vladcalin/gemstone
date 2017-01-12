@@ -3,8 +3,8 @@ import os
 from tornado.web import RequestHandler
 from tornado.gen import coroutine
 
-from pymicroservice.core.microservice import PyMicroService
-from pymicroservice.core.decorators import public_method, private_api_method
+from gemstone.core.microservice import MicroService
+from gemstone.core.decorators import public_method, private_api_method
 
 
 class IndexHandler(RequestHandler):
@@ -13,7 +13,7 @@ class IndexHandler(RequestHandler):
         self.render("index.html")
 
 
-class HelloWorldService(PyMicroService):
+class HelloWorldService(MicroService):
     name = "hello.world.service"
     host = "127.0.0.1"
     port = 5000

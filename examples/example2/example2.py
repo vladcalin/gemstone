@@ -3,15 +3,15 @@ import os
 from tornado.web import RequestHandler
 from tornado.gen import coroutine
 
-from pymicroservice.core.microservice import PyMicroService
-from pymicroservice.core.decorators import public_method, private_api_method
+from gemstone.core.microservice import MicroService
+from gemstone.core.decorators import public_method, private_api_method
 
 
 def print_stuff():
     print("hello there")
 
 
-class ExampleService2(PyMicroService):
+class ExampleService2(MicroService):
     name = "service.hellworld"
     host = "127.0.0.1"
     port = 10000

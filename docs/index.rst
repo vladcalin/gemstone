@@ -3,11 +3,11 @@
     You can adapt this file completely to your liking, but it should at least
     contain the root `toctree` directive.
 
-Welcome to pymicroservice's documentation!
+Welcome to gemstone's documentation!
 ==========================================
 
 
-The **pymicroservice** library aims to provide an easy way to
+The **gemstone** library aims to provide an easy way to
 develop simple, understandable and scalable HTTP APIs by using
 the asynchronous features of Python by using `Tornado <http://www.tornadoweb.org/en/stable/>`_ .
 
@@ -24,7 +24,6 @@ Contents:
     :maxdepth: 3
 
     intro
-    installation
     creating_a_service
     interacting_with_services
     reference

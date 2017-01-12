@@ -2,15 +2,15 @@ from unittest import TestCase
 import threading
 import time
 
-from pymicroservice.client.remote_service import RemoteService
-from pymicroservice import PyMicroService, public_method, private_api_method
-from pymicroservice.errors import CalledServiceError
+from gemstone.client.remote_service import RemoteService
+from gemstone import MicroService, public_method, private_api_method
+from gemstone.errors import CalledServiceError
 
 HOST, PORT = "127.0.0.1", 6799
 PORT2 = PORT + 1
 
 
-class Service1(PyMicroService):
+class Service1(MicroService):
     name = "test.service.client.1"
 
     host = HOST
@@ -42,7 +42,7 @@ class Service1(PyMicroService):
         return api_token == "test-token"
 
 
-class Service2(PyMicroService):
+class Service2(MicroService):
     name = "test.service.client.2"
     api_token_header = "Custom-Header"
     host = HOST

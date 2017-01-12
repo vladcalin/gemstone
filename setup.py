@@ -20,11 +20,11 @@ def get_meta_attr_from_string(meta_attr, content):
     return result.group(1)
 
 
-module_content = get_file_content(os.path.join("pymicroservice", "__init__.py"))
+module_content = get_file_content(os.path.join("gemstone", "__init__.py"))
 
 setup(
     # project metadata
-    name="pymicroservice",
+    name="gemstone",
     version=get_meta_attr_from_string("__version__", module_content),
     license="MIT",
 
@@ -44,7 +44,7 @@ setup(
         "Programming Language :: Python :: 3 :: Only",
         "Topic :: Software Development :: Libraries"
     ],
-    url="https://github.com/vladcalin/pymicroservice",
+    url="https://github.com/vladcalin/gemstone",
 
     zip_safe=False,
 
@@ -58,7 +58,7 @@ setup(
     install_requires=read_dependencies("requirements.txt"),
     entry_points={
         "console_scripts": [
-            "pymicroservice-cli = pymicroservice.cli:main"
+            "gemstone = gemstone.cli:main"
         ]
     }
 )

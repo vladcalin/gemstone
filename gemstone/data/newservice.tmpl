@@ -3,8 +3,7 @@ import os
 from tornado.web import RequestHandler
 from tornado.gen import coroutine
 
-from pymicroservice.core.microservice import PyMicroService
-from pymicroservice.core.decorators import public_method, private_api_method
+from gemstone import MicroService, public_method, private_api_method
 
 
 # example custom request handler
@@ -14,7 +13,7 @@ class IndexHandler(RequestHandler):
         raise NotImplementedError()
 
 
-class %(classname)s(PyMicroService):
+class %(classname)s(MicroService):
     name = "name.your.service"
     host = "127.0.0.1"
     port = 5000

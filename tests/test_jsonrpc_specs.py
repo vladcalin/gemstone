@@ -3,10 +3,10 @@ import logging
 
 from tornado.testing import AsyncHTTPTestCase, gen_test
 
-from pymicroservice import PyMicroService, public_method, private_api_method
+from gemstone import MicroService, public_method, private_api_method
 
 
-class TestService(PyMicroService):
+class TestService(MicroService):
     name = "test.service"
 
     host = "127.0.0.1"

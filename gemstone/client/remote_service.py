@@ -5,7 +5,7 @@ import asyncio
 
 from concurrent.futures import ThreadPoolExecutor
 
-from pymicroservice.errors import CalledServiceError
+from gemstone.errors import CalledServiceError
 
 
 class CallableMethod(object):

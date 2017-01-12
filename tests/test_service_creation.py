@@ -5,17 +5,17 @@ from unittest import TestCase
 from tornado.testing import AsyncHTTPTestCase
 from tornado.web import RequestHandler
 
-from pymicroservice import PyMicroService, public_method
-from pymicroservice.errors import ServiceConfigurationError
+from gemstone import MicroService, public_method
+from gemstone.errors import ServiceConfigurationError
 
 HOST, PORT = "127.0.0.1", 14777
 
 
-class NameMissingService(PyMicroService):
+class NameMissingService(MicroService):
     pass
 
 
-class BadMaxParallelBlockingTasksValueService(PyMicroService):
+class BadMaxParallelBlockingTasksValueService(MicroService):
     name = "test.1"
     max_parallel_blocking_tasks = -3
 
@@ -39,7 +39,7 @@ class ExtraHandler2(RequestHandler):
         self.render("template2.html", name="world")
 
 
-class TestService2(PyMicroService):
+class TestService2(MicroService):
     name = "test.2"
     host = HOST
     port = PORT

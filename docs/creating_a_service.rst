@@ -5,12 +5,12 @@ Creating a microservice
 Basic example
 -------------
 
-In order to create a simple microservice, you have to subclass the :py:class:`pymicroservice.PyMicroService`
+In order to create a simple microservice, you have to subclass the :py:class:`gemstone.MicroService`
 base class:
 
 ::
 
-    class HelloWorldService(PyMicroService):
+    class HelloWorldService(MicroService):
         name = "hello.world.service"
         host = "127.0.0.1"
         port = 5000
@@ -36,7 +36,7 @@ In order to create a template for your service, use the following command to cre
 
 ::
 
-    pymicroservice-cli new_service HelloWorldService hello_world_service.py
+    gemstone new_service HelloWorldService hello_world_service.py
 
 
 
@@ -45,11 +45,11 @@ After you created your service, run the script that contains it and enjoy.
 Exposing public methods
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-Public methods can be exposed by decorating them with the :py:func:`pymicroservice.public_method` decorator
+Public methods can be exposed by decorating them with the :py:func:`gemstone.public_method` decorator
 
 ::
 
-    class MyMicroService(PyMicroService):
+    class MyMicroService(MicroService):
 
         # stuff
 
@@ -63,13 +63,13 @@ Public methods can be exposed by decorating them with the :py:func:`pymicroservi
 Exposing private methods
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-In order to expose private methods, we have to decorate them with the :py:func:`pymicroservice.private_api_method`.
+In order to expose private methods, we have to decorate them with the :py:func:`gemstone.private_api_method`.
 These methods can be accessed only by providing a valid Api Token with the request. In addition, we must override the
-:py:meth:`pymicroservice.PyMicroService.api_token_is_valid` method to implement the token validation logic
+:py:meth:`gemstone.MicroService.api_token_is_valid` method to implement the token validation logic
 
 ::
 
-    class MyMicroService(PyMicroService):
+    class MyMicroService(MicroService):
 
         # stuff
 
@@ -93,55 +93,55 @@ to customize the behavior of our microservice.
 Required attributes
 ~~~~~~~~~~~~~~~~~~~
 
-- :py:data:`pymicroservice.PyMicroService.name` is required and defines the name of the microservice.
+- :py:data:`gemstone.MicroService.name` is required and defines the name of the microservice.
   **MUST** be defined by the concrete implementation, otherwise an error will be thrown at startup
 
 Specifying different host and port
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-- :py:data:`pymicroservice.PyMicroService.host` - specifies the address to bind to (hostname or IP address).
+- :py:data:`gemstone.MicroService.host` - specifies the address to bind to (hostname or IP address).
   Defaults to ``127.0.0.1``.
-- :py:data:`pymicroservice.PyMicroService.port` - an :py:class:`int` that specifies the port to bind to.
+- :py:data:`gemstone.MicroService.port` - an :py:class:`int` that specifies the port to bind to.
   Defaults to ``8000``
 
 Other options
 ~~~~~~~~~~~~~
 
-- :py:data:`pymicroservice.PyMicroService.api_token_header` - a :py:class:`str` that specifies the HTTP
+- :py:data:`gemstone.MicroService.api_token_header` - a :py:class:`str` that specifies the HTTP
   header that will be used for API access. Defaults to ``X-Api-Token``.
 
   In order to interact with a service that uses a custom ``api_token_header``, we have to specify it in the
-  :py:class:`pymicroservice.RemoteService` constructor
+  :py:class:`gemstone.RemoteService` constructor
 
   ::
 
         client = RemoteService(url, api_token="Custom-Token", api_key="my-api-key")
 
-- :py:data:`pymicroservice.PyMicroService.max_parallel_blocking_tasks` - the number of threads that
+- :py:data:`gemstone.MicroService.max_parallel_blocking_tasks` - the number of threads that
   will handle blocking actions (function calls). Defaults to :py:func:`os.cpu_count`.
 
 
-- :py:data:`pymicroservice.PyMicroService.static_dirs` - a list of ``(str, str)`` tuples that represent the
+- :py:data:`gemstone.MicroService.static_dirs` - a list of ``(str, str)`` tuples that represent the
   URL to which the static directory will be mapped, and the path of the directory that contain the static files.
   For example, if the directory ``/home/user/www/static`` contains the file ``index.html``, and we specify the static dir
   attribute with the value ``[("/static", "/home/user/www/static")]``, the service will serve ``index.html`` at the
   URL ``/static/index.html``.
 
-- :py:data:`pymicroservice.PyMicroService.extra_handlers` - a list of tuples of URLs and Tornado request handlers to
+- :py:data:`gemstone.MicroService.extra_handlers` - a list of tuples of URLs and Tornado request handlers to
   be included in the service.
 
   .. note::
 
         The ``/api`` endpoint is reserved for the JSON RPC service.
 
-- :py:data:`pymicroservice.PyMicroService.template_dir` - a directory where templates will be searched in, when, in a
+- :py:data:`gemstone.MicroService.template_dir` - a directory where templates will be searched in, when, in a
   custom handler we render a template via :py:meth:`tornado.web.RequestHandler.render`.
 
 
 Periodic tasks
 ~~~~~~~~~~~~~~
 
-- :py:data:`pymicroservice.PyMicroService.periodic_tasks` - a list of function - interval (in seconds) mappings that
+- :py:data:`gemstone.MicroService.periodic_tasks` - a list of function - interval (in seconds) mappings that
   schedules the given function to be executed every given seconds
 
   ::
@@ -149,11 +149,11 @@ Periodic tasks
       def periodic_func():
           print("hello there")
 
-      class MyService(PyMicroService):
+      class MyService(MicroService):
 
           # stuff
 
-          peirodic_tasks = [(periodic_func, 1)]
+          periodic_tasks = [(periodic_func, 1)]
 
           # stuff
 
@@ -178,7 +178,7 @@ A service registry is a remote service that keeps mappings of service names and 
 microservice will be able to locate another one dynamically. A service can be a service registry if it exposes
 via JSON RPC a ``ping(name, host, port)`` method and a ``locate_service(name)`` method.
 
-- :py:data:`pymicroservice.PyMicroService.service_registry_urls` - a list of URLS where a service registry is located and
+- :py:data:`gemstone.MicroService.service_registry_urls` - a list of URLS where a service registry is located and
   accessible via JSON RPC.
 
   ::
@@ -187,7 +187,7 @@ via JSON RPC a ``ping(name, host, port)`` method and a ``locate_service(name)`` 
 
   On service startup, a ping will be sent to the registry, and after that, a ping will be sent periodically.
 
-- :py:data:`pymicroservice.PyMicroService.service_registry_ping_interval` - the interval (in seconds) when the
+- :py:data:`gemstone.MicroService.service_registry_ping_interval` - the interval (in seconds) when the
   service will ping the registry. Defaults to 30 seconds.
 
   ::
@@ -198,4 +198,4 @@ via JSON RPC a ``ping(name, host, port)`` method and a ``locate_service(name)`` 
 Generating a command-line interface
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-See :py:meth:`pymicroservice.PyMicroService.get_cli()` for more details.
+See :py:meth:`gemstone.MicroService.get_cli()` for more details.
