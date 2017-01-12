@@ -1,10 +1,10 @@
-The **pymicroservice** framework
+The **gemstone** framework
 ================================
 
-[![Build Status](https://travis-ci.org/vladcalin/pymicroservice.svg?branch=master)](https://travis-ci.org/vladcalin/pymicroservice)
-[![Documentation Status](https://readthedocs.org/projects/pymicroservice/badge/?version=latest)](http://pymicroservice.readthedocs.io/en/latest/?badge=latest)
-[![PyPI version](https://badge.fury.io/py/pymicroservice.svg)](https://badge.fury.io/py/pymicroservice)
-[![Coverage Status](https://coveralls.io/repos/github/vladcalin/pymicroservice/badge.svg?branch=master)](https://coveralls.io/github/vladcalin/pymicroservice?branch=master)
+[![Build Status](https://travis-ci.org/vladcalin/gemstone.svg?branch=master)](https://travis-ci.org/vladcalin/gemstone)
+[![Documentation Status](https://readthedocs.org/projects/gemstone/badge/?version=latest)](http://gemstone.readthedocs.io/en/latest/?badge=latest)
+[![PyPI version](https://badge.fury.io/py/gemstone.svg)](https://badge.fury.io/py/gemstone)
+[![Coverage Status](https://coveralls.io/repos/github/vladcalin/gemstone/badge.svg?branch=master)](https://coveralls.io/github/vladcalin/gemstone?branch=master)
 
 Motivation
 ----------
@@ -32,13 +32,13 @@ Installation
 
 In order to install this library, run the command
 
-    pip install pymicroservice
+    pip install gemstone
 
 or to install it from sources
 
 
-    git clone https://github.com/vladcalin/pymicroservice.git
-    cd pymicroservice
+    git clone https://github.com/vladcalin/gemstone.git
+    cd gemstone
     python setup.py install
 
 To run the tests, run the command
@@ -52,11 +52,11 @@ Write into a ``hello_world_service.py`` file the following code:
 
 ```python
 
-	from pymicroservice.core.microservice import PyMicroService, \
-	    public_method, private_api_method
+    from gemstone import MicroService, public_method, private_api_method
+	    
     
     
-    class HelloWorldService(PyMicroService):
+    class HelloWorldService(MicroService):
         name = "hello.world.service"
         host = "127.0.0.1"
         port = 5000
@@ -113,7 +113,7 @@ This library offers a class through which you can interact with various services
 
 ```python
 
-    client = pymicroservice.RemoteClien("http://localhost:5000/api")
+    client = gemstone.RemoteClient("http://localhost:5000/api")
     print(client.name)  # "service.hello.world"
     print(client.methods.say_hello("world"))  # "hello world"
     
@@ -123,7 +123,7 @@ This library offers a class through which you can interact with various services
 Issues
 ------
 
-Check the [Github issue tracker](https://github.com/vladcalin/pymicroservice/issues).
+Check the [Github issue tracker](https://github.com/vladcalin/gemstone/issues).
 
 TODO
 ----
