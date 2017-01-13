@@ -1,6 +1,8 @@
 The **gemstone** framework
 ================================
 
+![gemstones](./gemstones.png)
+
 [![Build Status](https://travis-ci.org/vladcalin/gemstone.svg?branch=master)](https://travis-ci.org/vladcalin/gemstone)
 [![Documentation Status](https://readthedocs.org/projects/gemstone/badge/?version=latest)](http://gemstone.readthedocs.io/en/latest/?badge=latest)
 [![PyPI version](https://badge.fury.io/py/gemstone.svg)](https://badge.fury.io/py/gemstone)
