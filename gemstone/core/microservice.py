@@ -27,6 +27,7 @@ class MicroService(ABC):
 
     host = "127.0.0.1"
     port = 8000
+    accessible_at = None
 
     # extra Tornado configuration
     template_dir = "."
@@ -92,7 +93,7 @@ class MicroService(ABC):
 
             {
                 "host": "127.0.0.1",
-                "port": 9000.
+                "port": 9000,
                 "name": "service.example",
                 "max_parallel_blocking_tasks": 8,
                 "methods": {
@@ -107,6 +108,7 @@ class MicroService(ABC):
         return {
             "host": self.host,
             "port": self.port,
+            "accessible_at": self.accessible_at or "http://{}:{}/api".format(self.host, self.port),
             "name": self.name,
             "max_parallel_blocking_tasks": self.max_parallel_blocking_tasks,
             "methods": {m: self.methods[m].__doc__ for m in self.methods}
@@ -190,7 +192,8 @@ class MicroService(ABC):
         return logging.getLogger("tornado.application")
 
     def ping_to_service_registry(self, servreg_remote_service):
-        servreg_remote_service.notifications.ping(name=self.name, host=self.host, port=self.port)
+        host, port = self.accessible_at or (self.host, self.port)
+        servreg_remote_service.notifications.ping(name=self.name, host=host, port=port)
 
     def periodic_task_iter(self):
         for url in self.service_registry_urls:

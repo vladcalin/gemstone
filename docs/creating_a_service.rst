@@ -103,6 +103,17 @@ Specifying different host and port
   Defaults to ``127.0.0.1``.
 - :py:data:`gemstone.MicroService.port` - an :py:class:`int` that specifies the port to bind to.
   Defaults to ``8000``
+- :py:data:`gemstone.MicroService.accessible_at` - a (`address` : :py:class:`str`, `port` : :py:class:`int`) tuple
+  specifying a custom location where the service can be found. If at least one service registry is configured,
+  the service will send these values to it so that other services can access at the specified location.
+
+  The `host` component can be a an address (`"127.0.0.1"`, `"192.168.0.3"`, etc) or a domain (if the service is
+  accessible via DNS name. Example: `"myservice.example.com"`).
+
+  For example, it is useful when the service runs behind a load balancer and the
+  :py:data:`gemstone.MicroService.accessible_at` attribute will point to the address of the load balancer,
+  so that when another service queries the registry for this service, it will access the
+  load balancer instead. Also the first
 
 Other options
 ~~~~~~~~~~~~~

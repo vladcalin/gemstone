@@ -1,3 +1,9 @@
+0.1.1 (13.01.2017)
+==================
+
+- changed the name of the library from ``pymicroservice`` to ``gemstone``
+- added the ``gemstone.MicroService.accessible_at`` attribute
+
 0.1.0 (09.01.2017)
 ==================
 
