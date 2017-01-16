@@ -22,6 +22,9 @@ def get_meta_attr_from_string(meta_attr, content):
 
 module_content = get_file_content(os.path.join("gemstone", "__init__.py"))
 
+readme = get_file_content("README.rst")
+history = get_file_content("CHANGES.rst")
+
 setup(
     # project metadata
     name="gemstone",
@@ -34,7 +37,7 @@ setup(
     maintainer=get_meta_attr_from_string("__author__", module_content),
     maintainer_email=get_meta_attr_from_string("__email__", module_content),
 
-    long_description=get_file_content("readme.md"),
+    long_description=readme + "\n\n" + history,
     description="Build microservices with Python",
     keywords=["microservice", "cloud", "rpc", "compute", "service"],
     classifiers=[
@@ -55,10 +58,5 @@ setup(
     # tests
     test_suite="tests",
 
-    install_requires=read_dependencies("requirements.txt"),
-    entry_points={
-        "console_scripts": [
-            "gemstone = gemstone.cli:main"
-        ]
-    }
+    install_requires=read_dependencies("requirements.txt")
 )

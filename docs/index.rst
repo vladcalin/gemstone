@@ -4,7 +4,7 @@
     contain the root `toctree` directive.
 
 Welcome to gemstone's documentation!
-==========================================
+====================================
 
 
 The **gemstone** library aims to provide an easy way to
@@ -26,7 +26,9 @@ Contents:
     intro
     creating_a_service
     interacting_with_services
+    template_service
     reference
+    showcase
 
 
 .. todoList::
