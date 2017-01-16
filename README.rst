@@ -31,7 +31,7 @@ Few words ahead
 
 This library uses the asynchronous features of the Tornado web framework for creating a JSON RPC endpoint through which
 one can call exposed methods. The method calls are treated asynchronously. If you have no knowledge about asynchronous
-programming in Python, I suggest to read a few words from the [Tornado documentation](http://www.tornadoweb.org/en/stable/) .
+programming in Python, I suggest to read a few words from the `Tornado documentation <http://www.tornadoweb.org/en/stable/>`_ .
 
 Although it is not required for you to know about all that coroutines and event loop theory, it sure helps to understand
 what happens *under the hood*.
