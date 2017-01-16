@@ -3,6 +3,8 @@ The **gemstone** framework
 
 .. image:: https://travis-ci.org/vladcalin/gemstone.svg?branch=master
     :target: https://travis-ci.org/vladcalin/gemstone
+.. image :: https://ci.appveyor.com/api/projects/status/i6rep3022e7occ8e?svg=true
+    :target: https://ci.appveyor.com/project/vladcalin/gemstone
 .. image:: https://readthedocs.org/projects/gemstone/badge/?version=latest
     :target: http://gemstone.readthedocs.io/en/latest/?badge=latest
     :alt: Documentation Status
