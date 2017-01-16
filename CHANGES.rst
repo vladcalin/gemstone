@@ -1,3 +1,8 @@
+0.1.3 (16.01.2017)
+~~~~~~~~~~~~~~~~~~
+
+- fixed manifest to include required missing files
+
 0.1.2 (16.01.2017)
 ~~~~~~~~~~~~~~~~~~
 
