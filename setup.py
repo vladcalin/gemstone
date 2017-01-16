@@ -1,7 +1,15 @@
 import os.path
 import re
+import sys
 from setuptools import setup, find_packages
 
+# Check the Python version. Currently only 3.4+ is supported
+
+if sys.version_info < (3, 4):
+    sys.exit("Supported only for Python 3.4 or newer.")
+
+
+# Utility functions
 
 def read_dependencies(req_file):
     with open(req_file) as req:
@@ -20,6 +28,22 @@ def get_meta_attr_from_string(meta_attr, content):
     return result.group(1)
 
 
+# Metadata
+
+CLASSIFIERS = """
+    Development Status :: 3 - Alpha
+    License :: OSI Approved :: MIT License
+    Operating System :: OS Independent
+    Topic :: Utilities
+    Programming Language :: Python :: 3.4
+    Programming Language :: Python :: 3.5
+    Programming Language :: Python :: 3.6
+"""
+URL = "https://github.com/vladcalin/gemstone"
+KEYWORDS = "microservice service gemstone jsonrpc rpc http asynchronous"
+DESCRIPTION = "Build microservices with Python"
+LICENSE = "MIT"
+
 module_content = get_file_content(os.path.join("gemstone", "__init__.py"))
 
 readme = get_file_content("README.rst")
@@ -29,7 +53,7 @@ setup(
     # project metadata
     name="gemstone",
     version=get_meta_attr_from_string("__version__", module_content),
-    license="MIT",
+    license=LICENSE,
 
     author=get_meta_attr_from_string("__author__", module_content),
     author_email=get_meta_attr_from_string("__email__", module_content),
@@ -38,16 +62,10 @@ setup(
     maintainer_email=get_meta_attr_from_string("__email__", module_content),
 
     long_description=readme + "\n\n" + history,
-    description="Build microservices with Python",
-    keywords=["microservice", "cloud", "rpc", "compute", "service"],
-    classifiers=[
-        "Development Status :: 2 - Pre-Alpha",
-        "License :: OSI Approved :: MIT License",
-        "Operating System :: OS Independent",
-        "Programming Language :: Python :: 3 :: Only",
-        "Topic :: Software Development :: Libraries"
-    ],
-    url="https://github.com/vladcalin/gemstone",
+    description=DESCRIPTION,
+    keywords=KEYWORDS.split(),
+    classifiers=[x.strip() for x in CLASSIFIERS.split("\n") if x != ""],
+    url=URL,
 
     zip_safe=False,
 
@@ -58,5 +76,11 @@ setup(
     # tests
     test_suite="tests",
 
-    install_requires=read_dependencies("requirements.txt")
+    install_requires=read_dependencies("requirements.txt"),
+
+    entry_points={
+        "console_scripts": [
+            "gemstone = gemstone.cli:cli"
+        ]
+    }
 )

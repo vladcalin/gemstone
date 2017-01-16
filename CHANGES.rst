@@ -1,3 +1,9 @@
+0.1.2 (16.01.2017)
+~~~~~~~~~~~~~~~~~~
+
+- added py36 to travis-ci
+- refactored setup.py and reworked description files and documentation for better rendering
+
 0.1.1 (13.01.2017)
 ~~~~~~~~~~~~~~~~~~
 
