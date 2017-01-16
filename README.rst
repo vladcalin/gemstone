@@ -10,6 +10,10 @@ The **gemstone** framework
     :target: https://badge.fury.io/py/gemstone
 .. image:: https://coveralls.io/repos/github/vladcalin/gemstone/badge.svg?branch=master
     :target: https://coveralls.io/github/vladcalin/gemstone?branch=master
+.. image:: https://codeclimate.com/github/vladcalin/gemstone/badges/gpa.svg
+    :target: https://codeclimate.com/github/vladcalin/gemstone
+    :alt: Code Climate
+
 
 
 Motivation
