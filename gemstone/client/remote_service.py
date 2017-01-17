@@ -159,6 +159,9 @@ class RemoteService(object):
 
         registry = RemoteService(registry_url)
         service_locations = registry.methods.locate_service(name_pattern)
+        if not service_locations:
+            raise CalledServiceError("Unable to locate service {}".format(name_pattern))
+
         service_specs = choose_algs[choose_algorithm](service_locations)
 
         url = "http://{host}:{port}/api".format(host=service_specs["host"], port=service_specs["port"])

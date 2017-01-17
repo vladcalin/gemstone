@@ -293,7 +293,7 @@ class MicroService(ABC):
                                                              "Currently {}".format(cls.api_token_header))
         start_parser.add_argument("--max_parallel_tasks", help="Maximum number of methods to be"
                                                                "executed concurrently. Currently {}".format(
-            cls.max_parallel_blocking_tasks))
+                                                                cls.max_parallel_blocking_tasks))
         start_parser.add_argument("--service_registry", nargs="*",
                                   help="A url where a service registry can be found. Currently {}".format(
                                       cls.service_registry_urls))

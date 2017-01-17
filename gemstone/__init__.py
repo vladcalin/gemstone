@@ -10,4 +10,4 @@ from gemstone.client.remote_service import RemoteService
 __author__ = "Vlad Calin"
 __email__ = "vlad.s.calin@gmail.com"
 
-__version__ = "0.1.3"
+__version__ = "0.2.0"

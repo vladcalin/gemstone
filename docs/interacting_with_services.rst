@@ -129,7 +129,31 @@ The ``registry`` option specifies the URL where a service registry is accessible
   string values. In other words you can only send values in the format ``key=some_value`` that will be translated
   to ``func(key="some_value" ...)``. You can specify multiple parameters
 
-Examples::
+Example::
 
     gemstone call --registry=http://localhost:8000/api servicename say_hello name=world
     # calls servicename.say_hello with the parameter name="world"
+
+But if we want to interact with a service without having a service registry, we can use the ``call_raw`` command
+
+::
+
+    Usage: gemstone call_raw [OPTIONS] URL METHOD [PARAMS]...
+
+    Options:
+      --help  Show this message and exit.
+
+- ``URL`` - a valid http(s) url where the service is located.
+- ``METHOD`` - the name of the method to be called
+- ``PARAMS`` - same as above
+
+Example::
+
+    gemstone.exe call_raw http://service.local/api get_service_specs
+    [!] Service identification: 0.12918 seconds
+    [!] Method call: 0.01701 seconds
+    [!] Result:
+
+    {'host': '0.0.0.0',
+     'max_parallel_blocking_tasks': 4,
+     ...
