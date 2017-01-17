@@ -32,14 +32,6 @@ base class:
         service.start()
 
 
-In order to create a template for your service, use the following command to create a HelloWorldService class inside a hello_world_service.py file
-
-::
-
-    gemstone new_service HelloWorldService hello_world_service.py
-
-
-
 After you created your service, run the script that contains it and enjoy.
 
 Exposing public methods

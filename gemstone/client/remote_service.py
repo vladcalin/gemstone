@@ -140,6 +140,8 @@ class RemoteService(object):
         """
         Queries a service registry for the connection details (host and port) given a glob name pattern.
 
+        .. versionadded:: 0.1.4
+
         :param registry_url: A string representing the url where the service registry is accessible at.
                              Example: "http://192.168.0.1/api"
         :param name_pattern: A glob name pattern for which to return the available services. For

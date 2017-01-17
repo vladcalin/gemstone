@@ -105,3 +105,31 @@ Example::
 When at least one service registry is used, we can use the :py:meth:`gemstone.MicroService.get_service` method
 to identify a service by name (or glob pattern). For example, if we call the method with the ``"myservice.workers.*"``
 pattern, it will match ``"myservice.workers.01"``, ``"myservice.workers.02"`` and ``"myservice.workers.03"``.
+
+
+Via the gemstone executable
+---------------------------
+
+We can interact with the ``gemstone`` executable using the ``call`` command:
+
+::
+
+    Usage: gemstone call [OPTIONS] NAME METHOD [PARAMS]...
+
+    Options:
+      --registry TEXT  The service registry URL used for queries
+      --help           Show this message and exit.
+
+The ``registry`` option specifies the URL where a service registry is accessible. For example: ``"http://192.168.0.1:8000/api"``.
+
+- ``NAME`` - a glob pattern for the service you want to interact. Keep in mind that in the glob syntax, ``*`` matches
+  a sequence of characters while ``?`` matches a single character.
+- ``METHOD`` - the name of the method to call
+- ``PARAMS`` - parameters for the call in the format ``name=value``. Current implementation supports only simple
+  string values. In other words you can only send values in the format ``key=some_value`` that will be translated
+  to ``func(key="some_value" ...)``. You can specify multiple parameters
+
+Examples::
+
+    gemstone call --registry=http://localhost:8000/api servicename say_hello name=world
+    # calls servicename.say_hello with the parameter name="world"
