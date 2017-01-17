@@ -2,6 +2,7 @@ import os
 import urllib.request
 import json
 import asyncio
+import random
 
 from concurrent.futures import ThreadPoolExecutor
 
@@ -81,7 +82,7 @@ class RemoteService(object):
 
         self._methods = []
         self.name = None
-        self.get_services_info()
+        self.refresh_service_info()
 
         self._method_proxy = ServiceMethodProxy(self._methods, self)
         self._notification_proxy = ServiceMethodProxy(self._methods, self, is_notification=True)
@@ -112,7 +113,11 @@ class RemoteService(object):
         response = urllib.request.urlopen(request)
         return response.read().decode()
 
-    def get_services_info(self):
+    def refresh_service_info(self):
+        """
+        Returns a list of string representing the method names exposed by the service and updates the internal state
+        of the object to reflect the returned state of the service.
+        """
         res = self.make_request_sync(self.url,
                                      json_body={"jsonrpc": "2.0", "method": "get_service_specs", "id": self.req_id},
                                      headers={"Content-Type": "application/json"})
@@ -129,3 +134,30 @@ class RemoteService(object):
         :return: a :py:class:`list` with :py:class:`str` representing the names of the exposed methods
         """
         return self._methods
+
+    @classmethod
+    def get_service_by_name(cls, registry_url, name_pattern, choose_algorithm="random"):
+        """
+        Queries a service registry for the connection details (host and port) given a glob name pattern.
+
+        :param registry_url: A string representing the url where the service registry is accessible at.
+                             Example: "http://192.168.0.1/api"
+        :param name_pattern: A glob name pattern for which to return the available services. For
+                             example: "otherservice", "otherservice.worker*", "otherservice.worker.0?"
+        :param choose_algorithm: A string representing how the service should be picked if multiples services are
+                                 returned. Choices are: 'random' (choosing at random)
+        :return: a :py:class:`gemstone.RemoteService` instance through which to interact with the service
+        """
+        choose_algs = {
+            "random": lambda l: random.choice(l)
+        }
+        if choose_algorithm not in choose_algs.keys():
+            raise ValueError(
+                "Invalid choosing algorithm: '{}'. Valid choices are {}".format(choose_algorithm, choose_algs.keys()))
+
+        registry = RemoteService(registry_url)
+        service_locations = registry.methods.locate_service(name_pattern)
+        service_specs = choose_algs[choose_algorithm](service_locations)
+
+        url = "http://{host}:{port}/api".format(host=service_specs["host"], port=service_specs["port"])
+        return RemoteService(url)

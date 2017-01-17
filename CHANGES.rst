@@ -1,3 +1,8 @@
+
+
+- added ``gemstone.RemoteService.get_service_by_name`` method
+- added ``call`` command to cli
+
 0.1.3 (16.01.2017)
 ~~~~~~~~~~~~~~~~~~
 
