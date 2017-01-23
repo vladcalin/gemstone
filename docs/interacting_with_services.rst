@@ -12,11 +12,6 @@ making a ``POST`` request to ``http://service_ip:service_port/api`` with:
 
 - the headers
     - ``Content-Type: application/json``
-    - ``X-Api-Token: api-token`` if you want to access private methods
-
-    .. note::
-
-        The header might have another name, depending on the service configuration
 
 - the content
 

@@ -110,19 +110,31 @@ Specifying different host and port
 Other options
 ~~~~~~~~~~~~~
 
-- :py:data:`gemstone.MicroService.api_token_header` - a :py:class:`str` that specifies the HTTP
-  header that will be used for API access. Defaults to ``X-Api-Token``.
+- :py:data:`gemstone.MicroService.validation_strategies` - a list of validation strategy instances
+  that will be used to extract the api token that will be forwarded to the :any:`MicroService.api_token_is_valid`
+  method. Defaults to ``[HeaderValidationStrategy(header="X-Api-Token", template=None)]``
 
-  In order to interact with a service that uses a custom ``api_token_header``, we have to specify it in the
-  :py:class:`gemstone.RemoteService` constructor
+  See :ref:`token_validation` for more details, available options and how to implement custom validation
+  strategies
 
-  ::
+  If multiple strategies are specified, they will be run in the order they are defined until the first one
+  extracts a value which is not ``None``.
 
-        client = RemoteService(url, api_token="Custom-Token", api_key="my-api-key")
+  In order to interact with a service that uses a validation strategy, we have to specify
+  the proper arguments in the :py:class:`gemstone.RemoteService` constructor (See the class definition for more
+  info on this).
+
+  .. versionadded:: 0.3.0
 
 - :py:data:`gemstone.MicroService.max_parallel_blocking_tasks` - the number of threads that
   will handle blocking actions (function calls). Defaults to :py:func:`os.cpu_count`.
 
+Adding web application functionality
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+There might be situations when we want to extend the functionality of
+the microservice so that it will display some stats on some pages (or other scenarios).
+This library provides a way to quickly add behaviour that is not API-related.
 
 - :py:data:`gemstone.MicroService.static_dirs` - a list of ``(str, str)`` tuples that represent the
   URL to which the static directory will be mapped, and the path of the directory that contain the static files.
