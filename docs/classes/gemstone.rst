@@ -1,5 +1,5 @@
-The ``pymicroservice`` module
-=============================
+The ``gemstone`` module (main classes)
+======================================
 
 
 
@@ -18,9 +18,10 @@ The ``pymicroservice`` module
     .. autoattribute:: gemstone.MicroService.max_parallel_blocking_tasks
         :annotation: = an integer representing how many parallel tasks can be executed in parallel. Defaults to os.cpu_count()
 
-    .. autoattribute:: gemstone.MicroService.api_token_header
-        :annotation: = a string representing what HTTP header will contain the API token based on which access to the
-                private methods will be granted (or not).
+    .. autoattribute:: gemstone.MicroService.validation_strategies
+        :annotation: = a list of validation strategy objects that will try to extract the api token from
+                    various sources in order to validate the access to the private methods. See :ref:`token_validation`
+                    for more details.
 
     .. autoattribute:: gemstone.MicroService.extra_handlers
         :annotation: = A list of tuples of form (url_expression, tornado_handler) that will be added to the default

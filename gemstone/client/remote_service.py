@@ -43,8 +43,6 @@ class CallableMethod(object):
         request_body.setdefault("method", self.method)
         request_body.setdefault("params", params)
 
-        print(request_body, request_headers)
-
         if self.req_id:
             request_body["id"] = self.req_id
         response = self.service.make_request_sync(self.url, json_body=request_body, headers=request_headers)

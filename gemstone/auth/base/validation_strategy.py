@@ -2,6 +2,11 @@ import abc
 
 
 class BaseValidationStrategy(metaclass=abc.ABCMeta):
+    """
+    Base class for validation strategies.
+
+    """
+
     @abc.abstractmethod
     def extract_api_token(self, request_handler):
         """
@@ -10,5 +15,8 @@ class BaseValidationStrategy(metaclass=abc.ABCMeta):
 
         :param request_handler: a :py:class:`tornado.web.RequestHandler` that handles the current request
         :return:
+
+        .. versionadded:: 0.3.0
+
         """
         pass

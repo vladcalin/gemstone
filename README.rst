@@ -23,7 +23,7 @@ Motivation
 
 In the past years, the microservice-based architecture became very popular in the computing field. 
 Although this architecture grew more and more popular, there are a few tools that can help an
-individual to build such systems. The current alternatives are using [nameko](https://github.com/nameko/nameko) 
+individual to build such systems. The current alternatives are using `nameko <https://github.com/nameko/nameko>`_
 or by building a web application that acts like a microservice. I started developing this framework in order
 to provide a tool for creating and managing such systems with ease, and that are capable of being specialized in
 a certain role, be it entity management, data storage or just computing.
@@ -109,16 +109,17 @@ The response will be
 ::
 
     {
+        "jsonrpc": "2.0",
         "error": null,
         "id": 1,
-        "response": "hello world"
+        "response": "hello world",
     }
 
 In order to access the private method, we have to include in the HTTP
 request an ``X-Api-Token`` header with the value ``hello_world``, so that the
-method ``api_token_is_valid`` will return ``True``.
+method ``api_token_is_valid`` will return ``True`` (if the defaults configuration was kept).
 
-This library offers a class through which you can interact with various services:
+This library offers a class through which you can interact programmatically with various services:
 
 ::
 

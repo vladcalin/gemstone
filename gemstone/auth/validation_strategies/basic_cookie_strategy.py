@@ -3,6 +3,17 @@ from gemstone.auth.base.validation_strategy import BaseValidationStrategy
 
 class BasicCookieStrategy(BaseValidationStrategy):
     def __init__(self, cookie_name="AuthToken", template=None):
+        """
+
+        Extracts the api token from a cookie. By default, tries to extract it from
+        the ``'AuthToken'`` cookie
+
+        :param cookie_name:
+        :param template:
+
+        ... versionadded:: 0.3.0
+
+        """
         self.cookie = cookie_name
         if template:
             self.template = template

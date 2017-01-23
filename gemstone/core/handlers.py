@@ -237,7 +237,7 @@ class TornadoJsonRpcHandler(RequestHandler):
 
     def prepare_method_call(self, method, args):
         """
-        Wraps a method so that method() will call method(*args) or method(**args), depending of args type
+        Wraps a method so that method() will call ``method(*args)`` or ``method(**args)``, depending of args type
 
         :param method: a callable object (method)
         :param args: dict or list with the parameters for the function
