@@ -13,8 +13,8 @@ __all__ = [
 class TornadoJsonRpcHandler(RequestHandler):
     methods = None
     executor = None
-    api_token_header = None
-    api_token_handler = None
+    validation_strategies = None
+    api_token_handlers = None
 
     class _GenericErrorId:
         PARSE_ERROR = "PARSE_ERROR"
@@ -48,11 +48,11 @@ class TornadoJsonRpcHandler(RequestHandler):
         super(TornadoJsonRpcHandler, self).__init__(*args, **kwargs)
 
     # noinspection PyMethodOverriding
-    def initialize(self, methods, executor, api_token_header, api_token_handler):
+    def initialize(self, methods, executor, validation_strategies, api_token_handler):
         self.methods = methods
         self.executor = executor
-        self.api_token_header = api_token_header
-        self.api_token_handler = api_token_handler
+        self.validation_strategies = validation_strategies
+        self.api_token_handlers = api_token_handler
         self.request_is_finished = False
 
     @coroutine
@@ -120,7 +120,8 @@ class TornadoJsonRpcHandler(RequestHandler):
         # check for private access
         method = self.methods[single_request["method"]]
         if method.is_private:
-            if not self.api_token_handler(self.request.headers.get(self.api_token_header, None)):
+            token = self.extract_api_token()
+            if not self.api_token_handlers(token):
                 err = self.get_generic_jsonrpc_response(self._GenericErrorId.ACCESS_DENIED)
                 return self.make_response_dict(error=err, id=id_)
 
@@ -216,7 +217,6 @@ class TornadoJsonRpcHandler(RequestHandler):
             self.write(json.dumps(self.make_response_dict(result, error, id)))
             self.request_is_finished = True
 
-
     def write_batch_response(self, *results):
         self.set_header("Content-Type", "application/json")
         self.write(json.dumps(results))
@@ -266,3 +266,9 @@ class TornadoJsonRpcHandler(RequestHandler):
     def handle_batch_request(self, req_body):
         responses = yield [self.handle_single_request(single_req) for single_req in req_body]
         return responses
+
+    def extract_api_token(self):
+        for handler in self.validation_strategies:
+            token = handler.extract_api_token(self)
+            if token:
+                return token

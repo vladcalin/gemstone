@@ -1,6 +1,7 @@
 from unittest import TestCase
 import threading
 import time
+from gemstone.auth.validation_strategies.header_strategy import HeaderValidationStrategy
 
 from gemstone.client.remote_service import RemoteService
 from gemstone import MicroService, public_method, private_api_method
@@ -44,7 +45,11 @@ class Service1(MicroService):
 
 class Service2(MicroService):
     name = "test.service.client.2"
-    api_token_header = "Custom-Header"
+
+    validation_strategies = [
+        HeaderValidationStrategy(header_name="Custom-Header")
+    ]
+
     host = HOST
     port = PORT2
 
@@ -134,17 +139,18 @@ class ClientTestCase(TestCase):
             result = client.methods.method5("test")
 
     def test_method_call_private_token_ok(self):
-        client = RemoteService(self.service_url, api_key="test-token")
+        client = RemoteService(self.service_url, options={"auth_type": "header", "auth_token": "test-token"})
         result = client.methods.method5("test")
         self.assertEqual(result, "private test")
 
     def test_method_call_private_token_incorrect(self):
-        client = RemoteService(self.service_url, api_key="wrong-token")
+        client = RemoteService(self.service_url, options={"auth_type": "header", "auth_token": "wrong-token"})
         with self.assertRaises(CalledServiceError):
             result = client.methods.method5("test")
 
     def test_method_call_custom_api_token_header(self):
-        client = RemoteService(self.service_url2, api_header="Custom-Header", api_key="test-token")
+        client = RemoteService(self.service_url2, options={"auth_type": "header", "auth_params": "Custom-Header",
+                                                           "auth_token": "test-token"})
         result = client.methods.test()
         self.assertTrue(result)
 
@@ -162,7 +168,7 @@ class ClientTestCase(TestCase):
         client = RemoteService(self.service_url)
         response = client.notifications.method1(1, 2, 3)
         self.assertTrue(response is None)  # every notification should return None because
-                                           # do not care about the answer
+        # do not care about the answer
 
 
 if __name__ == '__main__':

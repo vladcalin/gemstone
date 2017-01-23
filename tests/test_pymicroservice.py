@@ -3,6 +3,7 @@ import json
 from tornado.testing import AsyncHTTPTestCase
 
 from gemstone import MicroService, public_method, private_api_method
+from gemstone.auth.validation_strategies.header_strategy import HeaderValidationStrategy
 
 TEST_HOST, TEST_PORT = ("localhost", 65503)
 
@@ -13,7 +14,9 @@ class TestService(MicroService):
     host = TEST_HOST
     port = TEST_PORT
 
-    api_token_header = "X-Testing-Token"
+    validation_strategies = [
+        HeaderValidationStrategy(header_name="X-Testing-Token")
+    ]
 
     @public_method
     def test1(self):

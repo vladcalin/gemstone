@@ -10,9 +10,9 @@ from gemstone.errors import CalledServiceError
 
 
 class CallableMethod(object):
-    def __init__(self, service_instance, method, req_id):
-        self.url = service_instance.url
-        self.service = service_instance
+    def __init__(self, remote_service, method, req_id):
+        self.url = remote_service.url
+        self.service = remote_service
         self.method = method
         self.req_id = req_id
 
@@ -25,15 +25,26 @@ class CallableMethod(object):
 
         # construct the request headers
         request_headers = {"Content-Type": "application/json"}
-        if self.service.api_key:
-            request_headers.setdefault(self.service.api_header or "X-Api-Token", self.service.api_key)
+
+        options = self.service.options
+        request_body = {}
+
+        if options:
+            if options.get("auth_type") == "header":
+                request_headers[options.get("auth_params", "X-Api-Token")] = options.get("auth_token")
+            elif options.get("auth_type") == "cookie":
+                request_headers["cookie"] = "{}={}".format(options.get("auth_params", "AuthCookie"),
+                                                           options.get("auth_token"))
+            elif options.get("auth_type") == "request":
+                request_body.setdefault(options.get("auth_params", "auth_token"), options.get("auth_token"))
 
         # construct the request body
-        request_body = {
-            "jsonrpc": "2.0",
-            "method": self.method,
-            "params": params,
-        }
+        request_body.setdefault("jsonrpc", "2.0")
+        request_body.setdefault("method", self.method)
+        request_body.setdefault("params", params)
+
+        print(request_body, request_headers)
+
         if self.req_id:
             request_body["id"] = self.req_id
         response = self.service.make_request_sync(self.url, json_body=request_body, headers=request_headers)
@@ -48,8 +59,8 @@ class CallableMethod(object):
 
 
 class ServiceMethodProxy(object):
-    def __init__(self, methods, remote_service, is_notification=False):
-        self._methods = methods
+    def __init__(self, remote_service, is_notification=False):
+        self._methods = remote_service._methods
         self._remote_service = remote_service
         self._is_notification = is_notification
 
@@ -57,7 +68,6 @@ class ServiceMethodProxy(object):
         if item.startswith("_"):
             return super(ServiceMethodProxy, self).__getattribute__(item)
         if item in self._methods:
-
             return CallableMethod(self._remote_service, item,
                                   None if self._is_notification else self._remote_service.req_id)
         else:
@@ -65,27 +75,28 @@ class ServiceMethodProxy(object):
 
 
 class RemoteService(object):
-    def __init__(self, url, *, threads=os.cpu_count(), api_key=None, api_header=None):
+    def __init__(self, url, *, threads=os.cpu_count(), options=None):
         """
         Class used to interact with other services
 
         :param url: The endpoint where the service listens. Must be a valid URL (ex: ``"http://127.0.0.1:5000/api"``)
         :param threads:
-        :param api_key: The api key to be used for requests
-        :param api_header: The custom api header that is used by the service
+        :param options: a :py:class:`dict` with options for the client. Available options are:
+                        - auth_type: 'cookie', 'header', 'request'
+                        - auth_params: depends on auth_type.
+                        - auth_token: :py:class`str` with
         """
         self.url = url
         self._executor = ThreadPoolExecutor(threads)
         self.req_id = 1
-        self.api_key = api_key
-        self.api_header = api_header
+        self.options = options
 
         self._methods = []
         self.name = None
         self.refresh_service_info()
 
-        self._method_proxy = ServiceMethodProxy(self._methods, self)
-        self._notification_proxy = ServiceMethodProxy(self._methods, self, is_notification=True)
+        self._method_proxy = ServiceMethodProxy(self)
+        self._notification_proxy = ServiceMethodProxy(self, is_notification=True)
 
     @property
     def methods(self):

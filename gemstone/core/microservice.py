@@ -16,6 +16,7 @@ from gemstone.errors import ServiceConfigurationError, AccessDeniedError
 from gemstone.core.handlers import TornadoJsonRpcHandler
 from gemstone.core.decorators import public_method
 from gemstone.client.remote_service import RemoteService
+from gemstone.auth.validation_strategies.header_strategy import HeaderValidationStrategy
 
 __all__ = [
     'MicroService'
@@ -35,7 +36,9 @@ class MicroService(ABC):
     extra_handlers = []
 
     # protocol specs
-    api_token_header = "X-Api-Token"
+    validation_strategies = [
+        HeaderValidationStrategy(header_name="X-Api-Token")
+    ]
 
     # service registry integration
     service_registry_urls = []
@@ -148,8 +151,8 @@ class MicroService(ABC):
              {
                  "methods": self.methods,
                  "executor": self._executor,
-                 "api_token_header":
-                     self.api_token_header,
+                 "validation_strategies":
+                     self.validation_strategies,
                  "api_token_handler": self.api_token_is_valid
              })
         ]
@@ -289,11 +292,9 @@ class MicroService(ABC):
         start_parser.add_argument("--name", help="The name of the microservice. Currently {}".format(cls.name))
         start_parser.add_argument("--host", help="The address to bind to. Currently {}".format(cls.host))
         start_parser.add_argument("--port", help="The port to bind to. Currently {}".format(cls.port), type=int)
-        start_parser.add_argument("--api_token_header", help="The header to be used for access validation."
-                                                             "Currently {}".format(cls.api_token_header))
         start_parser.add_argument("--max_parallel_tasks", help="Maximum number of methods to be"
                                                                "executed concurrently. Currently {}".format(
-                                                                cls.max_parallel_blocking_tasks))
+            cls.max_parallel_blocking_tasks))
         start_parser.add_argument("--service_registry", nargs="*",
                                   help="A url where a service registry can be found. Currently {}".format(
                                       cls.service_registry_urls))
@@ -309,7 +310,6 @@ class MicroService(ABC):
             cls._set_option_if_available(args, "name")
             cls._set_option_if_available(args, "host")
             cls._set_option_if_available(args, "port")
-            cls._set_option_if_available(args, "api_token_header")
             cls._set_option_if_available(args, "max_parallel_tasks")
             if getattr(args, "service_registry", None):
                 cls.service_registry_urls = args.service_registry
