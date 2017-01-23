@@ -5,6 +5,7 @@ from concurrent.futures import ThreadPoolExecutor
 import functools
 import random
 import argparse
+import sys
 
 from tornado.web import RequestHandler, StaticFileHandler
 from tornado.gen import coroutine
@@ -21,6 +22,12 @@ from gemstone.auth.validation_strategies.header_strategy import HeaderValidation
 __all__ = [
     'MicroService'
 ]
+
+IS_WINDOWS = sys.platform.startswith("win32")
+
+if IS_WINDOWS:
+    def dummy_windows():
+        pass
 
 
 class MicroService(ABC):
@@ -46,7 +53,10 @@ class MicroService(ABC):
 
     # periodic tasks
     periodic_tasks = []
-    default_periodic_tasks = []
+
+    # in some situations, on Windows the event loop may hang
+    # http://stackoverflow.com/questions/33634956/why-would-a-timeout-avoid-a-tornado-hang/33643631#33643631
+    default_periodic_tasks = [(dummy_windows, 0.5)] if IS_WINDOWS else []
 
     # io event related
     max_parallel_blocking_tasks = os.cpu_count()

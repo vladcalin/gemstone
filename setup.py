@@ -40,7 +40,7 @@ CLASSIFIERS = """
     Programming Language :: Python :: 3.6
 """
 URL = "https://github.com/vladcalin/gemstone"
-KEYWORDS = "microservice service gemstone jsonrpc rpc http asynchronous"
+KEYWORDS = "microservice service gemstone jsonrpc rpc http asynchronous async tornado asyncio"
 DESCRIPTION = "Build microservices with Python"
 LICENSE = "MIT"
 
