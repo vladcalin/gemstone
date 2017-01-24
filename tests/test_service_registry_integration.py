@@ -28,7 +28,7 @@ class ServiceRegistryIntegrationTestCase(TestCase):
 
     @patch("gemstone.core.microservice.PeriodicCallback")
     @patch("urllib.request.urlopen")
-    @skipIf(IS_WINDOWS, "Windows needs extra callbacks :(")
+    @skipIf(IS_WINDOWS, "different default callbacks for windows")
     def test_periodic_callback_init(self, urlopen, PeriodicCallback):
         callbacks = list(TestServiceNoServiceRegistries().periodic_task_iter())
         self.assertEqual(len(callbacks), 0)
