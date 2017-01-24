@@ -198,7 +198,7 @@ class JsonRpcSpecTestCase(AsyncHTTPTestCase):
         resp = self.fetch("/api", method="POST", headers={"Content-Type": "application/json"}, body=json.dumps(payload))
         resp = json.loads(resp.body.decode())
         self.assertEqual(resp["jsonrpc"], "2.0")
-        self.assertEqual(resp["result"], "received")
+        self.assertEqual(resp["result"], None)
         self.assertEqual(resp["error"], None)
         self.assertTrue("id" not in resp)
 
@@ -218,7 +218,7 @@ class JsonRpcSpecTestCase(AsyncHTTPTestCase):
         resp = self.fetch("/api", method="POST", headers={"Content-Type": "application/json"}, body=json.dumps(payload))
         resp = json.loads(resp.body.decode())
         self.assertEqual(resp["jsonrpc"], "2.0")
-        self.assertEqual(resp["result"], "received")
+        self.assertEqual(resp["result"], None)
         self.assertEqual(resp["error"], None)
         self.assertTrue("id" not in resp)
 

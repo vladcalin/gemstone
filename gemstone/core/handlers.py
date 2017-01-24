@@ -5,6 +5,9 @@ import asyncio
 from tornado.web import RequestHandler
 from tornado.gen import coroutine
 
+from gemstone.core.structs import JsonRpcResponse, JsonRpcRequest, JsonRpcRequestBatch, JsonRpcResponseBatch, \
+    GenericResponse
+
 __all__ = [
     'TornadoJsonRpcHandler'
 ]
@@ -15,33 +18,6 @@ class TornadoJsonRpcHandler(RequestHandler):
     executor = None
     validation_strategies = None
     api_token_handlers = None
-
-    class _GenericErrorId:
-        PARSE_ERROR = "PARSE_ERROR"
-        INVALID_REQUEST = "INVALID_REQUEST"
-        METHOD_NOT_FOUND = "METHOD_NOT_FOUND"
-        INVALID_PARAMS = "INVALID_PARAMS"
-        INTERNAL_ERROR = "INTERNAL_ERROR"
-        ACCESS_DENIED = "ACCESS_DENIED"
-
-        ALL = [PARSE_ERROR, INVALID_PARAMS, METHOD_NOT_FOUND, INVALID_REQUEST, INTERNAL_ERROR, ACCESS_DENIED]
-
-    class _ErrorCodes:
-        PARSE_ERROR = -32700
-        INVALID_REQUEST = -32600
-        METHOD_NOT_FOUND = -32601
-        INVALID_PARAMS = -32602
-        INTERNAL_ERROR = -32603
-        OTHERS = -32000
-        ACCESS_DENIED = -32001
-
-    class _ErrorMessages:
-        PARSE_ERROR = "Parse error"
-        INVALID_REQUEST = "Invalid Request"
-        METHOD_NOT_FOUND = "Method not found"
-        INVALID_PARAMS = "Invalid params"
-        INTERNAL_ERROR = "Internal error"
-        ACCESS_DENIED = "Access denied"
 
     def __init__(self, *args, **kwargs):
         self.request_is_finished = False
@@ -58,33 +34,50 @@ class TornadoJsonRpcHandler(RequestHandler):
     @coroutine
     def post(self):
         if self.request.headers.get("Content-type") != "application/json":
-            error = self.get_generic_jsonrpc_response(self._GenericErrorId.INVALID_REQUEST)
-            self.write_response(None, error, None)
+            self.write_single_response(GenericResponse.INVALID_REQUEST)
             return
 
         # validate json structure
         try:
             req_body = json.loads(self.request.body.decode())
         except ValueError:
-            error = self.get_generic_jsonrpc_response(self._GenericErrorId.PARSE_ERROR)
-            self.write_response(None, error, None)
+            self.write_single_response(GenericResponse.PARSE_ERROR)
             return
 
+        # handle the actual call
         if isinstance(req_body, dict):
-            result = yield self.handle_single_request(req_body)
+            # single call
+            req_object = JsonRpcRequest.from_dict(req_body)
+
+            # validation errors occured
+            if req_object.is_invalid():
+                resp = GenericResponse.INVALID_REQUEST
+                resp.id = req_object.id
+                self.write_single_response(resp)
+                return
+
+            result = yield self.handle_single_request(req_object)
             if result is None:  # is notification and a ack resp was already sent
                 return
-            self.write_response(result=result["result"], error=result["error"],
-                                id=result.get("id", None))  # ID not returned if some error appeared
+            self.write_single_response(result)
         elif isinstance(req_body, list):
-            results = yield self.handle_batch_request(req_body)
+            # batch call
+            batch_request_object = JsonRpcRequestBatch()
+            for req_dict in req_body:
+                batch_request_object.add_item(JsonRpcRequest.from_dict(req_dict))
+
+            if not batch_request_object:
+                self.write_single_response(GenericResponse.INVALID_REQUEST)
+
+            results = yield self.handle_batch_request(batch_request_object)
+
             valid_results = list(filter(lambda x: x is not None, results))
-            self.write_batch_response(*valid_results)
+            self.write_batch_response(JsonRpcResponseBatch(*valid_results))
         else:
-            self.write_response(error=self.get_generic_jsonrpc_response(self._GenericErrorId.INVALID_REQUEST))
+            self.write_single_response(GenericResponse.INVALID_REQUEST)
 
     @coroutine
-    def handle_single_request(self, single_request):
+    def handle_single_request(self, request_object):
         """
         Handles a single request object and returns the correct result as follows:
 
@@ -92,148 +85,107 @@ class TornadoJsonRpcHandler(RequestHandler):
         - ``None`` if it was a notification (if None is returned, a response object with "received" body
           was already sent to the client.
 
-        :param single_request: A :py:class:`dict` object representing a Request object
-        :return: A :py:class:`dict` object representing a Response object or None if no response is expected
+        :param request_object: A :py:class:`gemstone.core.structs.JsonRpcRequest` object representing a Request object
+        :return: A :py:class:`gemstone.core.structs.JsonRpcResponse` object representing a Response object or
+                 None if no response is expected (it was a notification)
 
         """
-        is_notification = False
         error = None
         result = None
-        id_ = single_request.get("id", None)
-
-        # validate keys
-        if not self.validate_jsonrpc_structure(single_request):
-            err = self.get_generic_jsonrpc_response(self._GenericErrorId.INVALID_REQUEST)
-            return self.make_response_dict(None, err, id_)
+        id_ = request_object.id
 
         # check if it is a notification or the client waits a response
-        if "id" not in single_request or single_request["id"] is None:
-            self.write_response("received")
-            is_notification = True
+        if request_object.is_notification():
+            self.write_single_response(GenericResponse.NOTIFICATION_RESPONSE)
 
         # validate method name
-        if single_request["method"] not in self.methods:
-            if not is_notification:
-                err = self.get_generic_jsonrpc_response(self._GenericErrorId.METHOD_NOT_FOUND)
-                return self.make_response_dict(error=err, id=id_)
+        if request_object.method not in self.methods:
+            if not request_object.is_notification():
+                resp = GenericResponse.METHOD_NOT_FOUND
+                resp.id = id_
+                return resp
 
         # check for private access
-        method = self.methods[single_request["method"]]
+        method = self.methods[request_object.method]
         if method.is_private:
             token = self.extract_api_token()
             if not self.api_token_handlers(token):
-                err = self.get_generic_jsonrpc_response(self._GenericErrorId.ACCESS_DENIED)
-                return self.make_response_dict(error=err, id=id_)
+                resp = GenericResponse.ACCESS_DENIED
+                resp.id = id_
+                return resp
 
-        method = self.prepare_method_call(method, single_request.get("params", {}))
+        method = self.prepare_method_call(method, request_object.params)
         if not method:
-            if not is_notification:
-                err = self.get_generic_jsonrpc_response(self._GenericErrorId.INVALID_REQUEST)
-                return self.make_response_dict(error=err, id=id_)
+            # this should happen only when the client sends "params": 1 or "params": true or "params": "string"
+            if not request_object.is_notification():
+                resp = GenericResponse.INVALID_REQUEST
+                resp.id = id_
+                return resp
             return
+
         try:
             result = yield self.call_method(method)
         except TypeError as e:
             # TODO: find a proper way to check that the function got the wrong parameters (with **kwargs)
             if "got an unexpected keyword argument" in e.args[0]:
-                err = self.get_generic_jsonrpc_response(self._GenericErrorId.INVALID_PARAMS)
-                return self.make_response_dict(None, err, id_)
+                resp = GenericResponse.INVALID_PARAMS
+                resp.id = id_
+                return resp
             # TODO: find a proper way to check that the function got the wrong parameters (with *args)
-            if "takes" in e.args[0] and "positional argument" in e.args[0] and "were given" in e.args[0]:
-                err = self.get_generic_jsonrpc_response(self._GenericErrorId.INVALID_PARAMS)
-                return self.make_response_dict(None, err, id_)
+            elif "takes" in e.args[0] and "positional argument" in e.args[0] and "were given" in e.args[0]:
+                resp = GenericResponse.INVALID_PARAMS
+                resp.id = id_
+                return resp
+            else:
+                raise
         except Exception as e:
-            err = self.get_generic_jsonrpc_response(self._GenericErrorId.INTERNAL_ERROR)
-            err["data"] = {
+            err = GenericResponse.INTERNAL_ERROR
+            err.id = id_
+            err.error["data"] = {
                 "class": type(e).__name__,
                 "info": str(e)
             }
-            return self.make_response_dict(None, err, id_)
+            return err
 
-        if not is_notification:
-            return self.make_response_dict(result, error, id_)
+        if not request_object.is_notification():
+            return JsonRpcResponse(result=result, error=error, id=id_)
 
-    def get_generic_jsonrpc_response(self, error_id):
-        if error_id not in self._GenericErrorId.ALL:
-            raise ValueError("Invalid error id: {0} (allowed only {1})".format(error_id, self._GenericErrorId.ALL))
-
-        return self.make_error_object(
-            getattr(self._ErrorCodes, error_id),
-            getattr(self._ErrorMessages, error_id)
-        )
-
-    def validate_jsonrpc_structure(self, body):
-        """
-        Makes sure the **body** contains the right keys in order to
-        respect the JSON RPC specifications. The request must contain: ``"jsonrpc"`` key with the ``"2.0"`` value,
-        a ``"method"`` key.
-
-        :param body: :py:class:`dict` representing a JSON RPC request
-        :return:
-        """
-        for mandatory_key in ["jsonrpc", "method"]:
-            if mandatory_key not in body:
-                return False
-
-        if body["jsonrpc"] != "2.0":
-            return False
-
-        return True
-
-    def make_response_dict(self, result=None, error=None, id=None):
-        response = {
-            "jsonrpc": "2.0",
-            "result": result,
-            "error": error
-        }
-
-        if id:
-            response["id"] = id
-        return response
-
-    def make_error_object(self, code, message, data=None):
-        err_obj = {
-            "code": code,
-            "message": message,
-        }
-        if data:
-            err_obj["data"] = data
-        return err_obj
-
-    def write_response(self, result=None, error=None, id=None):
+    def write_single_response(self, response_obj):
         """
         Writes a json rpc response ``{"result": result, "error": error, "id": id}``.
         If the ``id`` is ``None``, the response will not contain an ``id`` field.
         The response is sent to the client as an ``application/json`` response. Only one call per
         response is allowed
 
-        :param result: :py:class:`dict` representing the method call result, ``None`` if an error occurred.
-        :param error: :py:class:`dict` representing the error resulted in the method call, ``None`` if no error occurred
-        :param id: the ``id`` of the request that generated this response
+        :param response_obj: A Json rpc response object
         :return:
         """
+        if not isinstance(response_obj, JsonRpcResponse):
+            raise ValueError("Expected JsonRpcResponse, but got {} instead".format(type(response_obj).__name__))
+
         if not self.request_is_finished:
             self.set_header("Content-Type", "application/json")
-            self.write(json.dumps(self.make_response_dict(result, error, id)))
+            self.finish(response_obj.to_string())
             self.request_is_finished = True
 
-    def write_batch_response(self, *results):
+    def write_batch_response(self, batch_response):
         self.set_header("Content-Type", "application/json")
-        self.write(json.dumps(results))
+        self.write(batch_response.to_string())
 
     def write_error(self, status_code, **kwargs):
         if status_code == 405:
             self.set_status(405)
-            self.write_response(None, {"message": "Method not allowed"})
+            self.write_single_response(JsonRpcResponse(error={"code": 405, "message": "Method not allowed"}))
             return
 
         exc_info = kwargs["exc_info"]
-        err = self.make_error_object(self._ErrorCodes.INTERNAL_ERROR, self._ErrorMessages.INTERNAL_ERROR, data={
+        err = GenericResponse.INTERNAL_ERROR
+        err.error["data"] = {
             "class": str(exc_info[0].__name__),
             "info": str(exc_info[1])
-        })
+        }
         self.set_status(200)
-        self.write_response(error=err)
+        self.write_single_response(err)
 
     def prepare_method_call(self, method, args):
         """
@@ -263,8 +215,8 @@ class TornadoJsonRpcHandler(RequestHandler):
         return result
 
     @coroutine
-    def handle_batch_request(self, req_body):
-        responses = yield [self.handle_single_request(single_req) for single_req in req_body]
+    def handle_batch_request(self, batch_req_obj):
+        responses = yield [self.handle_single_request(single_req) for single_req in batch_req_obj.to_list()]
         return responses
 
     def extract_api_token(self):

@@ -60,7 +60,6 @@ class TestServiceWithCookieAuth(MicroService):
         return arg
 
     def api_token_is_valid(self, api_token):
-        print(api_token)
         return api_token == "test_ok"
 
 
