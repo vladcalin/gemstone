@@ -6,7 +6,10 @@ Token validation strategies
 .. autoclass:: gemstone.auth.base.validation_strategy.BaseValidationStrategy
     :members:
 
-.. automodule:: gemstone.auth.validation_strategies
+.. autoclass:: gemstone.auth.validation_strategies.HeaderValidationStrategy
+    :members:
+
+.. autoclass:: gemstone.auth.validation_strategies.BasicCookieStrategy
     :members:
 
 

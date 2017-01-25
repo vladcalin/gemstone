@@ -11,7 +11,7 @@ class BasicCookieStrategy(BaseValidationStrategy):
         :param cookie_name:
         :param template:
 
-        ... versionadded:: 0.3.0
+        .. versionadded:: 0.3.0
 
         """
         self.cookie = cookie_name

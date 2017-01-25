@@ -1,3 +1,21 @@
+0.3.1 (25.01.2017)
+~~~~~~~~~~~~~~~~~~
+
+- fixed event loop freezing on Windows
+- fixed a case when a ``TypeError`` was silenced when handling the bad parameters error
+  in JSON RPC 2.0 handler (#21)
+- major refactoring (handling of JSON RPC objects as Python objects instead of dicts and lists)
+  to improve readability and maintainability
+- improved documentation
+
+0.3.0 (23.01.2017)
+~~~~~~~~~~~~~~~~~~
+- added validation strategies (method for extraction of api token from the request)
+- base subclass for implementing validation strategies
+- built in validation strategies: ``HeaderValidationStrategy``, ``BasicCookieStrategy``
+- improved documentation
+
+
 0.2.0 (17.01.2017)
 ~~~~~~~~~~~~~~~~~~
 
