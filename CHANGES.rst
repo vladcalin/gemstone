@@ -1,3 +1,10 @@
+0.4.0 (25.01.2017)
+~~~~~~~~~~~~~~~~~~
+
+- modified ``accessible_at`` attribute of the ``gemstone.MicroService`` class
+- added the ``endpoint`` attribute to the ``gemstone.MicroService`` class
+- improved how the microservice communicates with the service registry
+
 0.3.1 (25.01.2017)
 ~~~~~~~~~~~~~~~~~~
 

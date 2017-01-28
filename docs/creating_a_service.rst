@@ -88,19 +88,20 @@ Required attributes
 - :py:data:`gemstone.MicroService.name` is required and defines the name of the microservice.
   **MUST** be defined by the concrete implementation, otherwise an error will be thrown at startup
 
-Specifying different host and port
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Specifying different host, port and location
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 - :py:data:`gemstone.MicroService.host` - specifies the address to bind to (hostname or IP address).
   Defaults to ``127.0.0.1``.
 - :py:data:`gemstone.MicroService.port` - an :py:class:`int` that specifies the port to bind to.
   Defaults to ``8000``
-- :py:data:`gemstone.MicroService.accessible_at` - a (`address` : :py:class:`str`, `port` : :py:class:`int`) tuple
+- :py:data:`gemstone.MicroService.endpoint` - a string representing the url where the service api will be accessible.
+  Defaults to ``"/api"``, so by default, the service will be accessible at ``http://{host}:{port}/api``.
+- :py:data:`gemstone.MicroService.accessible_at` - a string representing a http(s) address
   specifying a custom location where the service can be found. If at least one service registry is configured,
-  the service will send these values to it so that other services can access at the specified location.
+  the service will send this value to it so that other services can access at the specified location.
 
-  The `host` component can be a an address (`"127.0.0.1"`, `"192.168.0.3"`, etc) or a domain (if the service is
-  accessible via DNS name. Example: `"myservice.example.com"`).
+  Example: ``"http://2a330155abfc.myservice.com/workers/api"``
 
   For example, it is useful when the service runs behind a load balancer and the
   :py:data:`gemstone.MicroService.accessible_at` attribute will point to the address of the load balancer,
@@ -147,7 +148,7 @@ This library provides a way to quickly add behaviour that is not API-related.
 
   .. note::
 
-        The ``/api`` endpoint is reserved for the JSON RPC service.
+        Make sure that no other handle overwrites the endpoint of the service.
 
 - :py:data:`gemstone.MicroService.template_dir` - a directory where templates will be searched in, when, in a
   custom handler we render a template via :py:meth:`tornado.web.RequestHandler.render`.
@@ -191,7 +192,7 @@ Using a service registry
 
 A service registry is a remote service that keeps mappings of service names and network locations, so that each
 microservice will be able to locate another one dynamically. A service can be a service registry if it exposes
-via JSON RPC a ``ping(name, host, port)`` method and a ``locate_service(name)`` method.
+via JSON RPC a ``ping(name, url)`` method and a ``locate_service(name)`` method.
 
 - :py:data:`gemstone.MicroService.service_registry_urls` - a list of URLS where a service registry is located and
   accessible via JSON RPC.

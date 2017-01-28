@@ -173,5 +173,5 @@ class RemoteService(object):
 
         service_specs = choose_algs[choose_algorithm](service_locations)
 
-        url = "http://{host}:{port}/api".format(host=service_specs["host"], port=service_specs["port"])
+        url = service_specs
         return RemoteService(url)

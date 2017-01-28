@@ -15,6 +15,15 @@ The ``gemstone`` module (main classes)
     .. autoattribute:: gemstone.MicroService.port
         :annotation: = an integer representing the port to bind. Defaults to 8000
 
+    .. autoattribute:: gemstone.MicroService.endpoint
+        :annotation: = an string that says the url path where the service endpoint will be located.
+                    Defaults to "/api"
+
+    .. autoattribute:: gemstone.MicroService.accessible_at
+        :annotation: = a full-url that specifies where the service can be accessible. Should be defined by the
+                    user when the microservice is not directly accessible because it runs behind a load balancer
+                    or reverse proxy. Defaults to http://{host}:{port}{endpoint}
+
     .. autoattribute:: gemstone.MicroService.max_parallel_blocking_tasks
         :annotation: = an integer representing how many parallel tasks can be executed in parallel. Defaults to os.cpu_count()
 

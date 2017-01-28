@@ -36,6 +36,7 @@ class MicroService(ABC):
     host = "127.0.0.1"
     port = 8000
     accessible_at = None
+    endpoint = "/api"
 
     # extra Tornado configuration
     template_dir = "."
@@ -62,6 +63,10 @@ class MicroService(ABC):
     max_parallel_blocking_tasks = os.cpu_count()
     _executor = None
 
+    @property
+    def full_url(self):
+        return "pass"
+
     def __init__(self, io_loop=None):
         """
 
@@ -79,6 +84,12 @@ class MicroService(ABC):
         # name
         if self.name is None:
             raise ServiceConfigurationError("No name defined for the microservice")
+
+        # endpoint
+        if self.accessible_at is None:
+            self.accessible_at = "http://{host}:{port}{endpoint}".format(
+                host=self.host, port=self.port, endpoint=self.endpoint
+            )
 
         # methods
         self.methods = {}
@@ -121,7 +132,7 @@ class MicroService(ABC):
         return {
             "host": self.host,
             "port": self.port,
-            "accessible_at": self.accessible_at or "http://{}:{}/api".format(self.host, self.port),
+            "accessible_at": self.accessible_at,
             "name": self.name,
             "max_parallel_blocking_tasks": self.max_parallel_blocking_tasks,
             "methods": {m: self.methods[m].__doc__ for m in self.methods}
@@ -152,6 +163,8 @@ class MicroService(ABC):
         try:
             self.io_loop.start()
         except RuntimeError:
+            # TODO : find a way to check if the io_loop is running before trying to start it
+            # this method to check if the loop is running is ugly
             pass
 
     def make_tornado_app(self):
@@ -205,8 +218,8 @@ class MicroService(ABC):
         return logging.getLogger("tornado.application")
 
     def ping_to_service_registry(self, servreg_remote_service):
-        host, port = self.accessible_at or (self.host, self.port)
-        servreg_remote_service.notifications.ping(name=self.name, host=host, port=port)
+        url = self.accessible_at
+        servreg_remote_service.notifications.ping(name=self.name, url=url)
 
     def periodic_task_iter(self):
         for url in self.service_registry_urls:
@@ -243,12 +256,11 @@ class MicroService(ABC):
             raise ServiceConfigurationError("No service registry available")
 
         for service_reg in self.registries:
-            services = service_reg.methods.locate_service(name)
-            if not services:
+            endpoints = service_reg.methods.locate_service(name)
+            if not endpoints:
                 continue
-            random.shuffle(services)
-            for service in services:
-                url = "http://" + service["host"] + ":" + str(service["port"]) + "/api"
+            random.shuffle(endpoints)
+            for url in endpoints:
                 try:
                     return RemoteService(url)
                 except ConnectionError:
@@ -289,7 +301,7 @@ class MicroService(ABC):
             python service.py start --port=8000 --host=0.0.0.0 --service_registry http://127.0.0.1/api http://192.168.0.11/api  # override some parameters
 
 
-        :return: a function that can override and start the microservice, depending on the command line arguments
+        :return: a function that can override parameters and start the microservice, depending on the command line arguments
 
         .. versionadded:: 0.1.0
         """
@@ -302,6 +314,7 @@ class MicroService(ABC):
         start_parser.add_argument("--name", help="The name of the microservice. Currently {}".format(cls.name))
         start_parser.add_argument("--host", help="The address to bind to. Currently {}".format(cls.host))
         start_parser.add_argument("--port", help="The port to bind to. Currently {}".format(cls.port), type=int)
+        start_parser.add_argument("--accessible_at", help="The URL where the service can be accessed")
         start_parser.add_argument("--max_parallel_tasks", help="Maximum number of methods to be"
                                                                "executed concurrently. Currently {}".format(
             cls.max_parallel_blocking_tasks))
@@ -321,6 +334,7 @@ class MicroService(ABC):
             cls._set_option_if_available(args, "host")
             cls._set_option_if_available(args, "port")
             cls._set_option_if_available(args, "max_parallel_tasks")
+            cls._set_option_if_available(args, "accessible_at")
             if getattr(args, "service_registry", None):
                 cls.service_registry_urls = args.service_registry
 
