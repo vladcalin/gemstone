@@ -16,6 +16,12 @@ The **gemstone** framework
     :target: https://codeclimate.com/github/vladcalin/gemstone
     :alt: Code Climate
 
+Status
+~~~~~~
+
+This project is not ready for production use as it constantly receives improvements and it hasn't reached a mature enough phase to be declared stable.
+
+It may receive further updates that break the backwards compatilibility. 
 
 
 Motivation
