@@ -170,7 +170,7 @@ class MicroService(ABC):
     def make_tornado_app(self):
 
         handlers = [
-            (r"/api", TornadoJsonRpcHandler,
+            (self.endpoint, TornadoJsonRpcHandler,
              {
                  "methods": self.methods,
                  "executor": self._executor,

@@ -3,6 +3,7 @@ import urllib.request
 import json
 import asyncio
 import random
+import threading
 
 from concurrent.futures import ThreadPoolExecutor
 
@@ -17,8 +18,13 @@ class CallableMethod(object):
         self.req_id = req_id
 
     def __call__(self, *args, **kwargs):
+        __async = kwargs.pop("__async", False)
+
         if kwargs and args:
             raise ValueError("Cannot have positional arguments and keyword arguments at the same time")
+
+        if __async:
+            return AsyncMethodCall(self.service, self.method, args, kwargs)
 
         # construct the "params" value
         params = args or kwargs
@@ -54,6 +60,75 @@ class CallableMethod(object):
         if response["error"]:
             raise CalledServiceError(response["error"])
         return response["result"]
+
+
+class AsyncMethodCall(object):
+    def __init__(self, service, method, args, kwargs):
+        """
+        Encapsulates an asynchronous method call. The user should not be instantiated by the user.
+
+        The instantiation of this class triggers a http request in the background.
+
+        :param service: a :py:class:`gemstone.MicroService` instance that is properly initialized
+        :param method: a :py:class:`str` instance with the name if the method to be called
+        :param args: a list with the arguments
+        :param kwargs: a `dict` with the keyword arguments
+        """
+        self.service = service
+        self.method = method
+        self.args = args
+        self.kwargs = kwargs
+
+        self._lock = threading.Lock()
+        self._result = None
+        self._error = None
+        self._finished = False
+
+        self._background_thread = threading.Thread(target=self._make_sync_call)
+        self._background_thread.start()
+
+    def _make_sync_call(self):
+        error = None
+        try:
+            result = getattr(self.service.methods, self.method)(*self.args, **self.kwargs)
+        except CalledServiceError as e:
+            error = e.args[0]
+            result = None
+
+        with self._lock:
+            self._finished = True
+            self._error = error
+            self._result = result
+
+    def wait(self):
+        """
+        Waits for the async call to finish and returns the result
+
+        :return: the result of the method call
+        """
+        self._background_thread.join()
+        return self._result
+
+    def result(self):
+        """
+        Returns the result of the method call or `None` if not available or the call failed.
+        """
+        with self._lock:
+            return self._result
+
+    def error(self):
+        """
+        Returns the error from the method call (if any).
+        """
+        with self._lock:
+            return self._error
+
+    def finished(self):
+        """
+        Indicates if the request was finished or not.
+        """
+        with self._lock:
+            return self._finished
 
 
 class ServiceMethodProxy(object):
