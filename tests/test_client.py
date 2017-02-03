@@ -1,10 +1,11 @@
 from unittest import TestCase
+from unittest.mock import MagicMock, call
 import threading
 import time
 from gemstone.auth.validation_strategies.header_strategy import HeaderValidationStrategy
 
-from gemstone.client.remote_service import RemoteService
-from gemstone import MicroService, public_method, private_api_method
+from gemstone.client.remote_service import RemoteService, AsyncMethodCall
+from gemstone import MicroService, public_method, private_api_method, as_completed, first_completed, make_callbacks
 from gemstone.errors import CalledServiceError
 
 HOST, PORT = "127.0.0.1", 6799
@@ -30,6 +31,16 @@ class Service1(MicroService):
         if not isinstance(a, int) or not isinstance(b, int):
             raise ValueError("Bad type for a and b")
         return a + b
+
+    @public_method
+    def sleep(self, seconds):
+        time.sleep(seconds)
+        return seconds
+
+    @public_method
+    def sleep_with_error(self, seconds):
+        time.sleep(seconds)
+        raise ValueError(seconds)
 
     @public_method
     def method4(self, arg1, arg2):
@@ -84,7 +95,8 @@ class ClientTestCase(TestCase):
 
         self.assertEqual(client.name, "test.service.client.1")
         self.assertCountEqual(client.get_available_methods(),
-                              ["get_service_specs", "method1", "method2", "method3", "method4", "method5"])
+                              ["get_service_specs", "method1", "method2", "method3", "method4", "method5", "sleep",
+                               "sleep_with_error"])
 
     def test_method_call_no_args(self):
         client = RemoteService(self.service_url)
@@ -169,6 +181,83 @@ class ClientTestCase(TestCase):
         response = client.notifications.method1(1, 2, 3)
         self.assertTrue(response is None)  # every notification should return None because
         # do not care about the answer
+
+    def test_async_single_call_valid_result(self):
+        client = RemoteService(self.service_url)
+
+        r = client.methods.method3(1, 2, __async=True)
+
+        self.assertIsInstance(r, AsyncMethodCall)
+
+        r.wait()
+
+        self.assertEqual(r.result(), 3)
+        self.assertIsNone(r.error())
+        self.assertTrue(r.finished())
+
+    def test_async_single_call_error(self):
+        client = RemoteService(self.service_url)
+        r = client.methods.method3("a", "b", __async=True)
+
+        self.assertIsInstance(r, AsyncMethodCall)
+
+        r.wait()
+
+        self.assertIsNone(r.result())
+
+        self.assertIsNotNone(r.error())
+        self.assertEqual(r.error()["message"].lower(), "internal error")
+        self.assertEqual(r.error()["code"], -32603)
+        self.assertEqual(r.error()["data"]["class"], "ValueError")
+
+        self.assertTrue(r.finished())
+
+    def test_async_as_completed_async(self):
+        client = RemoteService(self.service_url)
+
+        requests = [client.methods.sleep(1 - x * 0.25, __async=True) for x in range(4)]
+        resps = list(reversed(list(as_completed(*requests))))
+
+        for i in range(4):
+            self.assertEqual(requests[i], resps[i])  # the calls should finish in the order they were instantiated
+
+    def test_async_first_completed_async(self):
+        client = RemoteService(self.service_url)
+
+        requests = [client.methods.sleep(1 - x * 0.25, __async=True) for x in range(4)]
+        first = first_completed(*requests)
+
+        self.assertEqual(first, requests[-1])
+
+    def test_async_add_callbacks_main_thread(self):
+        client = RemoteService(self.service_url)
+        requests = [client.methods.sleep(1 - x * 0.25, __async=True) for x in range(4)]
+
+        success_callback = MagicMock()
+        fail_callback = MagicMock()
+
+        make_callbacks(requests, on_result=success_callback, on_error=fail_callback)
+
+        success_callback.assert_has_calls(
+            [call(0.25), call(0.5), call(0.75), call(1.0)])
+        fail_callback.assert_not_called()
+
+    def test_async_add_callbacks_errors(self):
+        client = RemoteService(self.service_url)
+        requests = [client.methods.sleep_with_error(1 - x * 0.25, __async=True) for x in range(4)]
+
+        success_callback = MagicMock()
+        fail_callback = MagicMock()
+
+        make_callbacks(requests, on_result=success_callback, on_error=fail_callback)
+
+        success_callback.assert_not_called()
+        fail_callback.assert_has_calls([
+            call({'message': 'Internal error', 'data': {'info': '0.25', 'class': 'ValueError'}, 'code': -32603}),
+            call({'message': 'Internal error', 'data': {'info': '0.5', 'class': 'ValueError'}, 'code': -32603}),
+            call({'message': 'Internal error', 'data': {'info': '0.75', 'class': 'ValueError'}, 'code': -32603}),
+            call({'message': 'Internal error', 'data': {'info': '1.0', 'class': 'ValueError'}, 'code': -32603})
+        ])
 
 
 if __name__ == '__main__':
