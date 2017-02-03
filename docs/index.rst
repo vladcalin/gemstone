@@ -28,7 +28,7 @@ Contents:
     interacting_with_services
     template_service
     reference
-    showcase
+    changes
 
 
 .. todoList::

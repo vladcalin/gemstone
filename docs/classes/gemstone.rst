@@ -94,14 +94,3 @@ Request handlers
 
 .. autoclass:: gemstone.TornadoJsonRpcHandler
     :members:
-
-
-Utility
--------
-
-.. autofunction:: gemstone.as_completed
-
-.. autofunction:: gemstone.first_completed
-
-.. autofunction:: gemstone.make_callbacks
-

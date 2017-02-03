@@ -70,7 +70,7 @@ class AsyncMethodCall(object):
 
         The instantiation of this class triggers a http request in the background.
 
-        :param service: a :py:class:`gemstone.MicroService` instance that is properly initialized
+        :param service: a :py:class:`gemstone.RemoteService` instance that is properly initialized
         :param method: a :py:class:`str` instance with the name if the method to be called
         :param args: a list with the arguments
         :param kwargs: a `dict` with the keyword arguments

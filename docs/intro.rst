@@ -1,4 +1,4 @@
-Short overview
---------------
+Overview
+--------
 
 .. include:: ../README.rst

@@ -60,6 +60,31 @@ Example ::
     print(client.notifications.say_hello("world"))  # None -> we sent a notification, therefore discarding the result
 
 
+In addition, this class provides a method to asynchronously call methods by passing
+an extra keyword argument ``__async`` as shown in the following example
+
+::
+
+    async_response = client.methods.say_hello("world", __async=True)
+
+    print(async_response)
+    # <AsyncMethodCall ...>
+
+    async_response.wait()
+    print(async_response.finished())
+    # True
+    print(async_response.result())
+    # "hello world"
+    print(async_response.error())
+    # None
+
+.. seealso:: - :py:class:`gemstone.client.remote_service.AsyncMethodCall`,
+
+             - :py:func:`gemstone.as_completed`,
+             - :py:func:`gemstone.first_completed`
+             - :py:func:`gemstone.make_callbacks`
+
+
 Using a service registry
 ------------------------
 

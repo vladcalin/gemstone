@@ -12,7 +12,20 @@ def init_default_logger():
 
 def as_completed(*async_result_wrappers):
     """
-    Yields results as they become available.
+    Yields results as they become available from asynchronous method calls.
+
+    Example usage
+
+    ::
+
+        async_calls = [service.methods.do_stuff(x, __async=True) for x in range(25)]
+
+        for async_call in gemstone.as_completed(*async_calls):
+            print("just finished with result ", async_call.result())
+
+    .. note::
+             This generator yields the same items that were submitted through parameters, but in the order
+             their result become available.
 
     :param async_result_wrappers: :py:class:`gemstone.client.remote_service.AsyncMethodCall` instances.
     :return: a generator that yields items as soon they results become available.
@@ -33,7 +46,7 @@ def as_completed(*async_result_wrappers):
 def first_completed(*async_result_wrappers):
     """
     Just like :py:func:`gemstone.as_completed`, but returns only the first item and discards the
-    rest
+    rest.
 
     :param async_result_wrappers:
     :return:
