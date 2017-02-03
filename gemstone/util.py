@@ -1,5 +1,6 @@
 import sys
 import logging
+from multiprocessing.pool import ThreadPool
 
 
 def init_default_logger():
@@ -46,9 +47,29 @@ def first_completed(*async_result_wrappers):
         return completed[0]
 
 
-def make_callbacks(async_result_wrappers, on_result, on_error):
+def make_callbacks(async_result_wrappers, on_result, on_error, run_in_threads=False):
+    """
+    Monitors the :py:class:`gemstone.client.remote_service.AsyncMethodCall` instances from `async_result_wrappers`
+    and apply callbacks depending on their outcome.
+
+    :param async_result_wrappers: An iterable of :py:class:`gemstone.client.remote_service.AsyncMethodCall`
+    :param on_result: a callable that takes a single positional argument (the result)
+    :param on_error: a callabke that takes a single positional argument (the error)
+    :param run_in_threads: flag tha specifies if the callbacks should be called in the current thread or in background
+                           threads
+    """
+
+    if run_in_threads:
+        pool = ThreadPool()
+
     for item in as_completed(*async_result_wrappers):
         if item.error():
-            on_error(item.error())
+            if run_in_threads:
+                pool.apply_async(on_error, args=(item.error(),))
+            else:
+                on_error(item.error())
         else:
-            on_result(item.result())
+            if run_in_threads:
+                pool.apply_async(on_result, args=(item.result(),))
+            else:
+                on_result(item.result())

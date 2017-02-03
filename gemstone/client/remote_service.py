@@ -74,6 +74,8 @@ class AsyncMethodCall(object):
         :param method: a :py:class:`str` instance with the name if the method to be called
         :param args: a list with the arguments
         :param kwargs: a `dict` with the keyword arguments
+
+        .. versionadded:: 0.5.0
         """
         self.service = service
         self.method = method
@@ -170,7 +172,13 @@ class ServiceMethodProxy(object):
 class RemoteService(object):
     def __init__(self, url, *, threads=os.cpu_count(), options=None):
         """
-        Class used to interact with other services
+        Class used to interact with other services.
+
+        Quick examples:
+
+        - calling a method for result: ``x = service.methods.method_to_call(args)``
+        - calling a method as a notification: ``service.notifications.method_to_call(args)``
+        - calling a method for result asynchronously: ``r = service.methods.method_to_call(args, __async=True); r.wait()``
 
         :param url: The endpoint where the service listens. Must be a valid URL (ex: ``"http://127.0.0.1:5000/api"``)
         :param threads:
