@@ -16,14 +16,14 @@ if __name__ == '__main__':
     print(res.error())
     print(res.result())
 
-    # test a long async call
-    res = service.methods.slow_method(seconds=3, __async=True)
-    while not res.finished():
-        print("still waiting")
-        time.sleep(0.5)
-
-    print("Result is here!")
-    print(res.result())
+    # # test a long async call
+    # res = service.methods.slow_method(seconds=3, __async=True)
+    # while not res.finished():
+    #     print("still waiting")
+    #     time.sleep(0.5)
+    #
+    # print("Result is here!")
+    # print(res.result())
 
     # calling more stuff in parallel
 
@@ -31,10 +31,5 @@ if __name__ == '__main__':
     res2 = service.methods.slow_method(seconds=4, __async=True)
     res3 = service.methods.slow_method(seconds=5, __async=True)
 
-    while not res1.finished() or not res2.finished() or not res3.finished():
-        print("res1='{}' ; res2='{}' ; res3='{}'".format(res1.result(), res2.result(), res3.result()))
-        time.sleep(0.5)
-
-    print(res1.result())
-    print(res2.result())
-    print(res3.result())
+    gemstone.make_callbacks([res1, res2, res3], on_result=lambda x: print("[!] {}".format(x)),
+                            on_error=lambda x: print("[x] {}".format(x)))

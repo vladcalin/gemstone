@@ -4,6 +4,7 @@ import json
 import asyncio
 import random
 import threading
+import string
 
 from concurrent.futures import ThreadPoolExecutor
 
@@ -85,6 +86,7 @@ class AsyncMethodCall(object):
         self._finished = False
 
         self._background_thread = threading.Thread(target=self._make_sync_call)
+        self._background_thread.daemon = True
         self._background_thread.start()
 
     def _make_sync_call(self):
@@ -130,6 +132,24 @@ class AsyncMethodCall(object):
         with self._lock:
             return self._finished
 
+    def __eq__(self, other):
+        if not isinstance(other, type(self)):
+            return False
+
+        return hash(self) == hash(other)
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __hash__(self):
+        return id(self)
+
+    def __repr__(self):
+        return self.__str__()
+
+    def __str__(self):
+        return "<AsyncMethodCall service={} method={} id={}>".format(self.service, self.method, hash(self))
+
 
 class ServiceMethodProxy(object):
     def __init__(self, remote_service, is_notification=False):
@@ -142,7 +162,7 @@ class ServiceMethodProxy(object):
             return super(ServiceMethodProxy, self).__getattribute__(item)
         if item in self._methods:
             return CallableMethod(self._remote_service, item,
-                                  None if self._is_notification else self._remote_service.req_id)
+                                  None if self._is_notification else self._remote_service.get_new_id())
         else:
             return super(ServiceMethodProxy, self).__getattribute__(item)
 
@@ -170,6 +190,9 @@ class RemoteService(object):
 
         self._method_proxy = ServiceMethodProxy(self)
         self._notification_proxy = ServiceMethodProxy(self, is_notification=True)
+
+    def get_new_id(self):
+        return "".join(random.choice(string.ascii_letters + string.digits) for _ in range(15))
 
     @property
     def methods(self):
