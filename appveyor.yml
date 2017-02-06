@@ -14,3 +14,7 @@ install:
 
 test_script:
   - "%PYTHON%\\python.exe -m unittest discover tests"
+
+branches:
+  only:
+    - master

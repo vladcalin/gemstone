@@ -10,3 +10,7 @@ script:
     - "coverage run --source=gemstone -m unittest discover tests"
 after_success:
     - "coveralls -i"
+
+branches:
+  only:
+    - master
