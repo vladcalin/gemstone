@@ -1,2 +1,4 @@
 tornado
 click
+pika
+msgpack-python

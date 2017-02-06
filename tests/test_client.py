@@ -212,22 +212,14 @@ class ClientTestCase(TestCase):
 
         self.assertTrue(r.finished())
 
-    def test_async_as_completed_async(self):
-        client = RemoteService(self.service_url)
-
-        requests = [client.methods.sleep(1 - x * 0.25, __async=True) for x in range(4)]
-        resps = list(reversed(list(as_completed(*requests))))
-
-        for i in range(4):
-            self.assertEqual(requests[i], resps[i])  # the calls should finish in the order they were instantiated
-
     def test_async_first_completed_async(self):
         client = RemoteService(self.service_url)
 
         requests = [client.methods.sleep(1 - x * 0.25, __async=True) for x in range(4)]
         first = first_completed(*requests)
 
-        self.assertEqual(first, requests[-1])
+        self.assertIsInstance(first, AsyncMethodCall)
+        self.assertTrue(first in requests)
 
     def test_async_add_callbacks_main_thread(self):
         client = RemoteService(self.service_url)
@@ -239,7 +231,7 @@ class ClientTestCase(TestCase):
         make_callbacks(requests, on_result=success_callback, on_error=fail_callback)
 
         success_callback.assert_has_calls(
-            [call(0.25), call(0.5), call(0.75), call(1.0)])
+            [call(0.25), call(0.5), call(0.75), call(1.0)], any_order=True)
         fail_callback.assert_not_called()
 
     def test_async_add_callbacks_errors(self):
@@ -257,7 +249,7 @@ class ClientTestCase(TestCase):
             call({'message': 'Internal error', 'data': {'info': '0.5', 'class': 'ValueError'}, 'code': -32603}),
             call({'message': 'Internal error', 'data': {'info': '0.75', 'class': 'ValueError'}, 'code': -32603}),
             call({'message': 'Internal error', 'data': {'info': '1.0', 'class': 'ValueError'}, 'code': -32603})
-        ])
+        ], any_order=True)
 
 
 if __name__ == '__main__':

@@ -1,3 +1,5 @@
+import functools
+
 __all__ = [
     'public_method',
     'private_api_method'
@@ -22,3 +24,12 @@ def private_api_method(func):
     func.__private_api_method__ = True
     func.is_private = True
     return func
+
+
+def event_handler(event_name):
+    def wrapper(func):
+        func.__is_event_handler__ = True
+        func.__handled_event__ = event_name
+        return func
+
+    return wrapper
