@@ -15,6 +15,9 @@ The **gemstone** framework
 .. image:: https://codeclimate.com/github/vladcalin/gemstone/badges/gpa.svg
     :target: https://codeclimate.com/github/vladcalin/gemstone
     :alt: Code Climate
+.. image:: https://landscape.io/github/vladcalin/gemstone/master/landscape.svg?style=flat
+   :target: https://landscape.io/github/vladcalin/gemstone/master
+   :alt: Code Health
 
 Status
 ~~~~~~
