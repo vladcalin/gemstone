@@ -1,17 +1,31 @@
 The **gemstone** framework
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+PyPi
+
+.. image:: https://badge.fury.io/py/gemstone.svg
+    :target: https://badge.fury.io/py/gemstone
+
+Build
+
 .. image:: https://travis-ci.org/vladcalin/gemstone.svg?branch=master
     :target: https://travis-ci.org/vladcalin/gemstone
 .. image :: https://ci.appveyor.com/api/projects/status/i6rep3022e7occ8e?svg=true
     :target: https://ci.appveyor.com/project/vladcalin/gemstone
+    
+Documentation
+
 .. image:: https://readthedocs.org/projects/gemstone/badge/?version=latest
     :target: http://gemstone.readthedocs.io/en/latest/?badge=latest
     :alt: Documentation Status
-.. image:: https://badge.fury.io/py/gemstone.svg
-    :target: https://badge.fury.io/py/gemstone
+    
+Code coverage
+
 .. image:: https://coveralls.io/repos/github/vladcalin/gemstone/badge.svg?branch=master
     :target: https://coveralls.io/github/vladcalin/gemstone?branch=master
+    
+Code quality
+
 .. image:: https://codeclimate.com/github/vladcalin/gemstone/badges/gpa.svg
     :target: https://codeclimate.com/github/vladcalin/gemstone
     :alt: Code Climate
