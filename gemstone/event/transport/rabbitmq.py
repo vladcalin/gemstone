@@ -1,5 +1,6 @@
+import json
+
 import pika
-import msgpack
 
 from gemstone.event.transport.base import BaseEventTransport
 
@@ -7,12 +8,14 @@ from gemstone.event.transport.base import BaseEventTransport
 class RabbitMqEventTransport(BaseEventTransport):
     EXCHANGE_PREFIX = "gemstone.events."
 
-    def __init__(self, service_name, **connection_options):
+    def __init__(self, host="127.0.0.1", port=5672, username="", password="", **connection_options):
         self._handlers = {}
-        self._service_name = service_name
 
         self.connection = pika.BlockingConnection(
-            pika.ConnectionParameters(**connection_options)
+            pika.ConnectionParameters(
+                host=host, port=port, credentials=pika.PlainCredentials(username=username, password=password),
+                **connection_options
+            )
         )
         self.channel = self.connection.channel()
 
@@ -40,17 +43,23 @@ class RabbitMqEventTransport(BaseEventTransport):
             return
 
         event_name = method.exchange[len(self.EXCHANGE_PREFIX):]
-        print(event_name, method.exchange)
         self.on_event_received(event_name, body)
 
     def on_event_received(self, event_name, event_body):
         handler = self._handlers.get(event_name)
         if not handler:
             return
-        handler(event_body)
+        if isinstance(event_body, bytes):
+            event_body = event_body.decode()
+
+        handler(json.loads(event_body))
 
     def emit_event(self, event_name, event_body):
-        pass
+        self.channel.basic_publish(
+            exchange=self.EXCHANGE_PREFIX + event_name,
+            routing_key='',
+            body=json.dumps(event_body)
+        )
 
     def __del__(self):
         self.connection.close()
@@ -65,7 +74,7 @@ if __name__ == '__main__':
         print("QWQWEQQW {}".format(body))
 
 
-    transport = RabbitMqEventTransport("test", host="192.168.1.71",
+    transport = RabbitMqEventTransport(host="192.168.1.71",
                                        credentials=pika.PlainCredentials(username="admin", password="X5f6rPmx1yYz"))
 
     transport.register_event_handler(handler1, "event_one")

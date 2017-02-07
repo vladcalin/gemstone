@@ -3,6 +3,7 @@ import os
 import functools
 import random
 import argparse
+import threading
 import sys
 from abc import ABC
 from concurrent.futures import ThreadPoolExecutor
@@ -54,6 +55,9 @@ class MicroService(ABC):
     # http://stackoverflow.com/questions/33634956/why-would-a-timeout-avoid-a-tornado-hang/33643631#33643631
     default_periodic_tasks = [(lambda: None, 0.5)] if IS_WINDOWS else []
 
+    # event handlers
+    event_transports = []
+
     # io event related
     max_parallel_blocking_tasks = os.cpu_count()
     _executor = None
@@ -88,6 +92,10 @@ class MicroService(ABC):
         # methods
         self.methods = {}
         self.gather_exposed_methods()
+
+        # event handlers
+        self.event_handlers = {}
+        self.gather_event_handlers()
 
         if len(self.methods) == 0:
             raise ServiceConfigurationError("No exposed methods for the microservice")
@@ -197,6 +205,21 @@ class MicroService(ABC):
 
         raise ValueError("Service could not be located")
 
+    def start_thread(self, target, args, kwargs):
+        """
+        Shortcut method for starting a thread.
+
+        :param target: The function to be executed.
+        :param args: A tuple or list representing the positional arguments for the thread.
+        :param kwargs: A dictionary representing the keyword arguments.
+        """
+        thread_obj = threading.Thread(target=target, args=args, kwargs=kwargs, daemon=True)
+        thread_obj.start()
+
+    def emit_event(self, event_name, event_body):
+        for transport in self.event_transports:
+            transport.emit_event(event_name, event_body)
+
     @classmethod
     def get_cli(cls):
         """
@@ -267,7 +290,10 @@ class MicroService(ABC):
             if getattr(args, "service_registry", None):
                 cls.service_registry_urls = args.service_registry
 
-            args.func()
+            if hasattr(args, "func"):
+                args.func()
+            else:
+                parser.print_help()
 
         return call_argument_parser
 
@@ -285,6 +311,10 @@ class MicroService(ABC):
             self.logger.debug("Starting periodic task {}".format(periodic_task))
             periodic_task.start()
 
+        # starts the event handlers
+        self._initialize_event_handlers()
+        self._start_event_handlers()
+
         try:
             self.io_loop.start()
         except RuntimeError:
@@ -293,6 +323,19 @@ class MicroService(ABC):
             pass
 
     # endregion
+
+    def _initialize_event_handlers(self):
+        for event_transport in self.event_transports:
+            self.logger.debug("Initializing transport {}".format(event_transport))
+            for event_name, event_handler in self.event_handlers.items():
+                self.logger.debug("Setting handler for {}".format(event_name))
+                event_transport.register_event_handler(event_handler, event_name)
+
+    def _start_event_handlers(self):
+        for event_transport in self.event_transports:
+            self.start_thread(
+                target=event_transport.start_accepting_events, args=(), kwargs={}
+            )
 
     def make_tornado_app(self):
         """
@@ -305,6 +348,7 @@ class MicroService(ABC):
         handlers = [
             (self.endpoint, TornadoJsonRpcHandler,
              {
+                 "logger": self.logger,
                  "methods": self.methods,
                  "executor": self._executor,
                  "validation_strategies":
@@ -349,6 +393,17 @@ class MicroService(ABC):
                             getattr(item, "__private_api_method__", False) is True:
                 self.methods[item.__name__] = item
 
+    def gather_event_handlers(self):
+        """
+        Searches for the event handlers in the current microservice class.
+
+        :return:
+        """
+        for itemname in dir(self):
+            item = getattr(self, itemname)
+            if getattr(item, "__is_event_handler__", False):
+                self.event_handlers.setdefault(item.__handled_event__, item)
+
     def ping_to_service_registry(self, servreg_remote_service):
         """
         Notifies a service registry about the service (its name and http location)
@@ -356,6 +411,9 @@ class MicroService(ABC):
         :param servreg_remote_service: a :py:class:`gemstone.RemoteService` instance
         """
         url = self.accessible_at
+        self.logger.debug("Pinging {registry_url} (name={name}, url={url})".format(
+            registry_url=servreg_remote_service.url, name=self.name, url=url
+        ))
         servreg_remote_service.notifications.ping(name=self.name, url=url)
 
     def periodic_task_iter(self):

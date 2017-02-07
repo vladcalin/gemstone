@@ -3,7 +3,7 @@ Build microservices with Python
 """
 
 from gemstone.core.microservice import MicroService
-from gemstone.core.decorators import private_api_method, public_method
+from gemstone.core.decorators import private_api_method, public_method, event_handler
 from gemstone.core.handlers import TornadoJsonRpcHandler
 from gemstone.client.remote_service import RemoteService
 
