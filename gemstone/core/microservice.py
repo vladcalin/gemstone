@@ -91,11 +91,11 @@ class MicroService(ABC):
 
         # methods
         self.methods = {}
-        self.gather_exposed_methods()
+        self._gather_exposed_methods()
 
         # event handlers
         self.event_handlers = {}
-        self.gather_event_handlers()
+        self._gather_event_handlers()
 
         if len(self.methods) == 0:
             raise ServiceConfigurationError("No exposed methods for the microservice")
@@ -137,7 +137,9 @@ class MicroService(ABC):
             "accessible_at": self.accessible_at,
             "name": self.name,
             "max_parallel_blocking_tasks": self.max_parallel_blocking_tasks,
-            "methods": {m: self.methods[m].__doc__ for m in self.methods}
+            "methods": {m: self.methods[m].__doc__ for m in self.methods},
+            "event_transports": [str(t) for t in self.event_transports],
+            "events_handled": {ev_name: ev_handle.__doc__ for ev_name, ev_handle in self.event_handlers.items()}
         }
 
     # region Can be overridden by user
@@ -307,7 +309,7 @@ class MicroService(ABC):
         enable_pretty_logging()
         self.app.listen(self.port, address=self.host)
 
-        for periodic_task in self.periodic_task_iter():
+        for periodic_task in self._periodic_task_iter():
             self.logger.debug("Starting periodic task {}".format(periodic_task))
             periodic_task.start()
 
@@ -357,12 +359,12 @@ class MicroService(ABC):
              })
         ]
 
-        self.add_extra_handlers(handlers)
-        self.add_static_handlers(handlers)
+        self._add_extra_handlers(handlers)
+        self._add_static_handlers(handlers)
 
         return Application(handlers, template_path=self.template_dir)
 
-    def add_extra_handlers(self, handlers):
+    def _add_extra_handlers(self, handlers):
         """
         Adds the extra handler (defined by the user)
 
@@ -371,7 +373,7 @@ class MicroService(ABC):
         """
         handlers.extend(self.extra_handlers)
 
-    def add_static_handlers(self, handlers):
+    def _add_static_handlers(self, handlers):
         """
         Creates and adds the handles needed for serving static files.
 
@@ -380,7 +382,7 @@ class MicroService(ABC):
         for url, path in self.static_dirs:
             handlers.append((url.rstrip("/") + "/(.*)", StaticFileHandler, {"path": path}))
 
-    def gather_exposed_methods(self):
+    def _gather_exposed_methods(self):
         """
         Searches for the exposed methods in the current microservice class. A method is considered
         exposed if it is decorated with the :py:func:`gemstone.public_method` or
@@ -393,7 +395,7 @@ class MicroService(ABC):
                             getattr(item, "__private_api_method__", False) is True:
                 self.methods[item.__name__] = item
 
-    def gather_event_handlers(self):
+    def _gather_event_handlers(self):
         """
         Searches for the event handlers in the current microservice class.
 
@@ -404,7 +406,7 @@ class MicroService(ABC):
             if getattr(item, "__is_event_handler__", False):
                 self.event_handlers.setdefault(item.__handled_event__, item)
 
-    def ping_to_service_registry(self, servreg_remote_service):
+    def _ping_to_service_registry(self, servreg_remote_service):
         """
         Notifies a service registry about the service (its name and http location)
 
@@ -416,7 +418,7 @@ class MicroService(ABC):
         ))
         servreg_remote_service.notifications.ping(name=self.name, url=url)
 
-    def periodic_task_iter(self):
+    def _periodic_task_iter(self):
         """
         Iterates through all the periodic tasks:
 
@@ -429,7 +431,7 @@ class MicroService(ABC):
         for url in self.service_registry_urls:
             registry = RemoteService(url)
             self.registries.append(registry)
-            periodic_servreg_ping = functools.partial(self.ping_to_service_registry, registry)
+            periodic_servreg_ping = functools.partial(self._ping_to_service_registry, registry)
             periodic_servreg_ping()  # initial ping
             self.default_periodic_tasks.append(
                 (periodic_servreg_ping, self.service_registry_ping_interval)

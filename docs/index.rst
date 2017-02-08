@@ -23,11 +23,10 @@ Contents:
 .. toctree::
     :maxdepth: 3
 
-    intro
-    creating_a_service
-    interacting_with_services
-    template_service
-    reference
+    intro/index
+    tutorial/index
+    howto/index
+    reference/index
     changes
 
 

@@ -6,13 +6,9 @@ Reference
 .. toctree::
    :maxdepth: 2
 
-   classes/gemstone
-   classes/validation
-   classes/utility
-
-
-
-
+   gemstone
+   validation
+   utility
 
 
 

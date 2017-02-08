@@ -30,13 +30,13 @@ class ServiceRegistryIntegrationTestCase(TestCase):
     @patch("urllib.request.urlopen")
     @skipIf(IS_WINDOWS, "different default callbacks for windows")
     def test_periodic_callback_init(self, urlopen, PeriodicCallback):
-        callbacks = list(TestServiceNoServiceRegistries().periodic_task_iter())
+        callbacks = list(TestServiceNoServiceRegistries()._periodic_task_iter())
         self.assertEqual(len(callbacks), 0)
         urlopen.assert_not_called()
 
         urlopen.return_value = BytesIO(b'{"result":{"name":"registry", "methods":'
                                        b'{"ping": "", "locate_service": ""}}}')
 
-        callbacks = list(TestServiceOneServiceRegistry().periodic_task_iter())
+        callbacks = list(TestServiceOneServiceRegistry()._periodic_task_iter())
         self.assertEqual(len(callbacks), 1)
         self.assertEqual(urlopen.call_count, 2)  # get_service_specs and initial ping
