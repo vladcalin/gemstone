@@ -1,10 +1,13 @@
 import random
-import json
-import pika
 import time
+
+import simplejson as json
+import pika
+
 
 def pack_message(msg):
     return json.dumps(msg)
+
 
 i = 0
 
@@ -16,15 +19,14 @@ while True:
         )
     )
 
-
     channel = connection.channel()
 
-
     channel.basic_publish(
-            exchange="gemstone.events.event_{}".format(random.choice(["one", "two"])),
-            routing_key='',
-            body=pack_message({"username": "vlad", "email": "vlad_calin@swag.ro", "tags": ["awesome", "programmer"], "age": 21})
-        )
+        exchange="gemstone.events.event_{}".format(random.choice(["one", "two"])),
+        routing_key='',
+        body=pack_message(
+            {"username": "vlad", "email": "vlad_calin@swag.ro", "tags": ["awesome", "programmer"], "age": 21})
+    )
     connection.close()
     i += 1
     print(i)

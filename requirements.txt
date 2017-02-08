@@ -1,4 +1,4 @@
 tornado
 click
 pika
-msgpack-python
+simplejson

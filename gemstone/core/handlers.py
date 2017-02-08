@@ -1,7 +1,7 @@
-import json
 from functools import partial
 import asyncio
 
+import simplejson as json
 from tornado.web import RequestHandler
 from tornado.gen import coroutine
 

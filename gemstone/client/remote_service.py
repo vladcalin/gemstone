@@ -1,12 +1,12 @@
 import os
 import urllib.request
-import json
 import asyncio
 import random
 import threading
 import string
 
 from concurrent.futures import ThreadPoolExecutor
+import simplejson as json
 
 from gemstone.errors import CalledServiceError
 

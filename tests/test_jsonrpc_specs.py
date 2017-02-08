@@ -1,7 +1,7 @@
-import json
 import logging
 
 from tornado.testing import AsyncHTTPTestCase, gen_test
+import simplejson as json
 
 from gemstone import MicroService, public_method, private_api_method
 

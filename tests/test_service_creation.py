@@ -1,7 +1,7 @@
 import os.path
-import json
 from unittest import TestCase
 
+import simplejson as json
 from tornado.testing import AsyncHTTPTestCase
 from tornado.web import RequestHandler
 
