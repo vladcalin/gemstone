@@ -9,7 +9,7 @@ Overview
    overview
    installation
    creating_a_service
-   examples
    interacting_with_services
+   examples
    template_service
 
