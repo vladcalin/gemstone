@@ -1,11 +1,5 @@
-import json
-import code
-import traceback
-import signal
-
-# import pystuck; pystuck.run_server()
-
 from tornado.testing import AsyncHTTPTestCase
+import simplejson as json
 
 from gemstone import MicroService, public_method, private_api_method
 from gemstone.auth.validation_strategies.header_strategy import HeaderValidationStrategy

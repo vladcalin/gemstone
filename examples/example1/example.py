@@ -20,7 +20,7 @@ class HelloWorldService(MicroService):
 
     accessible_at = "http://localhost:5000/api"
 
-    service_registry_urls = ["http://localhost:8000/api"]
+    service_registry_urls = []
 
     extra_handlers = [
         (r"/app", IndexHandler),
@@ -63,5 +63,5 @@ class HelloWorldService(MicroService):
 
 
 if __name__ == '__main__':
-    service = HelloWorldService()
-    service.get_cli()()
+    cli = HelloWorldService.get_cli()
+    cli()

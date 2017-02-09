@@ -1,7 +1,7 @@
-import json
 from functools import partial
 import asyncio
 
+import simplejson as json
 from tornado.web import RequestHandler
 from tornado.gen import coroutine
 
@@ -18,13 +18,15 @@ class TornadoJsonRpcHandler(RequestHandler):
     executor = None
     validation_strategies = None
     api_token_handlers = None
+    logger = None
 
     def __init__(self, *args, **kwargs):
         self.request_is_finished = False
         super(TornadoJsonRpcHandler, self).__init__(*args, **kwargs)
 
     # noinspection PyMethodOverriding
-    def initialize(self, methods, executor, validation_strategies, api_token_handler):
+    def initialize(self, logger, methods, executor, validation_strategies, api_token_handler):
+        self.logger = logger
         self.methods = methods
         self.executor = executor
         self.validation_strategies = validation_strategies
@@ -107,6 +109,8 @@ class TornadoJsonRpcHandler(RequestHandler):
 
         # check for private access
         method = self.methods[request_object.method]
+        self.logger.info(
+            "Called {} ({}) (request id = {})".format(request_object.method, request_object.params, request_object.id))
         if method.is_private:
             token = self.extract_api_token()
             if not self.api_token_handlers(token):

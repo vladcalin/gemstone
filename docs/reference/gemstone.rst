@@ -1,7 +1,8 @@
 The ``gemstone`` module (main classes)
 ======================================
 
-
+Core classes
+------------
 
 .. autoclass:: gemstone.MicroService
     :members:
@@ -57,13 +58,6 @@ The ``gemstone`` module (main classes)
         :annotation: = The number of seconds between ``ping`` requests to the service registries.
 
 
-.. autofunction:: gemstone.public_method
-
-.. autofunction:: gemstone.private_api_method
-
-.. autoclass:: gemstone.TornadoJsonRpcHandler
-    :members:
-
 .. autoclass:: gemstone.RemoteService
     :members:
 
@@ -85,3 +79,18 @@ The ``gemstone`` module (main classes)
                            client.notifications.method_to_call(arguments)  # returns None
 
 
+
+
+
+Decorators
+----------
+
+.. autofunction:: gemstone.public_method
+
+.. autofunction:: gemstone.private_api_method
+
+Request handlers
+----------------
+
+.. autoclass:: gemstone.TornadoJsonRpcHandler
+    :members:

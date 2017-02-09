@@ -1,10 +1,12 @@
 import os
 import urllib.request
-import json
 import asyncio
 import random
+import threading
+import string
 
 from concurrent.futures import ThreadPoolExecutor
+import simplejson as json
 
 from gemstone.errors import CalledServiceError
 
@@ -17,8 +19,13 @@ class CallableMethod(object):
         self.req_id = req_id
 
     def __call__(self, *args, **kwargs):
+        __async = kwargs.pop("__async", False)
+
         if kwargs and args:
             raise ValueError("Cannot have positional arguments and keyword arguments at the same time")
+
+        if __async:
+            return AsyncMethodCall(self.service, self.method, args, kwargs)
 
         # construct the "params" value
         params = args or kwargs
@@ -56,6 +63,96 @@ class CallableMethod(object):
         return response["result"]
 
 
+class AsyncMethodCall(object):
+    def __init__(self, service, method, args, kwargs):
+        """
+        Encapsulates an asynchronous method call. The user should not be instantiated by the user.
+
+        The instantiation of this class triggers a http request in the background.
+
+        :param service: a :py:class:`gemstone.RemoteService` instance that is properly initialized
+        :param method: a :py:class:`str` instance with the name if the method to be called
+        :param args: a list with the arguments
+        :param kwargs: a `dict` with the keyword arguments
+
+        .. versionadded:: 0.5.0
+        """
+        self.service = service
+        self.method = method
+        self.args = args
+        self.kwargs = kwargs
+
+        self._lock = threading.Lock()
+        self._result = None
+        self._error = None
+        self._finished = False
+
+        self._background_thread = threading.Thread(target=self._make_sync_call)
+        self._background_thread.daemon = True
+        self._background_thread.start()
+
+    def _make_sync_call(self):
+        error = None
+        try:
+            result = getattr(self.service.methods, self.method)(*self.args, **self.kwargs)
+        except CalledServiceError as e:
+            error = e.args[0]
+            result = None
+
+        with self._lock:
+            self._finished = True
+            self._error = error
+            self._result = result
+
+    def wait(self):
+        """
+        Waits for the async call to finish and returns the result
+
+        :return: the result of the method call
+        """
+        self._background_thread.join()
+        return self._result
+
+    def result(self):
+        """
+        Returns the result of the method call or `None` if not available or the call failed.
+        """
+        with self._lock:
+            return self._result
+
+    def error(self):
+        """
+        Returns the error from the method call (if any).
+        """
+        with self._lock:
+            return self._error
+
+    def finished(self):
+        """
+        Indicates if the request was finished or not.
+        """
+        with self._lock:
+            return self._finished
+
+    def __eq__(self, other):
+        if not isinstance(other, type(self)):
+            return False
+
+        return hash(self) == hash(other)
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __hash__(self):
+        return id(self)
+
+    def __repr__(self):
+        return self.__str__()
+
+    def __str__(self):
+        return "<AsyncMethodCall service={} method={} id={}>".format(self.service, self.method, hash(self))
+
+
 class ServiceMethodProxy(object):
     def __init__(self, remote_service, is_notification=False):
         self._methods = remote_service._methods
@@ -67,7 +164,7 @@ class ServiceMethodProxy(object):
             return super(ServiceMethodProxy, self).__getattribute__(item)
         if item in self._methods:
             return CallableMethod(self._remote_service, item,
-                                  None if self._is_notification else self._remote_service.req_id)
+                                  None if self._is_notification else self._remote_service.get_new_id())
         else:
             return super(ServiceMethodProxy, self).__getattribute__(item)
 
@@ -75,7 +172,13 @@ class ServiceMethodProxy(object):
 class RemoteService(object):
     def __init__(self, url, *, threads=os.cpu_count(), options=None):
         """
-        Class used to interact with other services
+        Class used to interact with other services.
+
+        Quick examples:
+
+        - calling a method for result: ``x = service.methods.method_to_call(args)``
+        - calling a method as a notification: ``service.notifications.method_to_call(args)``
+        - calling a method for result asynchronously: ``r = service.methods.method_to_call(args, __async=True); r.wait()``
 
         :param url: The endpoint where the service listens. Must be a valid URL (ex: ``"http://127.0.0.1:5000/api"``)
         :param threads:
@@ -95,6 +198,9 @@ class RemoteService(object):
 
         self._method_proxy = ServiceMethodProxy(self)
         self._notification_proxy = ServiceMethodProxy(self, is_notification=True)
+
+    def get_new_id(self):
+        return "".join(random.choice(string.ascii_letters + string.digits) for _ in range(15))
 
     @property
     def methods(self):

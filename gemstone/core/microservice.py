@@ -1,19 +1,19 @@
 import logging
-from abc import ABC, abstractmethod
 import os
-from concurrent.futures import ThreadPoolExecutor
 import functools
 import random
 import argparse
+import threading
 import sys
+from abc import ABC
+from concurrent.futures import ThreadPoolExecutor
 
-from tornado.web import RequestHandler, StaticFileHandler
-from tornado.gen import coroutine
+from tornado.web import StaticFileHandler
 from tornado.ioloop import IOLoop, PeriodicCallback
 from tornado.web import Application
 from tornado.log import enable_pretty_logging
 
-from gemstone.errors import ServiceConfigurationError, AccessDeniedError
+from gemstone.errors import ServiceConfigurationError
 from gemstone.core.handlers import TornadoJsonRpcHandler
 from gemstone.core.decorators import public_method
 from gemstone.client.remote_service import RemoteService
@@ -24,10 +24,6 @@ __all__ = [
 ]
 
 IS_WINDOWS = sys.platform.startswith("win32")
-
-if IS_WINDOWS:
-    def dummy_windows():
-        pass
 
 
 class MicroService(ABC):
@@ -57,15 +53,14 @@ class MicroService(ABC):
 
     # in some situations, on Windows the event loop may hang
     # http://stackoverflow.com/questions/33634956/why-would-a-timeout-avoid-a-tornado-hang/33643631#33643631
-    default_periodic_tasks = [(dummy_windows, 0.5)] if IS_WINDOWS else []
+    default_periodic_tasks = [(lambda: None, 0.5)] if IS_WINDOWS else []
+
+    # event handlers
+    event_transports = []
 
     # io event related
     max_parallel_blocking_tasks = os.cpu_count()
     _executor = None
-
-    @property
-    def full_url(self):
-        return "pass"
 
     def __init__(self, io_loop=None):
         """
@@ -81,9 +76,12 @@ class MicroService(ABC):
         self.logger = self.get_logger()
         self.registries = []
 
+        self.logger.info("Initializing")
+
         # name
         if self.name is None:
             raise ServiceConfigurationError("No name defined for the microservice")
+        self.logger.debug("Service name: {}".format(self.name))
 
         # endpoint
         if self.accessible_at is None:
@@ -93,7 +91,11 @@ class MicroService(ABC):
 
         # methods
         self.methods = {}
-        self.gather_exposed_methods()
+        self._gather_exposed_methods()
+
+        # event handlers
+        self.event_handlers = {}
+        self._gather_event_handlers()
 
         if len(self.methods) == 0:
             raise ServiceConfigurationError("No exposed methods for the microservice")
@@ -135,8 +137,12 @@ class MicroService(ABC):
             "accessible_at": self.accessible_at,
             "name": self.name,
             "max_parallel_blocking_tasks": self.max_parallel_blocking_tasks,
-            "methods": {m: self.methods[m].__doc__ for m in self.methods}
+            "methods": {m: self.methods[m].__doc__ for m in self.methods},
+            "event_transports": [str(t) for t in self.event_transports],
+            "events_handled": {ev_name: ev_handle.__doc__ for ev_name, ev_handle in self.event_handlers.items()}
         }
+
+    # region Can be overridden by user
 
     def on_service_start(self):
         """
@@ -145,52 +151,6 @@ class MicroService(ABC):
         :return: ``None``
         """
         pass
-
-    def start(self):
-        """
-        The main method that starts the service. This is blocking.
-
-        """
-        self.on_service_start()
-        self.app = self.make_tornado_app()
-        enable_pretty_logging()
-        self.app.listen(self.port, address=self.host)
-
-        for periodic_task in self.periodic_task_iter():
-            self.logger.debug("Starting periodic task {}".format(periodic_task))
-            periodic_task.start()
-
-        try:
-            self.io_loop.start()
-        except RuntimeError:
-            # TODO : find a way to check if the io_loop is running before trying to start it
-            # this method to check if the loop is running is ugly
-            pass
-
-    def make_tornado_app(self):
-
-        handlers = [
-            (r"/api", TornadoJsonRpcHandler,
-             {
-                 "methods": self.methods,
-                 "executor": self._executor,
-                 "validation_strategies":
-                     self.validation_strategies,
-                 "api_token_handler": self.api_token_is_valid
-             })
-        ]
-
-        self.add_extra_handlers(handlers)
-        self.add_static_handlers(handlers)
-
-        return Application(handlers, template_path=self.template_dir)
-
-    def add_extra_handlers(self, handlers):
-        handlers.extend(self.extra_handlers)
-
-    def add_static_handlers(self, handlers):
-        for url, path in self.static_dirs:
-            handlers.append((url.rstrip("/") + "/(.*)", StaticFileHandler, {"path": path}))
 
     def api_token_is_valid(self, api_token):
         """
@@ -202,39 +162,18 @@ class MicroService(ABC):
         """
         return True
 
-    def gather_exposed_methods(self):
-        for itemname in dir(self):
-            item = getattr(self, itemname)
-            if getattr(item, "__is_exposed_method__", False) is True or \
-                            getattr(item, "__private_api_method__", False) is True:
-                self.methods[item.__name__] = item
-
     def get_logger(self):
         """
         Override this method to designate the logger for the application
 
         :return: a :py:class:`logging.Logger` instance
         """
+        enable_pretty_logging()
         return logging.getLogger("tornado.application")
 
-    def ping_to_service_registry(self, servreg_remote_service):
-        url = self.accessible_at
-        servreg_remote_service.notifications.ping(name=self.name, url=url)
+    # endregion
 
-    def periodic_task_iter(self):
-        for url in self.service_registry_urls:
-            registry = RemoteService(url)
-            self.registries.append(registry)
-            periodic_servreg_ping = functools.partial(self.ping_to_service_registry, registry)
-            periodic_servreg_ping()  # initial ping
-            self.default_periodic_tasks.append(
-                (periodic_servreg_ping, self.service_registry_ping_interval)
-            )
-
-        all_periodic_tasks = self.default_periodic_tasks + self.periodic_tasks
-        for func, timer_in_seconds in all_periodic_tasks:
-            timer_milisec = timer_in_seconds * 1000
-            yield PeriodicCallback(func, timer_milisec, io_loop=self.io_loop)
+    # region Can be called by user
 
     def get_service(self, name):
         """
@@ -267,6 +206,21 @@ class MicroService(ABC):
                     continue  # could not establish connection, try next
 
         raise ValueError("Service could not be located")
+
+    def start_thread(self, target, args, kwargs):
+        """
+        Shortcut method for starting a thread.
+
+        :param target: The function to be executed.
+        :param args: A tuple or list representing the positional arguments for the thread.
+        :param kwargs: A dictionary representing the keyword arguments.
+        """
+        thread_obj = threading.Thread(target=target, args=args, kwargs=kwargs, daemon=True)
+        thread_obj.start()
+
+    def emit_event(self, event_name, event_body):
+        for transport in self.event_transports:
+            transport.emit_event(event_name, event_body)
 
     @classmethod
     def get_cli(cls):
@@ -338,9 +292,155 @@ class MicroService(ABC):
             if getattr(args, "service_registry", None):
                 cls.service_registry_urls = args.service_registry
 
-            args.func()
+            if hasattr(args, "func"):
+                args.func()
+            else:
+                parser.print_help()
 
         return call_argument_parser
+
+    def start(self):
+        """
+        The main method that starts the service. This is blocking.
+
+        """
+        self.on_service_start()
+        self.app = self.make_tornado_app()
+        enable_pretty_logging()
+        self.app.listen(self.port, address=self.host)
+
+        for periodic_task in self._periodic_task_iter():
+            self.logger.debug("Starting periodic task {}".format(periodic_task))
+            periodic_task.start()
+
+        # starts the event handlers
+        self._initialize_event_handlers()
+        self._start_event_handlers()
+
+        try:
+            self.io_loop.start()
+        except RuntimeError:
+            # TODO : find a way to check if the io_loop is running before trying to start it
+            # this method to check if the loop is running is ugly
+            pass
+
+    # endregion
+
+    def _initialize_event_handlers(self):
+        for event_transport in self.event_transports:
+            self.logger.debug("Initializing transport {}".format(event_transport))
+            for event_name, event_handler in self.event_handlers.items():
+                self.logger.debug("Setting handler for {}".format(event_name))
+                event_transport.register_event_handler(event_handler, event_name)
+
+    def _start_event_handlers(self):
+        for event_transport in self.event_transports:
+            self.start_thread(
+                target=event_transport.start_accepting_events, args=(), kwargs={}
+            )
+
+    def make_tornado_app(self):
+        """
+        Creates a :py:class`tornado.web.Application` instance that respect the JSON RPC 2.0 specs and
+        exposes the designated methods.
+
+        :return: a :py:class:`tornado.web.Application` instance
+        """
+
+        handlers = [
+            (self.endpoint, TornadoJsonRpcHandler,
+             {
+                 "logger": self.logger,
+                 "methods": self.methods,
+                 "executor": self._executor,
+                 "validation_strategies":
+                     self.validation_strategies,
+                 "api_token_handler": self.api_token_is_valid
+             })
+        ]
+
+        self._add_extra_handlers(handlers)
+        self._add_static_handlers(handlers)
+
+        return Application(handlers, template_path=self.template_dir)
+
+    def _add_extra_handlers(self, handlers):
+        """
+        Adds the extra handler (defined by the user)
+
+        :param handlers: a list of :py:class:`tornado.web.RequestHandler` instances.
+        :return:
+        """
+        handlers.extend(self.extra_handlers)
+
+    def _add_static_handlers(self, handlers):
+        """
+        Creates and adds the handles needed for serving static files.
+
+        :param handlers:
+        """
+        for url, path in self.static_dirs:
+            handlers.append((url.rstrip("/") + "/(.*)", StaticFileHandler, {"path": path}))
+
+    def _gather_exposed_methods(self):
+        """
+        Searches for the exposed methods in the current microservice class. A method is considered
+        exposed if it is decorated with the :py:func:`gemstone.public_method` or
+        :py:func:`gemstone.private_api_method`.
+        """
+
+        for itemname in dir(self):
+            item = getattr(self, itemname)
+            if getattr(item, "__is_exposed_method__", False) is True or \
+                            getattr(item, "__private_api_method__", False) is True:
+                self.methods[item.__name__] = item
+
+    def _gather_event_handlers(self):
+        """
+        Searches for the event handlers in the current microservice class.
+
+        :return:
+        """
+        for itemname in dir(self):
+            item = getattr(self, itemname)
+            if getattr(item, "__is_event_handler__", False):
+                self.event_handlers.setdefault(item.__handled_event__, item)
+
+    def _ping_to_service_registry(self, servreg_remote_service):
+        """
+        Notifies a service registry about the service (its name and http location)
+
+        :param servreg_remote_service: a :py:class:`gemstone.RemoteService` instance
+        """
+        url = self.accessible_at
+        self.logger.debug("Pinging {registry_url} (name={name}, url={url})".format(
+            registry_url=servreg_remote_service.url, name=self.name, url=url
+        ))
+        servreg_remote_service.notifications.ping(name=self.name, url=url)
+
+    def _periodic_task_iter(self):
+        """
+        Iterates through all the periodic tasks:
+
+        - the service registry pinging
+        - default dummy task if on Windows
+        - user defined periodic tasks
+
+        :return:
+        """
+        for url in self.service_registry_urls:
+            registry = RemoteService(url)
+            self.registries.append(registry)
+            periodic_servreg_ping = functools.partial(self._ping_to_service_registry, registry)
+            periodic_servreg_ping()  # initial ping
+            self.default_periodic_tasks.append(
+                (periodic_servreg_ping, self.service_registry_ping_interval)
+            )
+
+        all_periodic_tasks = self.default_periodic_tasks + self.periodic_tasks
+        for func, timer_in_seconds in all_periodic_tasks:
+            timer_milisec = timer_in_seconds * 1000
+            yield PeriodicCallback(func, timer_milisec, io_loop=self.io_loop)
 
     @classmethod
     def _set_option_if_available(cls, args, name):
