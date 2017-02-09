@@ -9,6 +9,16 @@ class RabbitMqEventTransport(BaseEventTransport):
     EXCHANGE_PREFIX = "gemstone.events."
 
     def __init__(self, host="127.0.0.1", port=5672, username="", password="", **connection_options):
+        """
+        Event transport via RabbitMQ server.
+
+        :param host: ipv4 or hostname
+        :param port: the port where the server listens
+        :param username: username used for authentication
+        :param password: password used for authentication
+        :param connection_options: extra arguments that will be used in :py:class:`pika.BlockingConnection`
+                                   initialization.
+        """
         self._handlers = {}
 
         self.connection = pika.BlockingConnection(

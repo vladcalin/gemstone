@@ -1,3 +1,5 @@
+.. _creating-a-service:
+
 Creating a microservice
 =======================
 
@@ -106,7 +108,13 @@ Specifying different host, port and location
   For example, it is useful when the service runs behind a load balancer and the
   :py:data:`gemstone.MicroService.accessible_at` attribute will point to the address of the load balancer,
   so that when another service queries the registry for this service, it will access the
-  load balancer instead. Also the first
+  load balancer instead.
+
+Event dispatching
+~~~~~~~~~~~~~~~~~
+
+- :py:data:`gemstone.MicroService.event_transports` - a list of :py:class:`gemstone.event.transport.BaseEventTransport`.
+  See :ref:`event-transports` for available implementations and :ref:`publisher-subscriber` for usage.
 
 Other options
 ~~~~~~~~~~~~~

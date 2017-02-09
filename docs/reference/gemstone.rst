@@ -33,6 +33,9 @@ Core classes
                     various sources in order to validate the access to the private methods. See :ref:`token_validation`
                     for more details.
 
+    .. autoattribute:: gemstone.MicroService.event_transports
+        :annotation: = a list of event transports that will be used to publish and receive events.
+
     .. autoattribute:: gemstone.MicroService.extra_handlers
         :annotation: = A list of tuples of form (url_expression, tornado_handler) that will be added to the default
                 Tornado application.

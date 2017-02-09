@@ -29,6 +29,8 @@ def as_completed(*async_result_wrappers):
 
     :param async_result_wrappers: :py:class:`gemstone.client.remote_service.AsyncMethodCall` instances.
     :return: a generator that yields items as soon they results become available.
+
+    .. versionadded:: 0.5.0
     """
 
     wrappers_copy = list(async_result_wrappers)
@@ -50,6 +52,8 @@ def first_completed(*async_result_wrappers):
 
     :param async_result_wrappers:
     :return:
+
+    .. versionadded:: 0.5.0
     """
     wrappers_copy = list(async_result_wrappers)
     while True:
@@ -70,6 +74,8 @@ def make_callbacks(async_result_wrappers, on_result, on_error, run_in_threads=Fa
     :param on_error: a callabke that takes a single positional argument (the error)
     :param run_in_threads: flag tha specifies if the callbacks should be called in the current thread or in background
                            threads
+
+    .. versionadded:: 0.5.0
     """
 
     if run_in_threads:

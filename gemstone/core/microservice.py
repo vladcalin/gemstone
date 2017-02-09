@@ -214,11 +214,25 @@ class MicroService(ABC):
         :param target: The function to be executed.
         :param args: A tuple or list representing the positional arguments for the thread.
         :param kwargs: A dictionary representing the keyword arguments.
+
+        .. versionadded:: 0.5.0
         """
         thread_obj = threading.Thread(target=target, args=args, kwargs=kwargs, daemon=True)
         thread_obj.start()
 
     def emit_event(self, event_name, event_body):
+        """
+        Publishes an event of type ``event_name`` to all subscribers, having the body ``event_body``. The event
+        is pushed through all available event transports.
+
+        The event body must be a Python object that can be represented as a JSON.
+
+        :param event_name: a ``str`` representing the event type
+        :param event_body: a Python object that can be represented as JSON.
+
+        .. versionadded:: 0.5.0
+        """
+
         for transport in self.event_transports:
             transport.emit_event(event_name, event_body)
 

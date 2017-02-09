@@ -1,3 +1,17 @@
+0.5.0 (09.02.2017)
+~~~~~~~~~~~~~~~~~~
+
+- added support for publisher-subscriber communication method:
+    - base class for event transports: ``gemstone.event.transport.BaseEventTransport``
+    - first concrete implementation: ``gemstone.event.transport.RabbitMqEventTransport``
+    - ``gemstone.MicroService.emit_event`` for publishing an event
+    - ``gemstone.event_handler`` decorator for designating event handlers
+- restructured documentation (added tutorial, examples and howto sections).
+- added asynchronous method calls in ``gemstone.RemoteService``.
+- added ``gemstone.as_completed``, ``gemstone.first_completed``, ``gemstone.make_callbacks``
+  utility functions for dealing with asynchronous method calls.
+
+
 0.4.0 (25.01.2017)
 ~~~~~~~~~~~~~~~~~~
 
