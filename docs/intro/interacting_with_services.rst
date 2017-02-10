@@ -1,3 +1,5 @@
+.. _interacting-with-services:
+
 Interacting with services
 =========================
 

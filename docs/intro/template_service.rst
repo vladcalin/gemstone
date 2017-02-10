@@ -1,3 +1,5 @@
+.. _using-a-template:
+
 Using a template for writing a microservice
 ===========================================
 
