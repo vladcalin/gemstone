@@ -1,14 +1,13 @@
 import random
 import time
 import gemstone
-from gemstone.config.configurable import Optional, Required
 
 
 class TestMicroservice(gemstone.MicroService):
     name = "test"
-    host = Optional("127.0.0.1")
-    port = Optional("random", mapping={"random": lambda _: random.randint(8000, 65000)})
-    endpoint = Optional("/test/v1/api")
+    host = "127.0.0.1"
+    port = 8000
+    endpoint = "/api"
 
     @gemstone.public_method
     def say_hello(self, name):
@@ -21,5 +20,5 @@ class TestMicroservice(gemstone.MicroService):
 
 
 if __name__ == '__main__':
-    cli = TestMicroservice.get_cli()
-    cli()
+    service = TestMicroservice()
+    service.start()

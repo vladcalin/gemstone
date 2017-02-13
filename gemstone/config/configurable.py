@@ -1,55 +1,45 @@
-import abc
+"""
+
+Configurable component of the configurable sub-framework.
+
+Example usage of configurables
+
+::
+
+    class MyMicroService(MicroService):
+
+        name = "jadasd"
+        port = 8000
+        host = "127.0.0.1"
+        accessible_at = "http://..."
+        registry_urls = [...]
+
+        configurables = [
+            Configurable("port", type=int, mappings={
+                "random": random.randint(8000, 65000)
+            }),
+            Configurable("host", type=str)
+        ]
+        configurators = [
+            CommandLineConfigurator(),
+            IniFileConfigurator("config.ini"),
+            JsonFileConfigurator("config.json"),
+            XmlFileConfigurator("config.xml")
+        ]
+
+When :py:meth:`Microservice.start` is called, the configurators
+search for values that can override the specified configurables defaults.
+
+The configurators resolve in the order they are declared, meaning that a value
+that was set by a configurator can be overriden by a configurator that is
+
+"""
 
 
-class Configurable(abc.ABC):
-    @abc.abstractmethod
-    def value(self):
-        pass
-
-    @abc.abstractmethod
-    def set_value(self, value):
-        pass
-
-    @abc.abstractmethod
-    def is_set(self):
-        pass
-
-
-class Required(Configurable):
-    def __int__(self, *, mapping=None):
-        self.mapping = mapping or {}
-        self._value = None
-        self._is_set = False
-
-    def set_value(self, value):
-        self._value = value
-        self._is_set = True
-
-    def is_set(self):
-        return self._is_set
-
-    def value(self):
-        template = self.mapping.get(self._value)
-        if not template:
-            return self._value
-        else:
-            return template(self._value)
-
-
-class Optional(Configurable):
-    def __init__(self, default, *, mapping=None):
-        self.mapping = mapping or {}
-        self._value = default
-
-    def set_value(self, value):
-        self._value = value
-
-    def value(self):
-        template = self.mapping.get(self._value)
-        if not template:
-            return self._value
-        else:
-            return template(self._value)
-
-    def is_set(self):
-        return True
+class Configurable(object):
+    def __init__(self, name, type=str, *, template=None, mappings=None):
+        self.name = name
+        self.mappings = mappings or {}
+        self.template = template or (lambda x: x)
+        self.value = None
+        self.type = type

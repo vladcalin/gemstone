@@ -1,4 +1,5 @@
 import abc
+import argparse
 
 
 class BaseConfigurator(abc.ABC):
@@ -10,7 +11,7 @@ class BaseConfigurator(abc.ABC):
     """
 
     def __init__(self):
-        self._configurable = {}
+        self.configurables = []
 
     @abc.abstractmethod
     def load(self):
@@ -20,31 +21,40 @@ class BaseConfigurator(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def build_config(self):
-        """
-        Computes the final configuration.
-
-        :return:
-        """
-        pass
-
-    @abc.abstractmethod
     def get(self, name):
         pass
 
-    def register_configurable(self, name, configurable):
-        self._configurable[name] = configurable
+    def register_configurable(self, configurable):
+        self.configurables.append(configurable)
+
+    def get_configurable_by_name(self, name):
+        l = [c for c in self.configurables if c.name == name]
+        if l:
+            return l[0]
 
 
 class CommandLineConfigurator(BaseConfigurator):
     def __init__(self):
         super(CommandLineConfigurator, self).__init__()
+        self.args = None
 
     def load(self):
-        pass
-
-    def build_config(self):
-        pass
+        parser = argparse.ArgumentParser()
+        for configurable in self.configurables:
+            parser.add_argument("--" + configurable.name)
+        self.args = parser.parse_args()
 
     def get(self, name):
-        pass
+        configurable = self.get_configurable_by_name(name)
+        if not configurable:
+            return None
+
+        value = getattr(self.args, name, None)
+        if not value:
+            return None
+
+        value = configurable.template(value)
+        if value in configurable.mappings:
+            return configurable.mappings[value](value)
+
+        return value
