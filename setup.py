@@ -75,6 +75,7 @@ setup(
 
     # tests
     test_suite="tests",
+    test_requires="pytest",
 
     install_requires=read_dependencies("requirements.txt"),
 

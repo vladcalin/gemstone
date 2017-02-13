@@ -60,6 +60,7 @@ class MicroService(ABC):
     event_transports = []
 
     # configurable framework
+    skip_configuration = False
     configurables = [
         Configurable("port", type=int, mappings={"random": lambda _: random.randint(8000, 65000)}),
         Configurable("host"),
@@ -392,8 +393,9 @@ class MicroService(ABC):
     # endregion
 
     def _before_start_setup(self):
-        self._prepare_configurators()
-        self._activate_configurators()
+        if not self.skip_configuration:
+            self._prepare_configurators()
+            self._activate_configurators()
 
     def _initialize_event_handlers(self):
         for event_transport in self.event_transports:
