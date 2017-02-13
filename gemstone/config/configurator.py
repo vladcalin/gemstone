@@ -1,6 +1,8 @@
 import abc
 import argparse
 
+import simplejson as json
+
 
 class BaseConfigurator(abc.ABC):
     """
@@ -58,3 +60,35 @@ class CommandLineConfigurator(BaseConfigurator):
             return configurable.mappings[value](value)
 
         return value
+
+
+class JsonFileConfigurator(BaseConfigurator):
+    def __init__(self, file_name=None, from_cmd_arg=None):
+        if file_name and from_cmd_arg:
+            raise ValueError("Only one of 'file_name' and "
+                             "'from_cmd_arg' supported")
+
+        super(JsonFileConfigurator, self).__init__()
+        self.file_name = file_name
+        self.from_cmd_arg = from_cmd_arg
+        self.data = None
+
+    def get(self, name):
+        # TODO: implement this
+        pass
+
+    def load(self):
+        if self.file_name:
+            self.data = self._load_from_file(self.file_name)
+        elif self.from_cmd_arg:
+            self.data = self._load_from_cmd_line()
+
+    def _load_from_file(self, file_name):
+        with open(file_name) as f:
+            return json.load(f)
+
+    def _load_from_cmd_line(self):
+        parser = argparse.ArgumentParser()
+        parser.add_argument("file_name")
+        args = parser.parse_args()
+        return self._load_from_file(args.file_name)
