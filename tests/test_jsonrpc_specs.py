@@ -8,7 +8,7 @@ import logging
 from tornado.testing import AsyncHTTPTestCase
 import simplejson as json
 
-from tests.services.service1 import ServiceJsonRpcSpecs
+from tests.services.service_jsonrpc_specs import ServiceJsonRpcSpecs
 
 
 class JsonRpcSpecTestCase(AsyncHTTPTestCase):

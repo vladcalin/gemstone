@@ -16,7 +16,7 @@ from gemstone.client.remote_service import RemoteService, AsyncMethodCall
 from gemstone import make_callbacks, first_completed
 from gemstone.errors import CalledServiceError
 
-from tests.services.service2 import Service1, Service2
+from tests.services.service_client import Service1, Service2
 
 
 class ClientTestCase(TestCase):

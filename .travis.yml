@@ -5,9 +5,9 @@ python:
     - "3.6"
 install:
     - "pip install ."
-    - "pip install coverage python-coveralls"
+    - "pip install pytest coverage python-coveralls"
 script:
-    - "coverage run --source=gemstone -m unittest discover tests"
+    - "coverage run --source=gemstone -m pytest tests"
 after_success:
     - "coveralls -i"
 
