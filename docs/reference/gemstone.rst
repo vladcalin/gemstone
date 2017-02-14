@@ -4,7 +4,9 @@ The ``gemstone`` module (main classes)
 Core classes
 ------------
 
-.. autoclass:: gemstone.MicroService
+.. py:currentmodule:: gemstone
+
+.. autoclass:: MicroService
     :members:
 
     .. autoattribute:: gemstone.MicroService.name
@@ -61,7 +63,7 @@ Core classes
         :annotation: = The number of seconds between ``ping`` requests to the service registries.
 
 
-.. autoclass:: gemstone.RemoteService
+.. autoclass:: RemoteService
     :members:
 
     .. autoattribute:: gemstone.RemoteService.methods
@@ -88,12 +90,12 @@ Core classes
 Decorators
 ----------
 
-.. autofunction:: gemstone.public_method
+.. autofunction:: public_method
 
-.. autofunction:: gemstone.private_api_method
+.. autofunction:: private_api_method
 
 Request handlers
 ----------------
 
-.. autoclass:: gemstone.TornadoJsonRpcHandler
+.. autoclass:: TornadoJsonRpcHandler
     :members:

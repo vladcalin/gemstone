@@ -3,10 +3,11 @@
 Event transports
 ================
 
+.. py:currentmodule:: gemstone.event.transport
 
-.. autoclass:: gemstone.event.transport.BaseEventTransport
+.. autoclass:: BaseEventTransport
     :members:
 
-.. autoclass:: gemstone.event.transport.RabbitMqEventTransport
+.. autoclass:: RabbitMqEventTransport
     :members:
 

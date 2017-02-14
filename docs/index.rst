@@ -20,7 +20,7 @@ This library offers support for writing a microservice that:
 This documentation is structured in multiple parts:
 
 - :ref:`overview-top` - General information to get you started
-- :ref:`tutorial-top` - A tutorial that covers the basics.
+- :ref:`10-minutes-example` - A quick example that covers the basics.
 - :ref:`howto-top` - A collection of mini guides of how to handle various situations.
 - :ref:`reference-top` - The reference to the classes, functions, constants that can be used.
 
@@ -31,7 +31,6 @@ Table of contents:
     :maxdepth: 2
 
     intro/index
-    tutorial/index
     howto/index
     reference/index
     changes

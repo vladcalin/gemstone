@@ -8,6 +8,7 @@ Overview
 
    overview
    installation
+   10_minute_example
    creating_a_service
    interacting_with_services
    examples

@@ -22,3 +22,14 @@ programming in Python, I suggest to read a few words from the `Tornado documenta
 
 Although it is not required for you to know about all that coroutines and event loop theory, it sure helps to understand
 what happens *under the hood*.
+
+Features
+~~~~~~~~
+
+The main features of this framework are:
+
+- microservices that communicate over JSON RPC 2.0 protocol.
+- possibility to extend with custom functionality (via Tornado request handlers)
+- automatic service discovery
+- dynamic configuration (no need to modify the code to change the running parameters)
+- support for the publisher-subscriber communication pattern

@@ -12,3 +12,4 @@ Various topics of interest
    rpc
    publisher_subscriber
    service_discovery
+   configuration
