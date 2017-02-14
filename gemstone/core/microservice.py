@@ -7,7 +7,6 @@ import threading
 import sys
 from abc import ABC
 from concurrent.futures import ThreadPoolExecutor
-from typing import Iterable
 
 from tornado.web import StaticFileHandler
 from tornado.ioloop import IOLoop, PeriodicCallback
