@@ -13,6 +13,8 @@ from tornado.ioloop import IOLoop, PeriodicCallback
 from tornado.web import Application
 from tornado.log import enable_pretty_logging
 
+from gemstone.config.configurable import Configurable
+from gemstone.config.configurator import CommandLineConfigurator
 from gemstone.errors import ServiceConfigurationError
 from gemstone.core.handlers import TornadoJsonRpcHandler
 from gemstone.core.decorators import public_method
@@ -27,36 +29,51 @@ IS_WINDOWS = sys.platform.startswith("win32")
 
 
 class MicroService(ABC):
+    # service metadata
     name = None
 
+    # accessibility
     host = "127.0.0.1"
     port = 8000
     accessible_at = None
     endpoint = "/api"
 
-    # extra Tornado configuration
+    # webapp configuration
     template_dir = "."
     static_dirs = []
     extra_handlers = []
 
-    # protocol specs
+    # access control
     validation_strategies = [
         HeaderValidationStrategy(header_name="X-Api-Token")
     ]
 
-    # service registry integration
+    # auto-discovery
     service_registry_urls = []
     service_registry_ping_interval = 30
 
     # periodic tasks
     periodic_tasks = []
 
+    # event handlers
+    event_transports = []
+
+    # configurable framework
+    skip_configuration = False
+    configurables = [
+        Configurable("port", type=int, mappings={"random": lambda _: random.randint(8000, 65000)}),
+        Configurable("host"),
+        Configurable("accessible_at"),
+        Configurable("endpoint"),
+        Configurable("service_registry_urls", template=lambda s: s.split(","))
+    ]
+    configurators = [
+        CommandLineConfigurator()
+    ]
+
     # in some situations, on Windows the event loop may hang
     # http://stackoverflow.com/questions/33634956/why-would-a-timeout-avoid-a-tornado-hang/33643631#33643631
     default_periodic_tasks = [(lambda: None, 0.5)] if IS_WINDOWS else []
-
-    # event handlers
-    event_transports = []
 
     # io event related
     max_parallel_blocking_tasks = os.cpu_count()
@@ -318,10 +335,14 @@ class MicroService(ABC):
         The main method that starts the service. This is blocking.
 
         """
+        self._before_start_setup()
         self.on_service_start()
         self.app = self.make_tornado_app()
         enable_pretty_logging()
         self.app.listen(self.port, address=self.host)
+
+        for k, v in self.get_current_configuration().items():
+            self.logger.debug("{}={}".format(k, v))
 
         for periodic_task in self._periodic_task_iter():
             self.logger.debug("Starting periodic task {}".format(periodic_task))
@@ -338,7 +359,42 @@ class MicroService(ABC):
             # this method to check if the loop is running is ugly
             pass
 
+    def get_current_configuration(self):
+        return {
+            "name": self.name,
+            "host": self.host,
+            "port": self.port,
+            "endpoint": self.endpoint,
+            "accessible_at": self.accessible_at,
+            "autodiscovery": {
+                "service_registry_urls": self.service_registry_urls,
+                "service_registry_ping_interval": self.service_registry_ping_interval,
+            },
+            "max_parallel_blocking_tasks": self.max_parallel_blocking_tasks,
+            "webapp": {
+                "template_dir": self.template_dir,
+                "static_dirs": self.static_dirs,
+                "extra_handlers": [str(h) for h in self.extra_handlers]
+            },
+            "access_control": {
+                "validation_strategies": [str(v) for v in self.validation_strategies]
+            },
+            "event": {
+                "event_transports": [str(t) for t in self.event_transports]
+            },
+            "configuration": {
+                "configurables": [str(c) for c in self.configurables],
+                "configurators": [str(c) for c in self.configurators]
+            }
+
+        }
+
     # endregion
+
+    def _before_start_setup(self):
+        if not self.skip_configuration:
+            self._prepare_configurators()
+            self._activate_configurators()
 
     def _initialize_event_handlers(self):
         for event_transport in self.event_transports:
@@ -460,3 +516,21 @@ class MicroService(ABC):
     def _set_option_if_available(cls, args, name):
         if hasattr(args, name) and getattr(args, name) is not None:
             setattr(cls, name, getattr(args, name))
+
+    def _prepare_configurators(self):
+        for configurator in self.configurators:
+            for configurable in self.configurables:
+                configurator.register_configurable(configurable)
+
+    def _activate_configurators(self):
+        for configurator in self.configurators:
+            configurator.load()
+
+        for configurator in self.configurators:
+            for configurable in self.configurables:
+                name = configurable.name
+                value = configurator.get(name)
+                if not value:
+                    continue
+
+                setattr(self, name, value)

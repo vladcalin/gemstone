@@ -1,42 +1,19 @@
+"""
+Contains tests that assert the compliance with the
+JSON RPC 2.0 specifications (http://www.jsonrpc.org/specification)
+"""
+
 import logging
 
-from tornado.testing import AsyncHTTPTestCase, gen_test
+from tornado.testing import AsyncHTTPTestCase
 import simplejson as json
 
-from gemstone import MicroService, public_method, private_api_method
-
-
-class TestService(MicroService):
-    name = "test.service"
-
-    host = "127.0.0.1"
-    port = 9999
-
-    @public_method
-    def test_method_no_params(self):
-        return "success_1"
-
-    @public_method
-    def test_method_params(self, param1, param2):
-        return "this {} is a {}".format(param1, param2)
-
-    @public_method
-    def test_method_var_params(self, **kwargs):
-        return {
-            "kwargs": kwargs
-        }
-
-    @private_api_method
-    def test_method_priv_no_params(self):
-        pass
-
-    def api_token_is_valid(self, api_token):
-        return api_token == "test-token"
+from tests.services.service_jsonrpc_specs import ServiceJsonRpcSpecs
 
 
 class JsonRpcSpecTestCase(AsyncHTTPTestCase):
     def get_app(self):
-        app = TestService().make_tornado_app()
+        app = ServiceJsonRpcSpecs().make_tornado_app()
 
         # disable logging
         hn = logging.NullHandler()
@@ -318,7 +295,8 @@ class JsonRpcSpecTestCase(AsyncHTTPTestCase):
              "params": {"param1": "test", "param2": "test2"}},
             {"jsonrpc": "2.0", "id": 3, "method": "test_method_no_params", "params": {}}
         ]
-        resp = self.fetch("/api", method="POST", headers={"Content-Type": "application/json"}, body=json.dumps(payload))
+        resp = self.fetch("/api", method="POST", headers={"Content-Type": "application/json"},
+                          body=json.dumps(payload))
         resp = json.loads(resp.body.decode())
 
         response_id_1 = self._get_response_by_id(resp, 1)

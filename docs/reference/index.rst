@@ -10,6 +10,7 @@ Reference
 
    gemstone
    validation
+   config
    event_transport
    utility
 

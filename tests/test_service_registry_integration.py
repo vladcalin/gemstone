@@ -3,18 +3,10 @@ from unittest.mock import patch
 from io import BytesIO
 import sys
 
-from gemstone import MicroService
+from tests.services.service_service_registry_integration import TestServiceNoServiceRegistries, \
+    TestServiceOneServiceRegistry
 
 IS_WINDOWS = sys.platform.startswith("win32")
-
-
-class TestServiceNoServiceRegistries(MicroService):
-    name = "test.service.1"
-
-
-class TestServiceOneServiceRegistry(MicroService):
-    name = "test.service.1"
-    service_registry_urls = ["http://localhost:9999/api"]
 
 
 class ServiceRegistryIntegrationTestCase(TestCase):
