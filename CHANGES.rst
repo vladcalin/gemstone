@@ -1,3 +1,15 @@
+0.6.0 (14.02.2017)
+~~~~~~~~~~~~~~~~~~
+
+- added configurable framework:
+    - ``gemstone.config.configurable.Configurable`` class
+    - ``gemstone.config.configurator.*`` classes
+    - ``gemstone.MicroService.configurables`` and ``gemstone.MicroService.configurators`` attributes
+    - switched testing to pytest
+    - improved documentation (restructured and minor additions). Still a work in progress
+
+
+
 0.5.0 (09.02.2017)
 ~~~~~~~~~~~~~~~~~~
 
