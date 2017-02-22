@@ -36,6 +36,13 @@ Event dispatching
 
     .. autoattribute:: gemstone.MicroService.event_transports
 
+Dynamic configuration
+^^^^^^^^^^^^^^^^^^^^^
+
+    .. autoattribute:: gemstone.MicroService.skip_configuration
+    .. autoattribute:: gemstone.MicroService.configurables
+    .. autoattribute:: gemstone.MicroService.configurators
+
 Web application functionality
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -82,26 +89,9 @@ Can be called
 
 
 .. autoclass:: RemoteService
-    :members:
 
     .. autoattribute:: gemstone.RemoteService.methods
-        :annotation: = A proxy object through which methods from the remote service can be invoked. Example usage
-
-                        ::
-
-                           client = RemoteService(api_url)
-                           result = client.methods.method_to_call(arguments)
-
     .. autoattribute:: gemstone.RemoteService.notifications
-        :annotation: = A proxy object through which methods from the remote service can be invoked as notifications.
-                       (no answer is expected). Example usage:
-
-                        ::
-
-                           client = RemoteService(api_url)
-                           client.notifications.method_to_call(arguments)  # returns None
-
-
 
 
 
@@ -109,11 +99,13 @@ Decorators
 ----------
 
 .. autofunction:: public_method
-
 .. autofunction:: private_api_method
+.. autofunction:: event_handler
 
 Request handlers
 ----------------
+
+.. autoclass:: GemstoneCustomHandler
 
 .. autoclass:: TornadoJsonRpcHandler
     :members:

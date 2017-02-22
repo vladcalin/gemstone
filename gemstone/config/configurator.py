@@ -34,6 +34,12 @@ class BaseConfigurator(abc.ABC):
         if l:
             return l[0]
 
+    def __repr__(self):
+        return "<{}>".format(self.__class__.__name__)
+
+    def __str__(self):
+        return repr(self)
+
 
 class CommandLineConfigurator(BaseConfigurator):
     def __init__(self):

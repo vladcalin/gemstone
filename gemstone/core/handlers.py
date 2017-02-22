@@ -9,13 +9,23 @@ from gemstone.core.structs import JsonRpcResponse, JsonRpcRequest, JsonRpcReques
     GenericResponse
 
 __all__ = [
-    'TornadoJsonRpcHandler'
+    'TornadoJsonRpcHandler',
+    'GemstoneCustomHandler'
 ]
 
 
 # noinspection PyAbstractClass
 class GemstoneCustomHandler(RequestHandler):
+    """
+    Base class for custom Tornado handlers that
+    can be added to the microservice.
+
+    Offers a reference to the microservice through the ``self.microservice`` attribute.
+
+    """
+
     def __init__(self, *args, **kwargs):
+        #: reference to the microservice that uses the request handler
         self.microservice = None
         super(GemstoneCustomHandler, self).__init__(*args, **kwargs)
 

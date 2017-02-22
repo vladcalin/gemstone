@@ -204,10 +204,33 @@ class RemoteService(object):
 
     @property
     def methods(self):
+        """
+        Returns a proxy object through which you can call remote methods. Usage:
+
+        ::
+
+            client = gemstone.RemoteService(service_url)
+            print(client.methods.say_hello("world"))
+            # hello world
+
+        For asynchronous call, you must pass the ``__async=True`` parameter to the method call
+
+        ::
+
+            async_resp = client.methods.say_hello("world", __async=True)
+            async_resp.wait()
+            print(async_resp.result())
+            # hello world
+
+        """
         return self._method_proxy
 
     @property
     def notifications(self):
+        """
+        Same as :py:meth:`gemstone.RemoteService.methods` but does not wait for a response.
+        Returns ``None`` immediately.
+        """
         return self._notification_proxy
 
     def make_request_sync(self, url, json_body=None, headers=None):

@@ -3,7 +3,7 @@
 REM Command file for Sphinx documentation
 
 if "%SPHINXBUILD%" == "" (
-	set SPHINXBUILD=D:\Projects\personal\quartz\venv\Scripts\sphinx-build.exe
+	set SPHINXBUILD=D:\Projects\gemstones\_gemstone\Scripts\sphinx-build.exe
 )
 set BUILDDIR=_build
 set ALLSPHINXOPTS=-d %BUILDDIR%/doctrees %SPHINXOPTS% .

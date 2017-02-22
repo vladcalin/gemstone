@@ -43,3 +43,9 @@ class Configurable(object):
         self.template = template or (lambda x: x)
         self.value = None
         self.type = type
+
+    def __repr__(self):
+        return "<Configurable name={} type={}>".format(self.name, self.type)
+
+    def __str__(self):
+        return repr(self)
