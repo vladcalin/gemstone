@@ -1,7 +1,7 @@
-.. _howto-top:
+.. _topics-top:
 
-HOW TOs
-=======
+Topics
+======
 
 Various topics of interest
 
