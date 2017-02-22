@@ -13,24 +13,35 @@ __all__ = [
 ]
 
 
-class TornadoJsonRpcHandler(RequestHandler):
-    methods = None
-    executor = None
-    validation_strategies = None
-    api_token_handlers = None
-    logger = None
+# noinspection PyAbstractClass
+class GemstoneCustomHandler(RequestHandler):
+    def __init__(self, *args, **kwargs):
+        self.microservice = None
+        super(GemstoneCustomHandler, self).__init__(*args, **kwargs)
 
+    # noinspection PyMethodOverriding
+    def initialize(self, microservice):
+        self.microservice = microservice
+
+
+# noinspection PyAbstractClass
+class TornadoJsonRpcHandler(RequestHandler):
     def __init__(self, *args, **kwargs):
         self.request_is_finished = False
+        self.methods = None
+        self.executor = None
+        self.validation_strategies = None
+        self.api_token_handlers = None
+        self.logger = None
         super(TornadoJsonRpcHandler, self).__init__(*args, **kwargs)
 
     # noinspection PyMethodOverriding
-    def initialize(self, logger, methods, executor, validation_strategies, api_token_handler):
-        self.logger = logger
-        self.methods = methods
-        self.executor = executor
-        self.validation_strategies = validation_strategies
-        self.api_token_handlers = api_token_handler
+    def initialize(self, microservice):
+        self.logger = microservice.logger
+        self.methods = microservice.methods
+        self.executor = microservice._executor
+        self.validation_strategies = microservice.validation_strategies
+        self.api_token_handlers = microservice.api_token_is_valid
         self.request_is_finished = False
 
     @coroutine

@@ -29,37 +29,54 @@ IS_WINDOWS = sys.platform.startswith("win32")
 
 
 class MicroService(ABC):
-    # service metadata
+    #: The name of the service. Is required.
     name = None
 
-    # accessibility
+    #: The host where the service will listen
     host = "127.0.0.1"
+
+    #: The port where the service will bind
     port = 8000
+
+    #: The url where the service can be accessed by other microservices.
+    #: Useful when using a service registry.
     accessible_at = None
+
+    #: The path in the URL where the microservice JSON RPC endpoint will be accessible.
     endpoint = "/api"
 
-    # webapp configuration
+    #: Template directory used by the created Tornado Application.
+    #: Useful when you plan to add web application functionality
+    #: to the microservice.
     template_dir = "."
+
+    #: A list of directories where the static files will looked for.
     static_dirs = []
+
+    #: A list of extra Tornado handlers that will be included in the
+    #: created Tornado application.
     extra_handlers = []
 
-    # access control
+    #: A list of validation strategies used by the security sub-framework.
     validation_strategies = [
         HeaderValidationStrategy(header_name="X-Api-Token")
     ]
 
-    # auto-discovery
+    #: A list of service registry complete URL which will enable service auto-discovery.
     service_registry_urls = []
+    #: Interval (in seconds) when the microservice will ping all the service registries.
     service_registry_ping_interval = 30
 
-    # periodic tasks
+    #: A list of (time_in_seconds, callable) that will enable periodic task execution.
     periodic_tasks = []
 
-    # event handlers
+    #: A list of Event transports that will enable the Event dispatching feature.
     event_transports = []
 
-    # configurable framework
+    #: Flag that if set to True, will disable the configurable sub-framework.
     skip_configuration = False
+    #: A list of configurable objects that allows the service's running parameters to
+    #: be changed dynamically without changing its code.
     configurables = [
         Configurable("port", type=int, mappings={"random": lambda _: random.randint(8000, 65000)}),
         Configurable("host"),
@@ -67,6 +84,8 @@ class MicroService(ABC):
         Configurable("endpoint"),
         Configurable("service_registry_urls", template=lambda s: s.split(","))
     ]
+    #: A list of configurator objects that will extract in order values for
+    #: the defined configurators
     configurators = [
         CommandLineConfigurator()
     ]
@@ -75,7 +94,8 @@ class MicroService(ABC):
     # http://stackoverflow.com/questions/33634956/why-would-a-timeout-avoid-a-tornado-hang/33643631#33643631
     default_periodic_tasks = [(lambda: None, 0.5)] if IS_WINDOWS else []
 
-    # io event related
+    #: How many methods can be executed in parallel at the same time. Note that every blocking
+    #: method is executed in a ``concurrent.features.ThreadPoolExecutor``
     max_parallel_blocking_tasks = os.cpu_count()
     _executor = None
 
@@ -412,21 +432,13 @@ class MicroService(ABC):
     def make_tornado_app(self):
         """
         Creates a :py:class`tornado.web.Application` instance that respect the JSON RPC 2.0 specs and
-        exposes the designated methods.
+        exposes the designated methods. Can be used in tests to obtain the Tornado application.
 
         :return: a :py:class:`tornado.web.Application` instance
         """
 
         handlers = [
-            (self.endpoint, TornadoJsonRpcHandler,
-             {
-                 "logger": self.logger,
-                 "methods": self.methods,
-                 "executor": self._executor,
-                 "validation_strategies":
-                     self.validation_strategies,
-                 "api_token_handler": self.api_token_is_valid
-             })
+            (self.endpoint, TornadoJsonRpcHandler, {"microservice": self})
         ]
 
         self._add_extra_handlers(handlers)
@@ -441,7 +453,8 @@ class MicroService(ABC):
         :param handlers: a list of :py:class:`tornado.web.RequestHandler` instances.
         :return:
         """
-        handlers.extend(self.extra_handlers)
+        extra_handlers = [(h[0], h[1], {"microservice": self}) for h in self.extra_handlers]
+        handlers.extend(extra_handlers)
 
     def _add_static_handlers(self, handlers):
         """

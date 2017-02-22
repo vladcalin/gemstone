@@ -7,60 +7,78 @@ Core classes
 .. py:currentmodule:: gemstone
 
 .. autoclass:: MicroService
-    :members:
+
+Attributes
+~~~~~~~~~~
+
+You can (and should) define various class attributes in order
+to provide the desired functionality for your microservice.
+These attributes can be configured at runtime by using
+the configurable sub-framework (read more at :ref:`configuration-tips` )
+
+
+Identification
+^^^^^^^^^^^^^^
 
     .. autoattribute:: gemstone.MicroService.name
-        :annotation: = a string representing the name of the service. MUST be specified by user
-
     .. autoattribute:: gemstone.MicroService.host
-        :annotation: = a string representing the address or host to bind. Defaults to 127.0.0.1
-
     .. autoattribute:: gemstone.MicroService.port
-        :annotation: = an integer representing the port to bind. Defaults to 8000
-
     .. autoattribute:: gemstone.MicroService.endpoint
-        :annotation: = an string that says the url path where the service endpoint will be located.
-                    Defaults to "/api"
-
     .. autoattribute:: gemstone.MicroService.accessible_at
-        :annotation: = a full-url that specifies where the service can be accessible. Should be defined by the
-                    user when the microservice is not directly accessible because it runs behind a load balancer
-                    or reverse proxy. Defaults to http://{host}:{port}{endpoint}
 
-    .. autoattribute:: gemstone.MicroService.max_parallel_blocking_tasks
-        :annotation: = an integer representing how many parallel tasks can be executed in parallel. Defaults to os.cpu_count()
+Access validation
+^^^^^^^^^^^^^^^^^
 
     .. autoattribute:: gemstone.MicroService.validation_strategies
-        :annotation: = a list of validation strategy objects that will try to extract the api token from
-                    various sources in order to validate the access to the private methods. See :ref:`token_validation`
-                    for more details.
+
+Event dispatching
+^^^^^^^^^^^^^^^^^
 
     .. autoattribute:: gemstone.MicroService.event_transports
-        :annotation: = a list of event transports that will be used to publish and receive events.
+
+Web application functionality
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     .. autoattribute:: gemstone.MicroService.extra_handlers
-        :annotation: = A list of tuples of form (url_expression, tornado_handler) that will be added to the default
-                Tornado application.
-
     .. autoattribute:: gemstone.MicroService.template_dir
-        :annotation: = The path of the directory where the default Tornado application will look for templates. To
-                read more about how to use templates in Tornado, see http://www.tornadoweb.org/en/stable/template.html
-
     .. autoattribute:: gemstone.MicroService.static_dirs
-        :annotation: = A list of directory paths in which the default Tornado app will search for static files.
+
+Periodic tasks
+^^^^^^^^^^^^^^
 
     .. autoattribute:: gemstone.MicroService.periodic_tasks
-        :annotation: = A list of tuples of functions and an integer, that schedules the function to be executed every
-                given seconds in an asynchronous manner (there might be a slight delay in the function execution,
-                depending on the io loop availability).
+
+Service auto-discovery
+^^^^^^^^^^^^^^^^^^^^^^
 
     .. autoattribute:: gemstone.MicroService.service_registry_urls
-        :annotation: = A list of strings that represent the urls where the service registries are located. Pings them
-                on service startup. The service registry must expose a ping(name, host, port) method and
-                a locate_service(name) method via JSON RPC.
-
     .. autoattribute:: gemstone.MicroService.service_registry_ping_interval
-        :annotation: = The number of seconds between ``ping`` requests to the service registries.
+
+Misc
+^^^^
+
+    .. autoattribute:: gemstone.MicroService.max_parallel_blocking_tasks
+
+Methods
+~~~~~~~
+
+Can be overridden
+^^^^^^^^^^^^^^^^^
+
+    .. automethod:: gemstone.MicroService.on_service_start
+    .. automethod:: gemstone.MicroService.api_token_is_valid
+    .. automethod:: gemstone.MicroService.get_logger
+
+Can be called
+^^^^^^^^^^^^^
+
+    .. automethod:: gemstone.MicroService.get_service
+    .. automethod:: gemstone.MicroService.start_thread
+    .. automethod:: gemstone.MicroService.emit_event
+    .. automethod:: gemstone.MicroService.get_current_configuration
+    .. automethod:: gemstone.MicroService.make_tornado_app
+    .. automethod:: gemstone.MicroService.start
+
 
 
 .. autoclass:: RemoteService

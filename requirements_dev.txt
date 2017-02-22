@@ -1,0 +1,11 @@
+# standard requirements
+tornado
+click
+pika
+simplejson
+
+# testing
+pytest
+
+# documentation
+sphinx

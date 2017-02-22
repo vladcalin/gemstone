@@ -1,4 +1,4 @@
 .. _configuration-tips:
 
-Configuration tips
-==================
+Configurable features
+=====================
