@@ -1,5 +1,5 @@
 from functools import partial
-import asyncio
+import copy
 
 import simplejson as json
 from tornado.web import RequestHandler
@@ -43,6 +43,7 @@ class TornadoJsonRpcHandler(RequestHandler):
         self.validation_strategies = None
         self.api_token_handlers = None
         self.logger = None
+        self.microservice = None
         super(TornadoJsonRpcHandler, self).__init__(*args, **kwargs)
 
     # noinspection PyMethodOverriding
@@ -53,6 +54,7 @@ class TornadoJsonRpcHandler(RequestHandler):
         self.validation_strategies = microservice.validation_strategies
         self.api_token_handlers = microservice.api_token_is_valid
         self.request_is_finished = False
+        self.microservice = microservice
 
     @coroutine
     def post(self):
@@ -130,14 +132,14 @@ class TornadoJsonRpcHandler(RequestHandler):
 
         # check for private access
         method = self.methods[request_object.method]
-        self.logger.info(
-            "Called {} ({}) (request id = {})".format(request_object.method, request_object.params, request_object.id))
         if method.is_private:
             token = self.extract_api_token()
             if not self.api_token_handlers(token):
                 resp = GenericResponse.ACCESS_DENIED
                 resp.id = id_
                 return resp
+
+
 
         method = self.prepare_method_call(method, request_object.params)
         if not method:
@@ -147,6 +149,10 @@ class TornadoJsonRpcHandler(RequestHandler):
                 resp.id = id_
                 return resp
             return
+
+        # before request hook
+        request_object_copy = copy.deepcopy(request_object)
+        self.microservice.before_method_call(request_object_copy)
 
         try:
             result = yield self.call_method(method)
@@ -172,8 +178,12 @@ class TornadoJsonRpcHandler(RequestHandler):
             }
             return err
 
+        to_return_resp = JsonRpcResponse(result=result, error=error, id=id_)
+
+        self.microservice.after_method_call(request_object_copy, to_return_resp)
+
         if not request_object.is_notification():
-            return JsonRpcResponse(result=result, error=error, id=id_)
+            return to_return_resp
 
     def write_single_response(self, response_obj):
         """

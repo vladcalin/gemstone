@@ -189,6 +189,29 @@ class MicroService(ABC):
         """
         pass
 
+    def before_method_call(self, request_object):
+        """
+        Called before every RPC method call
+
+        :param request_object: a :py:class:`gemstone.core.structs.JsonRpcRequest` instance.
+        """
+        pass
+
+    def after_method_call(self, request_object, response_object):
+        """
+        Called after every RPC **successful** method call. If ``response_object`` instance is
+        modified the response of the actual call is modified
+
+        :param request_object: a :py:class:`gemstone.core.structs.JsonRpcRequest` instance.
+        :param response_object: a :py:class:`gemstone.core.structs.JsonRpcResponse` instance.
+        :return:
+        """
+        pass
+
+    def on_failed_method_call(self, request_object, response_object):
+        # TODO: make the json rpc handler use this
+        pass
+
     def api_token_is_valid(self, api_token):
         """
         Method that must be overridden by subclasses in order to implement the API token validation logic.
