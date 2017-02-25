@@ -65,11 +65,17 @@ class JsonRpcRequest(object):
         method = d.get("method", None)
         if not method:
             raise JsonRpcInvalidRequestError()
+        if not isinstance(method, str):
+            raise JsonRpcInvalidRequestError()
 
         # params
         params = d.get("params", {})
+        if not isinstance(params, (list, dict)):
+            raise JsonRpcInvalidRequestError()
 
         req_id = d.get("id", None)
+        if not isinstance(req_id, (int, str)) and req_id is not None:
+            raise JsonRpcInvalidRequestError()
 
         instance = cls(
             id=req_id,
@@ -147,20 +153,23 @@ class JsonRpcRequestBatch(object):
 
 
 class JsonRpcResponseBatch(object):
-    def __init__(self, *batch):
-        self.batch_dict = {x.id: x for x in batch}
+    def __init__(self, batch):
+        self.items = batch
 
-    def add_item(self, item, id=None):
-        """Adds an item to the batch. If there is already another item
-        with the same id, it will be overwritten"""
-        item_id = id or item.id
-        self.batch_dict[item_id] = item
+    def add_item(self, item):
+        """Adds an item to the batch."""
 
-    def to_list(self):
-        return list(self.batch_dict.values())
+        if not isinstance(item, JsonRpcResponse):
+            raise TypeError("Expected JsonRpcResponse but got {} instead".format(type(item).__name__))
+
+        self.items.append(item)
+
+    def iter_items(self):
+        for item in self.items:
+            yield item
 
     def to_string(self):
-        return json.dumps([i.to_dict() for i in self.to_list()])
+        return json.dumps([i.to_dict() for i in self.iter_items()])
 
 
 class GenericResponse:
@@ -172,3 +181,32 @@ class GenericResponse:
     ACCESS_DENIED = JsonRpcResponse(error={"code": -32001, "message": "Access denied"})
 
     NOTIFICATION_RESPONSE = JsonRpcResponse()
+
+
+def parse_json_structure(string_item):
+    """
+    Given a raw representation of a json structure, returns the parsed corresponding data
+    structure (``JsonRpcRequest`` or ``JsonRpcRequestBatch``)
+
+    :param string_item:
+    :return:
+    """
+    if not isinstance(string_item, str):
+        raise TypeError("Expected str but got {} instead".format(type(string_item).__name__))
+
+    try:
+        item = json.loads(string_item)
+    except ValueError:
+        raise JsonRpcParseError()
+
+    if isinstance(item, dict):
+        return JsonRpcRequest.from_dict(item)
+    elif isinstance(item, list):
+        request_batch = JsonRpcRequestBatch([])
+        for d in item:
+            try:
+                parsed_entry = JsonRpcRequest.from_dict(d)
+            except JsonRpcInvalidRequestError:
+                parsed_entry = GenericResponse.PARSE_ERROR
+            request_batch.add_item(parsed_entry)
+        return request_batch

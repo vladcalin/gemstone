@@ -6,7 +6,7 @@ from tornado.web import RequestHandler
 from tornado.gen import coroutine
 
 from gemstone.core.structs import JsonRpcResponse, JsonRpcRequest, JsonRpcRequestBatch, JsonRpcResponseBatch, \
-    GenericResponse
+    GenericResponse, parse_json_structure, JsonRpcParseError, JsonRpcInvalidRequestError
 
 __all__ = [
     'TornadoJsonRpcHandler',
@@ -37,7 +37,7 @@ class GemstoneCustomHandler(RequestHandler):
 # noinspection PyAbstractClass
 class TornadoJsonRpcHandler(RequestHandler):
     def __init__(self, *args, **kwargs):
-        self.request_is_finished = False
+        self.response_is_sent = False
         self.methods = None
         self.executor = None
         self.validation_strategies = None
@@ -53,7 +53,7 @@ class TornadoJsonRpcHandler(RequestHandler):
         self.executor = microservice._executor
         self.validation_strategies = microservice.validation_strategies
         self.api_token_handlers = microservice.api_token_is_valid
-        self.request_is_finished = False
+        self.response_is_sent = False
         self.microservice = microservice
 
     @coroutine
@@ -62,39 +62,27 @@ class TornadoJsonRpcHandler(RequestHandler):
             self.write_single_response(GenericResponse.INVALID_REQUEST)
             return
 
-        # validate json structure
+        req_body_raw = self.request.body.decode()
         try:
-            req_body = json.loads(self.request.body.decode())
-        except ValueError:
+            req_object = parse_json_structure(req_body_raw)
+        except JsonRpcParseError:
             self.write_single_response(GenericResponse.PARSE_ERROR)
+            return
+        except JsonRpcInvalidRequestError:
+            self.write_single_response(GenericResponse.INVALID_REQUEST)
             return
 
         # handle the actual call
-        if isinstance(req_body, dict):
+        if isinstance(req_object, JsonRpcRequest):
             # single call
-            req_object = JsonRpcRequest.from_dict(req_body)
-
-            # validation errors occured
-            if req_object.is_invalid():
-                resp = GenericResponse.INVALID_REQUEST
-                resp.id = req_object.id
-                self.write_single_response(resp)
-                return
+            if req_object.is_notification():
+                self.write_single_response(GenericResponse.NOTIFICATION_RESPONSE)
 
             result = yield self.handle_single_request(req_object)
-            if result is None:  # is notification and a ack resp was already sent
-                return
             self.write_single_response(result)
-        elif isinstance(req_body, list):
+        elif isinstance(req_object, JsonRpcRequestBatch):
             # batch call
-            batch_request_object = JsonRpcRequestBatch()
-            for req_dict in req_body:
-                batch_request_object.add_item(JsonRpcRequest.from_dict(req_dict))
-
-            if not batch_request_object:
-                self.write_single_response(GenericResponse.INVALID_REQUEST)
-
-            results = yield self.handle_batch_request(batch_request_object)
+            results = yield self.handle_batch_request(req_object)
 
             valid_results = list(filter(lambda x: x is not None, results))
             self.write_batch_response(JsonRpcResponseBatch(*valid_results))
@@ -119,16 +107,11 @@ class TornadoJsonRpcHandler(RequestHandler):
         result = None
         id_ = request_object.id
 
-        # check if it is a notification or the client waits a response
-        if request_object.is_notification():
-            self.write_single_response(GenericResponse.NOTIFICATION_RESPONSE)
-
         # validate method name
         if request_object.method not in self.methods:
-            if not request_object.is_notification():
-                resp = GenericResponse.METHOD_NOT_FOUND
-                resp.id = id_
-                return resp
+            resp = GenericResponse.METHOD_NOT_FOUND
+            resp.id = id_
+            return resp
 
         # check for private access
         method = self.methods[request_object.method]
@@ -139,16 +122,7 @@ class TornadoJsonRpcHandler(RequestHandler):
                 resp.id = id_
                 return resp
 
-
-
         method = self.prepare_method_call(method, request_object.params)
-        if not method:
-            # this should happen only when the client sends "params": 1 or "params": true or "params": "string"
-            if not request_object.is_notification():
-                resp = GenericResponse.INVALID_REQUEST
-                resp.id = id_
-                return resp
-            return
 
         # before request hook
         request_object_copy = copy.deepcopy(request_object)
@@ -182,8 +156,7 @@ class TornadoJsonRpcHandler(RequestHandler):
 
         self.microservice.after_method_call(request_object_copy, to_return_resp)
 
-        if not request_object.is_notification():
-            return to_return_resp
+        return to_return_resp
 
     def write_single_response(self, response_obj):
         """
@@ -198,10 +171,11 @@ class TornadoJsonRpcHandler(RequestHandler):
         if not isinstance(response_obj, JsonRpcResponse):
             raise ValueError("Expected JsonRpcResponse, but got {} instead".format(type(response_obj).__name__))
 
-        if not self.request_is_finished:
+        if not self.response_is_sent:
+            self.set_status(200)
             self.set_header("Content-Type", "application/json")
             self.finish(response_obj.to_string())
-            self.request_is_finished = True
+            self.response_is_sent = True
 
     def write_batch_response(self, batch_response):
         self.set_header("Content-Type", "application/json")
@@ -214,6 +188,14 @@ class TornadoJsonRpcHandler(RequestHandler):
             return
 
         exc_info = kwargs["exc_info"]
+        # handle jsonrpc specific exceptions
+        # if isinstance(exc_info[1], JsonRpcParseError):
+        #     self.write_single_response(GenericResponse.PARSE_ERROR)
+        #     return
+        # elif isinstance(exc_info[1], JsonRpcInvalidRequestError):
+        #     self.write_single_response(GenericResponse.INVALID_REQUEST)
+        #     return
+
         err = GenericResponse.INTERNAL_ERROR
         err.error["data"] = {
             "class": str(exc_info[0].__name__),
@@ -235,7 +217,7 @@ class TornadoJsonRpcHandler(RequestHandler):
         elif isinstance(args, dict):
             to_call = partial(method, **args)
         else:
-            return None
+            raise TypeError("args must be list or dict but got {} instead".format(type(args).__name__))
         return to_call
 
     @coroutine
@@ -251,7 +233,7 @@ class TornadoJsonRpcHandler(RequestHandler):
 
     @coroutine
     def handle_batch_request(self, batch_req_obj):
-        responses = yield [self.handle_single_request(single_req) for single_req in batch_req_obj.to_list()]
+        responses = yield [self.handle_single_request(single_req) for single_req in batch_req_obj.iter_items()]
         return responses
 
     def extract_api_token(self):
