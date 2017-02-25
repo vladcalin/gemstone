@@ -10,22 +10,16 @@ class ServiceJsonRpcSpecs(MicroService):
     skip_configuration = True
 
     @public_method
-    def test_method_no_params(self):
-        return "success_1"
+    def subtract(self, a, b):
+        if not isinstance(a, int) or not isinstance(b, int):
+            raise TypeError("Arguments must be integers")
+        return a - b
 
     @public_method
-    def test_method_params(self, param1, param2):
-        return "this {} is a {}".format(param1, param2)
+    def update(self, a):
+        return str(a)
 
-    @public_method
-    def test_method_var_params(self, **kwargs):
-        return {
-            "kwargs": kwargs
-        }
 
-    @private_api_method
-    def test_method_priv_no_params(self):
-        pass
 
     def api_token_is_valid(self, api_token):
         return api_token == "test-token"

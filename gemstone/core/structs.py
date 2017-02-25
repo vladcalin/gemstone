@@ -11,7 +11,8 @@ class JsonRpcResponse(object):
         to_return = {
             "jsonrpc": "2.0",
             "result": self.response,
-            "error": self.error
+            "error": self.error,
+            "id": self.id
         }
         if self.id:
             to_return["id"] = self.id
@@ -130,8 +131,8 @@ class JsonRpcResponseBatch(object):
 
 
 class GenericResponse:
-    PARSE_ERROR = JsonRpcResponse(error={"code": -32700, "message": "Parse error"})
-    INVALID_REQUEST = JsonRpcResponse(error={"code": -32600, "message": "Invalid Request"})
+    PARSE_ERROR = JsonRpcResponse(error={"code": -32700, "message": "Parse error"}, id=None)
+    INVALID_REQUEST = JsonRpcResponse(error={"code": -32600, "message": "Invalid Request"}, id=None)
     METHOD_NOT_FOUND = JsonRpcResponse(error={"code": -32601, "message": "Method not found"})
     INVALID_PARAMS = JsonRpcResponse(error={"code": -32602, "message": "Invalid params"})
     INTERNAL_ERROR = JsonRpcResponse(error={"code": -32603, "message": "Internal error"})

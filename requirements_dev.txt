@@ -6,6 +6,7 @@ simplejson
 
 # testing
 pytest
+pytest-tornado
 
 # documentation
 sphinx
