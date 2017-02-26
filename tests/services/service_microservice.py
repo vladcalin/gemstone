@@ -16,18 +16,24 @@ class TestService(MicroService):
     ]
 
     @public_method
-    def test1(self):
-        return "test1_ok"
+    def say_hello(self):
+        return "hello"
 
     @public_method
-    def test2(self, arg1, arg2):
-        return arg1 + arg2
+    def subtract(self, a, b):
+        return a - b
+
+    @public_method
+    def sum(self, *args):
+        return sum(args)
+
+    @public_method
+    def divide(self, a, b):
+        return a / b
 
     @private_api_method
-    def test3(self, msg):
-        return {
-            "response": msg
-        }
+    def private_sum(self, a, b):
+        return a + b
 
     @public_method
     def test_raises(self):
@@ -35,20 +41,3 @@ class TestService(MicroService):
 
     def api_token_is_valid(self, api_token):
         return api_token == "testing_token"
-
-
-class TestServiceWithCookieAuth(MicroService):
-    name = "service.test.3"
-    host = TEST_HOST
-    port = TEST_PORT + 1
-
-    validation_strategies = [
-        BasicCookieStrategy(cookie_name="AuthToken")
-    ]
-
-    @private_api_method
-    def test(self, arg):
-        return arg
-
-    def api_token_is_valid(self, api_token):
-        return api_token == "test_ok"

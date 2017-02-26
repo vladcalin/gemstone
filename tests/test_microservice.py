@@ -1,160 +1,413 @@
 from tornado.testing import AsyncHTTPTestCase
 import simplejson as json
 
-from tests.services.service_microservice import TestService, TestServiceWithCookieAuth
+import pytest
+
+from tests.services.service_microservice import TestService
 
 
-class PyMicroServiceBehaviourTestCase(AsyncHTTPTestCase):
-    def get_app(self):
-        return TestService().make_tornado_app()
-
-    def test_public_method_call(self):
-        payload = {
-            "jsonrpc": "2.0",
-            "method": "test1",
-            "id": 1
-        }
-        response = self.fetch("/api", method="POST", body=json.dumps(payload),
-                              headers={"Content-Type": "application/json"})
-        response = json.loads(response.body.decode())
-
-        self.assertEqual(response["result"], "test1_ok")
-        self.assertEqual(response["error"], None)
-        self.assertEqual(response["id"], 1)
-
-    def test_private_method_call_no_api_token_header(self):
-        payload = {
-            "jsonrpc": "2.0",
-            "method": "test3",
-            "id": 1,
-            "params": {"msg": "test"}
-        }
-        response = self.fetch("/api", method="POST", body=json.dumps(payload),
-                              headers={"Content-Type": "application/json"})
-        response = json.loads(response.body.decode())
-
-        self.assertEqual(response["result"], None)
-        self.assertEqual(response["id"], 1)
-        self.assertEqual(response["error"]["code"], -32001)
-        self.assertEqual(response["error"]["message"].lower(), "access denied")
-
-    def test_private_method_call_bad_api_token(self):
-        payload = {
-            "jsonrpc": "2.0",
-            "method": "test3",
-            "id": 1,
-            "params": {"msg": "test"}
-        }
-        response = self.fetch("/api", method="POST", body=json.dumps(payload),
-                              headers={"Content-Type": "application/json",
-                                       "X-Testing-Token": "bad_token"})
-        response = json.loads(response.body.decode())
-
-        self.assertEqual(response["result"], None)
-        self.assertEqual(response["id"], 1)
-        self.assertEqual(response["error"]["code"], -32001)
-        self.assertEqual(response["error"]["message"].lower(), "access denied")
-
-    def test_private_method_call_good_token(self):
-        payload = {
-            "jsonrpc": "2.0",
-            "method": "test3",
-            "id": 1,
-            "params": {"msg": "test"}
-        }
-        response = self.fetch("/api", method="POST", body=json.dumps(payload),
-                              headers={"Content-Type": "application/json",
-                                       "X-Testing-Token": "testing_token"})
-        response = json.loads(response.body.decode())
-
-        self.assertIsNotNone(response["result"])
-        self.assertEqual(response["result"]["response"], "test")
-        self.assertEqual(response["id"], 1)
-        self.assertIsNone(response["error"])
-
-    def test_public_method_call_which_raises_exception(self):
-        payload = {
-            "jsonrpc": "2.0",
-            "method": "test_raises",
-            "id": 77
-        }
-        response = self.fetch("/api", method="POST", body=json.dumps(payload),
-                              headers={"Content-Type": "application/json"})
-        response = json.loads(response.body.decode())
-        self.assertEqual(response["result"], None)
-        self.assertEqual(response["error"]["code"], -32603)
-        self.assertEqual(response["error"]["message"].lower(), "internal error")
-        self.assertEqual(response["error"]["data"], {"class": "ValueError", "info": "This is a test"})
-        self.assertEqual(response["id"], 77)
+@pytest.fixture
+def app():
+    return TestService().make_tornado_app()
 
 
-class TestCaseServiceWithCookieAuth(AsyncHTTPTestCase):
-    def get_app(self):
-        return TestServiceWithCookieAuth().make_tornado_app()
+@pytest.mark.gen_test
+def test_simple_call_no_parameters(http_client, base_url):
+    base_url += "/api"
+    body = {
+        "id": 1,
+        "method": "say_hello",
+        "jsonrpc": "2.0"
+    }
 
-    def test_no_cookie_sent(self):
-        payload = {
-            "jsonrpc": "2.0",
-            "method": "test",
-            "params": {
-                "arg": "ok"
-            },
-            "id": 1
-        }
-        response = self.fetch("/api", method="POST", body=json.dumps(payload),
-                              headers={"Content-Type": "application/json"})  # no 'Cookie: ApiToken=...'
-        response = json.loads(response.body.decode())
-        self.assertEqual(response["result"], None)
-        self.assertEqual(response["id"], 1)
-        self.assertEqual(response["error"]["code"], -32001)
-        self.assertEqual(response["error"]["message"].lower(), "access denied")
+    result = yield http_client.fetch(base_url, method="POST", body=json.dumps(body),
+                                     headers={"content-type": "application/json"})
+    assert result.code == 200
+    resp_body = json.loads(result.body)
 
-    def test_bad_cookie_sent(self):
-        payload = {
-            "jsonrpc": "2.0",
-            "method": "test",
-            "params": {
-                "arg": "ok"
-            },
-            "id": 1
-        }
-        response = self.fetch("/api", method="POST", body=json.dumps(payload),
-                              headers={"Content-Type": "application/json", "Cooke": "SomeCookie=Irrelevant"})
-        response = json.loads(response.body.decode())
-        self.assertEqual(response["result"], None)
-        self.assertEqual(response["id"], 1)
-        self.assertEqual(response["error"]["code"], -32001)
-        self.assertEqual(response["error"]["message"].lower(), "access denied")
+    assert resp_body["id"] == 1
+    assert resp_body["error"] is None
+    assert resp_body["result"] == "hello"
+    assert resp_body["jsonrpc"] == "2.0"
 
-    def test_bad_cookie_value(self):
-        payload = {
-            "jsonrpc": "2.0",
-            "method": "test",
-            "params": {
-                "arg": "ok"
-            },
-            "id": 1
-        }
-        response = self.fetch("/api", method="POST", body=json.dumps(payload),
-                              headers={"Content-Type": "application/json", "Cooke": "AuthToken=BadCookie"})
-        response = json.loads(response.body.decode())
-        self.assertEqual(response["result"], None)
-        self.assertEqual(response["id"], 1)
-        self.assertEqual(response["error"]["code"], -32001)
-        self.assertEqual(response["error"]["message"].lower(), "access denied")
 
-    def test_ok_cookie_value(self):
-        payload = {
-            "jsonrpc": "2.0",
-            "method": "test",
-            "params": {
-                "arg": "ok"
-            },
-            "id": 1
-        }
-        response = self.fetch("/api", method="POST", body=json.dumps(payload),
-                              headers={"Content-Type": "application/json", "Cookie": "AuthToken=test_ok"})
-        response = json.loads(response.body.decode())
-        self.assertEqual(response["error"], None)
-        self.assertEqual(response["id"], 1)
-        self.assertEqual(response["result"], "ok")
+@pytest.mark.gen_test
+def test_simple_call_positional_arguments(http_client, base_url):
+    base_url += "/api"
+    body = {
+        "id": 1,
+        "method": "subtract",
+        "params": [10, 20],
+        "jsonrpc": "2.0"
+    }
+
+    result = yield http_client.fetch(base_url, method="POST", body=json.dumps(body),
+                                     headers={"content-type": "application/json"})
+    assert result.code == 200
+    resp_body = json.loads(result.body)
+
+    assert resp_body["id"] == 1
+    assert resp_body["error"] is None
+    assert resp_body["result"] == -10
+    assert resp_body["jsonrpc"] == "2.0"
+
+
+@pytest.mark.gen_test
+def test_simple_call_keyword_arguments(http_client, base_url):
+    base_url += "/api"
+    body = {
+        "id": 1,
+        "method": "subtract",
+        "params": {"b": 20, "a": 10},
+        "jsonrpc": "2.0"
+    }
+
+    result = yield http_client.fetch(base_url, method="POST", body=json.dumps(body),
+                                     headers={"content-type": "application/json"})
+    assert result.code == 200
+    resp_body = json.loads(result.body)
+
+    assert resp_body["id"] == 1
+    assert resp_body["error"] is None
+    assert resp_body["result"] == -10
+    assert resp_body["jsonrpc"] == "2.0"
+
+
+@pytest.mark.gen_test
+def test_simple_call_variable_length_positional_arguments(http_client, base_url):
+    base_url += "/api"
+    body = {
+        "id": 1,
+        "method": "sum",
+        "params": list(range(0, 100)),
+        "jsonrpc": "2.0"
+    }
+
+    result = yield http_client.fetch(base_url, method="POST", body=json.dumps(body),
+                                     headers={"content-type": "application/json"})
+    assert result.code == 200
+    resp_body = json.loads(result.body)
+
+    assert resp_body["id"] == 1
+    assert resp_body["error"] is None
+    assert resp_body["result"] == 4950
+    assert resp_body["jsonrpc"] == "2.0"
+
+
+@pytest.mark.gen_test
+def test_simple_call_raise_exception(http_client, base_url):
+    base_url += "/api"
+    body = {
+        "id": 1,
+        "method": "divide",
+        "params": {"a": 10, "b": 0},
+        "jsonrpc": "2.0"
+    }
+
+    result = yield http_client.fetch(base_url, method="POST", body=json.dumps(body),
+                                     headers={"content-type": "application/json"})
+    assert result.code == 200
+    resp_body = json.loads(result.body)
+
+    assert resp_body["id"] == 1
+    assert resp_body["result"] is None
+    assert resp_body["error"] is not None
+    assert resp_body["error"]["code"] == -32603
+    assert resp_body["error"]["message"] == "Internal error"
+    assert resp_body["error"]["data"]["class"] == "ZeroDivisionError"
+    assert resp_body["error"]["data"]["info"] == "division by zero"
+    assert resp_body["jsonrpc"] == "2.0"
+
+
+@pytest.mark.gen_test
+def test_simple_call_wrong_arguments_too_few_positional_arguments(http_client, base_url):
+    base_url += "/api"
+    body = {
+        "id": 1,
+        "method": "subtract",
+        "params": [10],
+        "jsonrpc": "2.0"
+    }
+
+    result = yield http_client.fetch(base_url, method="POST", body=json.dumps(body),
+                                     headers={"content-type": "application/json"})
+    assert result.code == 200
+    resp_body = json.loads(result.body)
+    print(resp_body)
+    assert resp_body["id"] == 1
+    assert resp_body["result"] is None
+    assert resp_body["error"] is not None
+    assert resp_body["error"]["code"] == -32602
+    assert resp_body["error"]["message"] == "Invalid params"
+    assert resp_body["jsonrpc"] == "2.0"
+
+
+@pytest.mark.gen_test
+def test_simple_call_wrong_arguments_too_many_positional_arguments(http_client, base_url):
+    base_url += "/api"
+    body = {
+        "id": 1,
+        "method": "subtract",
+        "params": [10, 20, 30],
+        "jsonrpc": "2.0"
+    }
+
+    result = yield http_client.fetch(base_url, method="POST", body=json.dumps(body),
+                                     headers={"content-type": "application/json"})
+    assert result.code == 200
+    resp_body = json.loads(result.body)
+    print(resp_body)
+    assert resp_body["id"] == 1
+    assert resp_body["result"] is None
+    assert resp_body["error"] is not None
+    assert resp_body["error"]["code"] == -32602
+    assert resp_body["error"]["message"] == "Invalid params"
+    assert resp_body["jsonrpc"] == "2.0"
+
+
+@pytest.mark.gen_test
+def test_simple_call_wrong_arguments_too_few_keyword_arguments(http_client, base_url):
+    base_url += "/api"
+    body = {
+        "id": 1,
+        "method": "subtract",
+        "params": {"a": 10},
+        "jsonrpc": "2.0"
+    }
+
+    result = yield http_client.fetch(base_url, method="POST", body=json.dumps(body),
+                                     headers={"content-type": "application/json"})
+    assert result.code == 200
+    resp_body = json.loads(result.body)
+    print(resp_body)
+    assert resp_body["id"] == 1
+    assert resp_body["result"] is None
+    assert resp_body["error"] is not None
+    assert resp_body["error"]["code"] == -32602
+    assert resp_body["error"]["message"] == "Invalid params"
+    assert resp_body["jsonrpc"] == "2.0"
+
+
+@pytest.mark.gen_test
+def test_simple_call_wrong_arguments_too_many_keyword_arguments(http_client, base_url):
+    base_url += "/api"
+    body = {
+        "id": 1,
+        "method": "subtract",
+        "params": {"a": 10, "b": 20, "c": 30},
+        "jsonrpc": "2.0"
+    }
+
+    result = yield http_client.fetch(base_url, method="POST", body=json.dumps(body),
+                                     headers={"content-type": "application/json"})
+    assert result.code == 200
+    resp_body = json.loads(result.body)
+    print(resp_body)
+    assert resp_body["id"] == 1
+    assert resp_body["result"] is None
+    assert resp_body["error"] is not None
+    assert resp_body["error"]["code"] == -32602
+    assert resp_body["error"]["message"] == "Invalid params"
+    assert resp_body["jsonrpc"] == "2.0"
+
+
+@pytest.mark.gen_test
+def test_simple_call_wrong_arguments_no_arguments(http_client, base_url):
+    base_url += "/api"
+    body = {
+        "id": 1,
+        "method": "subtract",
+        "jsonrpc": "2.0"
+    }
+
+    result = yield http_client.fetch(base_url, method="POST", body=json.dumps(body),
+                                     headers={"content-type": "application/json"})
+    assert result.code == 200
+    resp_body = json.loads(result.body)
+    print(resp_body)
+    assert resp_body["id"] == 1
+    assert resp_body["result"] is None
+    assert resp_body["error"] is not None
+    assert resp_body["error"]["code"] == -32602
+    assert resp_body["error"]["message"] == "Invalid params"
+    assert resp_body["jsonrpc"] == "2.0"
+
+
+@pytest.mark.gen_test
+def test_notification_valid(http_client, base_url):
+    base_url += "/api"
+    body = {
+        "method": "subtract",
+        "params": [20, 10],
+        "jsonrpc": "2.0"
+    }
+
+    result = yield http_client.fetch(base_url, method="POST", body=json.dumps(body),
+                                     headers={"content-type": "application/json"})
+    assert result.code == 200
+    resp_body = json.loads(result.body)
+    print(resp_body)
+    assert "id" not in resp_body
+    assert resp_body["result"] is None
+    assert resp_body["error"] is None
+    assert resp_body["jsonrpc"] == "2.0"
+
+
+@pytest.mark.gen_test
+def test_notification_method_not_found(http_client, base_url):
+    base_url += "/api"
+    body = {
+        "method": "foobar",
+        "params": [20, 10],
+        "jsonrpc": "2.0"
+    }
+
+    result = yield http_client.fetch(base_url, method="POST", body=json.dumps(body),
+                                     headers={"content-type": "application/json"})
+    assert result.code == 200
+    resp_body = json.loads(result.body)
+    print(resp_body)
+    assert "id" not in resp_body
+    assert resp_body["result"] is None
+    assert resp_body["error"] is None
+    assert resp_body["jsonrpc"] == "2.0"
+
+
+@pytest.mark.gen_test
+def test_notification_invalid_params(http_client, base_url):
+    base_url += "/api"
+    body = {
+        "method": "divide",
+        "params": [20, 10, 30],
+        "jsonrpc": "2.0"
+    }
+
+    result = yield http_client.fetch(base_url, method="POST", body=json.dumps(body),
+                                     headers={"content-type": "application/json"})
+    assert result.code == 200
+    resp_body = json.loads(result.body)
+    print(resp_body)
+    assert "id" not in resp_body
+    assert resp_body["result"] is None
+    assert resp_body["error"] is None
+    assert resp_body["jsonrpc"] == "2.0"
+
+
+@pytest.mark.gen_test
+def test_notification_internal_error(http_client, base_url):
+    base_url += "/api"
+    body = {
+        "method": "divide",
+        "params": [20, 0],
+        "jsonrpc": "2.0"
+    }
+
+    result = yield http_client.fetch(base_url, method="POST", body=json.dumps(body),
+                                     headers={"content-type": "application/json"})
+    assert result.code == 200
+    resp_body = json.loads(result.body)
+    print(resp_body)
+    assert "id" not in resp_body
+    assert resp_body["result"] is None
+    assert resp_body["error"] is None
+    assert resp_body["jsonrpc"] == "2.0"
+
+
+@pytest.mark.gen_test
+def test_private_call_wrong_token(http_client, base_url):
+    base_url += "/api"
+    body = {
+        "id": 3,
+        "method": "private_sum",
+        "params": [13, -13],
+        "jsonrpc": "2.0"
+    }
+
+    result = yield http_client.fetch(base_url, method="POST", body=json.dumps(body),
+                                     headers={"content-type": "application/json",
+                                              "X-Testing-Token": "bad_token"})
+    assert result.code == 200
+    resp_body = json.loads(result.body)
+    print(resp_body)
+    assert resp_body["id"] == 3
+    assert resp_body["result"] is None
+    assert resp_body["error"] is not None
+    assert resp_body["error"]["code"] == -32001
+    assert resp_body["error"]["message"] == "Access denied"
+    assert resp_body["jsonrpc"] == "2.0"
+
+
+@pytest.mark.gen_test
+def test_private_call_wrong_token_and_wrong_parameters(http_client, base_url):
+    # without a valid token, somebody should not be able to get information
+    # about certain methods, such as the parameters
+    base_url += "/api"
+    body = {
+        "id": 3,
+        "method": "private_sum",
+        "params": [13],
+        "jsonrpc": "2.0"
+    }
+
+    result = yield http_client.fetch(base_url, method="POST", body=json.dumps(body),
+                                     headers={"content-type": "application/json",
+                                              "X-Testing-Token": "bad_token"})
+    assert result.code == 200
+    resp_body = json.loads(result.body)
+    print(resp_body)
+    assert resp_body["id"] == 3
+    assert resp_body["result"] is None
+    assert resp_body["error"] is not None
+    assert resp_body["error"]["code"] == -32001
+    assert resp_body["error"]["message"] == "Access denied"
+    assert resp_body["jsonrpc"] == "2.0"
+
+
+@pytest.mark.gen_test
+def test_private_call_ok_token(http_client, base_url):
+    # without a valid token, somebody should not be able to get information
+    # about certain methods, such as the parameters
+    base_url += "/api"
+    body = {
+        "id": 3,
+        "method": "private_sum",
+        "params": [13, -13],
+        "jsonrpc": "2.0"
+    }
+
+    result = yield http_client.fetch(base_url, method="POST", body=json.dumps(body),
+                                     headers={"content-type": "application/json",
+                                              "X-Testing-Token": "testing_token"})
+    assert result.code == 200
+    resp_body = json.loads(result.body)
+    print(resp_body)
+    assert resp_body["id"] == 3
+    assert resp_body["result"] == 0
+    assert resp_body["error"] is None
+    assert resp_body["jsonrpc"] == "2.0"
+
+
+@pytest.mark.gen_test
+def test_private_call_ok_token_wrong_parameters(http_client, base_url):
+    # without a valid token, somebody should not be able to get information
+    # about certain methods, such as the parameters
+    base_url += "/api"
+    body = {
+        "id": 3,
+        "method": "private_sum",
+        "params": [13],
+        "jsonrpc": "2.0"
+    }
+
+    result = yield http_client.fetch(base_url, method="POST", body=json.dumps(body),
+                                     headers={"content-type": "application/json",
+                                              "X-Testing-Token": "testing_token"})
+    assert result.code == 200
+    resp_body = json.loads(result.body)
+    print(resp_body)
+    assert resp_body["id"] == 3
+    assert resp_body["result"] is None
+    assert resp_body["error"] is not None
+    assert resp_body["error"]["code"] == -32602
+    assert resp_body["error"]["message"] == "Invalid params"
+    assert resp_body["jsonrpc"] == "2.0"

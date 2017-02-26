@@ -76,6 +76,7 @@ class TornadoJsonRpcHandler(RequestHandler):
                 req_object = JsonRpcRequest.from_dict(req_object)
             except JsonRpcInvalidRequestError:
                 self.write_single_response(GenericResponse.INVALID_REQUEST)
+                return
 
             if req_object.is_notification():
                 self.write_single_response(GenericResponse.NOTIFICATION_RESPONSE)
@@ -165,6 +166,10 @@ class TornadoJsonRpcHandler(RequestHandler):
                 return resp
             # TODO: find a proper way to check that the function got the wrong parameters (with *args)
             elif "takes" in e.args[0] and "positional argument" in e.args[0] and "were given" in e.args[0]:
+                resp = GenericResponse.INVALID_PARAMS
+                resp.id = id_
+                return resp
+            elif "missing" in e.args[0] and "required positional argument" in e.args[0]:
                 resp = GenericResponse.INVALID_PARAMS
                 resp.id = id_
                 return resp
