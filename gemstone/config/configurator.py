@@ -61,11 +61,8 @@ class CommandLineConfigurator(BaseConfigurator):
         if not value:
             return None
 
-        value = configurable.template(value)
-        if value in configurable.mappings:
-            return configurable.mappings[value](value)
-
-        return value
+        configurable.set_value(value)
+        return configurable.get_final_value()
 
 
 class JsonFileConfigurator(BaseConfigurator):
