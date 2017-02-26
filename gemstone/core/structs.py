@@ -196,17 +196,25 @@ def parse_json_structure(string_item):
 
     try:
         item = json.loads(string_item)
-    except ValueError:
+    except json.JSONDecodeError:
         raise JsonRpcParseError()
 
     if isinstance(item, dict):
         return JsonRpcRequest.from_dict(item)
     elif isinstance(item, list):
+        if len(item) == 0:
+            raise JsonRpcInvalidRequestError()
+
         request_batch = JsonRpcRequestBatch([])
         for d in item:
             try:
+                # handles the case of valid batch but with invalid
+                # requests.
+                if not isinstance(d, dict):
+                    raise JsonRpcInvalidRequestError()
+                # is dict, all fine
                 parsed_entry = JsonRpcRequest.from_dict(d)
             except JsonRpcInvalidRequestError:
-                parsed_entry = GenericResponse.PARSE_ERROR
+                parsed_entry = GenericResponse.INVALID_REQUEST
             request_batch.add_item(parsed_entry)
         return request_batch

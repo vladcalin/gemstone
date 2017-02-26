@@ -150,3 +150,32 @@ def test_jsonrpc_request_from_string_fail():
 
     with pytest.raises(JsonRpcParseError):
         JsonRpcRequest.from_string(json2)
+
+
+def test_jsonrpc_request_batch_valid():
+    json_items = [
+        {
+            "jsonrpc": "2.0",
+            "method": "test",
+            "params": {"a": 1, "b": 2},
+            "id": 1
+        },
+        {
+            "jsonrpc": "2.0",
+            "method": "test",
+            "params": {"a": 3, "b": 4},
+            "id": 2
+        },
+        {
+            "jsonrpc": "2.0",
+            "method": "test",
+            "params": {"a": 5, "b": 6},
+            "id": 3
+        }
+    ]
+
+    parsed = JsonRpcRequestBatch.from_json_list(json_items)
+    assert len(parsed.items) == 3
+    assert [x.id for x in parsed.iter_items()] == [1, 2, 3]
+    assert set([x.method for x in parsed.iter_items()]) == {"test"}
+    assert [x.params for x in parsed.iter_items()] == [{"a": 1, "b": 2}, {"a": 3, "b": 4}, {"a": 5, "b": 6}]

@@ -16,10 +16,25 @@ class ServiceJsonRpcSpecs(MicroService):
         return a - b
 
     @public_method
+    def sum(self, *args):
+        return sum(args)
+
+    @public_method
     def update(self, a):
         return str(a)
 
+    @public_method
+    def get_data(self):
+        return ["hello", 5]
 
+    @public_method
+    def notify_hello(self, a):
+        return a
 
     def api_token_is_valid(self, api_token):
         return api_token == "test-token"
+
+
+if __name__ == '__main__':
+    service = ServiceJsonRpcSpecs()
+    service.start()

@@ -64,28 +64,51 @@ class TornadoJsonRpcHandler(RequestHandler):
 
         req_body_raw = self.request.body.decode()
         try:
-            req_object = parse_json_structure(req_body_raw)
-        except JsonRpcParseError:
+            req_object = json.loads(req_body_raw)
+        except json.JSONDecodeError:
             self.write_single_response(GenericResponse.PARSE_ERROR)
-            return
-        except JsonRpcInvalidRequestError:
-            self.write_single_response(GenericResponse.INVALID_REQUEST)
             return
 
         # handle the actual call
-        if isinstance(req_object, JsonRpcRequest):
+        if isinstance(req_object, dict):
             # single call
+            try:
+                req_object = JsonRpcRequest.from_dict(req_object)
+            except JsonRpcInvalidRequestError:
+                self.write_single_response(GenericResponse.INVALID_REQUEST)
+
             if req_object.is_notification():
                 self.write_single_response(GenericResponse.NOTIFICATION_RESPONSE)
 
             result = yield self.handle_single_request(req_object)
             self.write_single_response(result)
-        elif isinstance(req_object, JsonRpcRequestBatch):
-            # batch call
-            results = yield self.handle_batch_request(req_object)
+        elif isinstance(req_object, list):
+            if len(req_object) == 0:
+                self.write_single_response(GenericResponse.INVALID_REQUEST)
+                return
 
-            valid_results = list(filter(lambda x: x is not None, results))
-            self.write_batch_response(JsonRpcResponseBatch(*valid_results))
+            # batch call
+            invalid_requests = []
+            requests_futures = []
+            notification_futures = []
+
+            for item in req_object:
+                try:
+                    if not isinstance(item, dict):
+                        raise JsonRpcInvalidRequestError()
+                    current_rpc_call = JsonRpcRequest.from_dict(item)
+
+                    # handle notifications
+                    if current_rpc_call.is_notification():
+                        # we trigger their execution, but we don't yield for their results
+                        notification_futures.append(self.handle_single_request(current_rpc_call))
+                    else:
+                        requests_futures.append(self.handle_single_request(current_rpc_call))
+                except JsonRpcInvalidRequestError:
+                    invalid_requests.append(GenericResponse.INVALID_REQUEST)
+
+            finished_rpc_calls = yield requests_futures
+            self.write_batch_response(JsonRpcResponseBatch(invalid_requests + finished_rpc_calls))
         else:
             self.write_single_response(GenericResponse.INVALID_REQUEST)
 
@@ -103,6 +126,10 @@ class TornadoJsonRpcHandler(RequestHandler):
                  None if no response is expected (it was a notification)
 
         """
+        # dont handle responses?
+        if isinstance(request_object, JsonRpcResponse):
+            return request_object
+
         error = None
         result = None
         id_ = request_object.id
@@ -188,14 +215,6 @@ class TornadoJsonRpcHandler(RequestHandler):
             return
 
         exc_info = kwargs["exc_info"]
-        # handle jsonrpc specific exceptions
-        # if isinstance(exc_info[1], JsonRpcParseError):
-        #     self.write_single_response(GenericResponse.PARSE_ERROR)
-        #     return
-        # elif isinstance(exc_info[1], JsonRpcInvalidRequestError):
-        #     self.write_single_response(GenericResponse.INVALID_REQUEST)
-        #     return
-
         err = GenericResponse.INTERNAL_ERROR
         err.error["data"] = {
             "class": str(exc_info[0].__name__),
