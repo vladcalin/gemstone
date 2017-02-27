@@ -1,8 +1,8 @@
 Changes
 =======
 
-0.7.0 (TODO)
-~~~~~~~~~~~~
+0.7.0 (27.02.2017)
+~~~~~~~~~~~~~~~~~~
 
 - added ``gemstone.GemstoneCustomHandler`` class
 - modified the way one can add custom Tornado handler to the microservice.
