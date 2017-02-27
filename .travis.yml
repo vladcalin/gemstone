@@ -6,7 +6,7 @@ python:
     - "nightly"
 install:
     - "pip install ."
-    - "pip install requirements_tests.txt"
+    - "pip install -r requirements_tests.txt"
 script:
     - "pytest --cov=gemstone tests"
 after_success:
