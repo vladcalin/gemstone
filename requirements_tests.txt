@@ -8,6 +8,4 @@ simplejson
 pytest
 pytest-tornado
 pytest-cov
-
-# documentation
-sphinx
+coveralls
