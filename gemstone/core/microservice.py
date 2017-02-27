@@ -176,7 +176,8 @@ class MicroService(ABC):
             "max_parallel_blocking_tasks": self.max_parallel_blocking_tasks,
             "methods": {m: self.methods[m].__doc__ for m in self.methods},
             "event_transports": [str(t) for t in self.event_transports],
-            "events_handled": {ev_name: ev_handle.__doc__ for ev_name, ev_handle in self.event_handlers.items()}
+            "events_handled": {ev_name: ev_handle.__doc__ for ev_name, ev_handle in
+                               self.event_handlers.items()}
         }
 
     # region Can be overridden by user
@@ -214,8 +215,9 @@ class MicroService(ABC):
 
     def api_token_is_valid(self, api_token):
         """
-        Method that must be overridden by subclasses in order to implement the API token validation logic.
-        Should return ``True`` if the api token is valid, or ``False`` otherwise.
+        Method that must be overridden by subclasses in order to implement the API token
+        validation logic. Should return ``True`` if the api token is valid, or
+        ``False`` otherwise.
 
         :param api_token: a string representing the received api token value
         :return: ``True`` if the api_token is valid, ``False`` otherwise
@@ -237,14 +239,16 @@ class MicroService(ABC):
 
     def get_service(self, name):
         """
-        Locates a remote service by name. The name can be a glob-like pattern (``"project.worker.*"``). If multiple
-        services match the given name, a random instance will be chosen. There might be multiple services that match
-        a given name if there are multiple services with the same name running, or when the pattern matches
-        multiple different services.
+        Locates a remote service by name. The name can be a glob-like pattern
+        (``"project.worker.*"``). If multiple services match the given name, a
+        random instance will be chosen. There might be multiple services that
+        match a given name if there are multiple services with the same name
+        running, or when the pattern matches multiple different services.
 
         .. todo::
 
-            Make this use self.io_loop to resolve the request. The current implementation is blocking and slow
+            Make this use self.io_loop to resolve the request. The current
+            implementation is blocking and slow
 
         :param name: a pattern for the searched service.
         :return: a :py:class:`gemstone.RemoteService` instance
@@ -282,8 +286,8 @@ class MicroService(ABC):
 
     def emit_event(self, event_name, event_body):
         """
-        Publishes an event of type ``event_name`` to all subscribers, having the body ``event_body``. The event
-        is pushed through all available event transports.
+        Publishes an event of type ``event_name`` to all subscribers, having the body
+        ``event_body``. The event is pushed through all available event transports.
 
         The event body must be a Python object that can be represented as a JSON.
 
@@ -326,10 +330,12 @@ class MicroService(ABC):
             python service.py --help    # show the help
             python service.py start     # start the microservice with the default parameters
             python service.py start --help  # show the configurable parameters
-            python service.py start --port=8000 --host=0.0.0.0 --service_registry http://127.0.0.1/api http://192.168.0.11/api  # override some parameters
+            python service.py start --port=8000 --host=0.0.0.0 --service_registry \
+                http://127.0.0.1/api http://192.168.0.11/api  # override some parameters
 
 
-        :return: a function that can override parameters and start the microservice, depending on the command line arguments
+        :return: a function that can override parameters and start the microservice,
+                 depending on the command line arguments
 
         .. versionadded:: 0.1.0
         """
@@ -339,15 +345,23 @@ class MicroService(ABC):
 
         # myservice.py start [--opt=val]*
         start_parser = subparser.add_parser("start")
-        start_parser.add_argument("--name", help="The name of the microservice. Currently {}".format(cls.name))
-        start_parser.add_argument("--host", help="The address to bind to. Currently {}".format(cls.host))
-        start_parser.add_argument("--port", help="The port to bind to. Currently {}".format(cls.port), type=int)
-        start_parser.add_argument("--accessible_at", help="The URL where the service can be accessed")
-        start_parser.add_argument("--max_parallel_tasks", help="Maximum number of methods to be"
-                                                               "executed concurrently. Currently {}".format(
-            cls.max_parallel_blocking_tasks))
+        start_parser.add_argument("--name",
+                                  help="The name of the microservice. Currently {}".format(
+                                      cls.name))
+        start_parser.add_argument("--host",
+                                  help="The address to bind to. Currently {}".format(cls.host))
+        start_parser.add_argument("--port",
+                                  help="The port to bind to. Currently {}".format(cls.port),
+                                  type=int)
+        start_parser.add_argument("--accessible_at",
+                                  help="The URL where the service can be accessed")
+        start_parser.add_argument("--max_parallel_tasks",
+                                  help="Maximum number of methods to be"
+                                       "executed concurrently. Currently {}".format(
+                                      cls.max_parallel_blocking_tasks))
         start_parser.add_argument("--service_registry", nargs="*",
-                                  help="A url where a service registry can be found. Currently {}".format(
+                                  help="A url where a service "
+                                       "registry can be found. Currently {}".format(
                                       cls.service_registry_urls))
 
         def start():
@@ -454,8 +468,9 @@ class MicroService(ABC):
 
     def make_tornado_app(self):
         """
-        Creates a :py:class`tornado.web.Application` instance that respect the JSON RPC 2.0 specs and
-        exposes the designated methods. Can be used in tests to obtain the Tornado application.
+        Creates a :py:class`tornado.web.Application` instance that respect the
+        JSON RPC 2.0 specs and exposes the designated methods. Can be used
+        in tests to obtain the Tornado application.
 
         :return: a :py:class:`tornado.web.Application` instance
         """

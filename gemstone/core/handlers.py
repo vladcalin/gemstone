@@ -5,7 +5,8 @@ import simplejson as json
 from tornado.web import RequestHandler
 from tornado.gen import coroutine
 
-from gemstone.core.structs import JsonRpcResponse, JsonRpcRequest, JsonRpcRequestBatch, JsonRpcResponseBatch, \
+from gemstone.core.structs import JsonRpcResponse, JsonRpcRequest, JsonRpcRequestBatch, \
+    JsonRpcResponseBatch, \
     GenericResponse, parse_json_structure, JsonRpcParseError, JsonRpcInvalidRequestError
 
 __all__ = [
@@ -119,15 +120,16 @@ class TornadoJsonRpcHandler(RequestHandler):
         Handles a single request object and returns the correct result as follows:
 
         - A valid response object if it is a regular request (with ID)
-        - ``None`` if it was a notification (if None is returned, a response object with "received" body
-          was already sent to the client.
+        - ``None`` if it was a notification (if None is returned, a response object with
+          "received" body was already sent to the client.
 
-        :param request_object: A :py:class:`gemstone.core.structs.JsonRpcRequest` object representing a Request object
-        :return: A :py:class:`gemstone.core.structs.JsonRpcResponse` object representing a Response object or
-                 None if no response is expected (it was a notification)
+        :param request_object: A :py:class:`gemstone.core.structs.JsonRpcRequest` object
+                               representing a Request object
+        :return: A :py:class:`gemstone.core.structs.JsonRpcResponse` object representing a
+                 Response object or None if no response is expected (it was a notification)
 
         """
-        # dont handle responses?
+        # don't handle responses?
         if isinstance(request_object, JsonRpcResponse):
             return request_object
 
@@ -159,13 +161,16 @@ class TornadoJsonRpcHandler(RequestHandler):
         try:
             result = yield self.call_method(method)
         except TypeError as e:
-            # TODO: find a proper way to check that the function got the wrong parameters (with **kwargs)
+            # TODO: find a proper way to check that the function got the wrong
+            # parameters (with **kwargs)
             if "got an unexpected keyword argument" in e.args[0]:
                 resp = GenericResponse.INVALID_PARAMS
                 resp.id = id_
                 return resp
-            # TODO: find a proper way to check that the function got the wrong parameters (with *args)
-            elif "takes" in e.args[0] and "positional argument" in e.args[0] and "were given" in e.args[0]:
+            # TODO: find a proper way to check that the function got the wrong
+            # parameters (with *args)
+            elif "takes" in e.args[0] and "positional argument" in e.args[0] and "were given" in \
+                    e.args[0]:
                 resp = GenericResponse.INVALID_PARAMS
                 resp.id = id_
                 return resp
@@ -201,7 +206,8 @@ class TornadoJsonRpcHandler(RequestHandler):
         :return:
         """
         if not isinstance(response_obj, JsonRpcResponse):
-            raise ValueError("Expected JsonRpcResponse, but got {} instead".format(type(response_obj).__name__))
+            raise ValueError(
+                "Expected JsonRpcResponse, but got {} instead".format(type(response_obj).__name__))
 
         if not self.response_is_sent:
             self.set_status(200)
@@ -216,7 +222,8 @@ class TornadoJsonRpcHandler(RequestHandler):
     def write_error(self, status_code, **kwargs):
         if status_code == 405:
             self.set_status(405)
-            self.write_single_response(JsonRpcResponse(error={"code": 405, "message": "Method not allowed"}))
+            self.write_single_response(
+                JsonRpcResponse(error={"code": 405, "message": "Method not allowed"}))
             return
 
         exc_info = kwargs["exc_info"]
@@ -230,7 +237,8 @@ class TornadoJsonRpcHandler(RequestHandler):
 
     def prepare_method_call(self, method, args):
         """
-        Wraps a method so that method() will call ``method(*args)`` or ``method(**args)``, depending of args type
+        Wraps a method so that method() will call ``method(*args)`` or ``method(**args)``,
+        depending of args type
 
         :param method: a callable object (method)
         :param args: dict or list with the parameters for the function
@@ -241,7 +249,8 @@ class TornadoJsonRpcHandler(RequestHandler):
         elif isinstance(args, dict):
             to_call = partial(method, **args)
         else:
-            raise TypeError("args must be list or dict but got {} instead".format(type(args).__name__))
+            raise TypeError(
+                "args must be list or dict but got {} instead".format(type(args).__name__))
         return to_call
 
     @coroutine
@@ -257,7 +266,8 @@ class TornadoJsonRpcHandler(RequestHandler):
 
     @coroutine
     def handle_batch_request(self, batch_req_obj):
-        responses = yield [self.handle_single_request(single_req) for single_req in batch_req_obj.iter_items()]
+        responses = yield [self.handle_single_request(single_req) for single_req in
+                           batch_req_obj.iter_items()]
         return responses
 
     def extract_api_token(self):

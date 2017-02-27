@@ -7,10 +7,11 @@ class BaseEventTransport(ABC):
 
     The basic workflow would be the following:
 
-    - the handlers are registered with the :py:meth:`BaseEventTransport.register_event_handler` method
+    - the handlers are registered with the :py:meth:`BaseEventTransport.register_event_handler`
+      method
     - the :py:meth:`BaseEventTransport.start_accepting_events` is invoked
-    - for each incoming event, call :py:meth:`BaseEventTransport.on_event_received` whose responsability
-      is to invoke the proper handler function.
+    - for each incoming event, call :py:meth:`BaseEventTransport.on_event_received`
+      whose responsibility is to invoke the proper handler function.
 
     """
 

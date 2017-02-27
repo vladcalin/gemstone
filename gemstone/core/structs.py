@@ -45,12 +45,13 @@ class JsonRpcRequest(object):
     @classmethod
     def from_dict(cls, d):
         """
-        Validates a dict instance and transforms it in a :py:class:`gemstone.core.structs.JsonRpcRequest`
+        Validates a dict instance and transforms it in a
+        :py:class:`gemstone.core.structs.JsonRpcRequest`
         instance
 
         :param d: The dict instance
-        :return: A :py:class:`gemstone.core.structs.JsonRpcRequest` if everything goes well, or None
-                 if the validation fails
+        :return: A :py:class:`gemstone.core.structs.JsonRpcRequest`
+                 if everything goes well, or None if the validation fails
         """
         for key in ("method", "jsonrpc"):
             if key not in d:
@@ -88,7 +89,8 @@ class JsonRpcRequest(object):
         return self.id is None
 
     def __repr__(self):
-        return "<JsonRpcRequest id={} method={} params={}>".format(self.id, self.method, self.params)
+        return "<JsonRpcRequest id={} method={} params={}>".format(self.id, self.method,
+                                                                   self.params)
 
 
 class JsonRpcResponse(object):
@@ -120,14 +122,15 @@ class JsonRpcResponse(object):
         )
 
     def __repr__(self):
-        return "<JsonRpcResponse id={} response={} error={}>".format(self.id, self.response, self.error)
+        return "<JsonRpcResponse id={} response={} error={}>".format(self.id, self.response,
+                                                                     self.error)
 
 
 class JsonRpcRequestBatch(object):
     def __init__(self, batch_of_jsonrpc_req):
         """
-        Makes a json rpc request batch object from a list of :py:class:`gemstone.core.structs.JSonRpcRequest`
-        objects
+        Makes a json rpc request batch object from a list of
+        :py:class:`gemstone.core.structs.JSonRpcRequest` objects
 
         :param batch_of_jsonrpc_req: list of :py:class:`gemstone.core.structs.JSonRpcRequest`
         """
@@ -160,7 +163,8 @@ class JsonRpcResponseBatch(object):
         """Adds an item to the batch."""
 
         if not isinstance(item, JsonRpcResponse):
-            raise TypeError("Expected JsonRpcResponse but got {} instead".format(type(item).__name__))
+            raise TypeError(
+                "Expected JsonRpcResponse but got {} instead".format(type(item).__name__))
 
         self.items.append(item)
 
@@ -173,8 +177,10 @@ class JsonRpcResponseBatch(object):
 
 
 class GenericResponse:
-    PARSE_ERROR = JsonRpcResponse(error={"code": -32700, "message": "Parse error"}, send_id_field=True)
-    INVALID_REQUEST = JsonRpcResponse(error={"code": -32600, "message": "Invalid Request"}, send_id_field=True)
+    PARSE_ERROR = JsonRpcResponse(error={"code": -32700, "message": "Parse error"},
+                                  send_id_field=True)
+    INVALID_REQUEST = JsonRpcResponse(error={"code": -32600, "message": "Invalid Request"},
+                                      send_id_field=True)
     METHOD_NOT_FOUND = JsonRpcResponse(error={"code": -32601, "message": "Method not found"})
     INVALID_PARAMS = JsonRpcResponse(error={"code": -32602, "message": "Invalid params"})
     INTERNAL_ERROR = JsonRpcResponse(error={"code": -32603, "message": "Internal error"})

@@ -18,8 +18,8 @@ def public_method(func):
 
 def private_api_method(func):
     """
-    Decorates a method to be exposed (privately) from a :py:class:`gemstone.PyMicroService` concrete
-    implementation. The exposed method will be private.
+    Decorates a method to be exposed (privately) from a :py:class:`gemstone.PyMicroService`
+    concrete implementation. The exposed method will be private.
     """
     func.__private_api_method__ = True
     func.is_private = True
@@ -28,11 +28,12 @@ def private_api_method(func):
 
 def event_handler(event_name):
     """
-    Decorator for designating a handler for an event type. ``event_name`` must be a string representing the
-    name of the event type.
+    Decorator for designating a handler for an event type. ``event_name`` must be a string
+    representing the name of the event type.
 
-    The decorated function must accept a parameter: the body of the received event, which
-    will be a Python object that can be encoded as a JSON (dict, list, str, int, bool, float or None)
+    The decorated function must accept a parameter: the body of the received event,
+    which will be a Python object that can be encoded as a JSON (dict, list, str, int,
+    bool, float or None)
 
     :param event_name:
     :return:
