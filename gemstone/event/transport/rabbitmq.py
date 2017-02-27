@@ -16,14 +16,15 @@ class RabbitMqEventTransport(BaseEventTransport):
         :param port: the port where the server listens
         :param username: username used for authentication
         :param password: password used for authentication
-        :param connection_options: extra arguments that will be used in :py:class:`pika.BlockingConnection`
-                                   initialization.
+        :param connection_options: extra arguments that will be used in
+                                   :py:class:`pika.BlockingConnection` initialization.
         """
         self._handlers = {}
 
         self.connection = pika.BlockingConnection(
             pika.ConnectionParameters(
-                host=host, port=port, credentials=pika.PlainCredentials(username=username, password=password),
+                host=host, port=port,
+                credentials=pika.PlainCredentials(username=username, password=password),
                 **connection_options
             )
         )
@@ -85,7 +86,8 @@ if __name__ == '__main__':
 
 
     transport = RabbitMqEventTransport(host="192.168.1.71",
-                                       credentials=pika.PlainCredentials(username="admin", password="X5f6rPmx1yYz"))
+                                       credentials=pika.PlainCredentials(username="admin",
+                                                                         password="X5f6rPmx1yYz"))
 
     transport.register_event_handler(handler1, "event_one")
     transport.register_event_handler(handler2, "event_two")

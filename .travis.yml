@@ -3,11 +3,12 @@ python:
     - "3.4"
     - "3.5"
     - "3.6"
+    - "nightly"
 install:
     - "pip install ."
-    - "pip install pytest coverage python-coveralls"
+    - "pip install -r requirements_tests.txt"
 script:
-    - "coverage run --source=gemstone -m pytest tests"
+    - "python -m pytest --cov=gemstone tests"
 after_success:
     - "coveralls -i"
 

@@ -34,6 +34,12 @@ class BaseConfigurator(abc.ABC):
         if l:
             return l[0]
 
+    def __repr__(self):
+        return "<{}>".format(self.__class__.__name__)
+
+    def __str__(self):
+        return repr(self)
+
 
 class CommandLineConfigurator(BaseConfigurator):
     def __init__(self):
@@ -55,11 +61,8 @@ class CommandLineConfigurator(BaseConfigurator):
         if not value:
             return None
 
-        value = configurable.template(value)
-        if value in configurable.mappings:
-            return configurable.mappings[value](value)
-
-        return value
+        configurable.set_value(value)
+        return configurable.get_final_value()
 
 
 class JsonFileConfigurator(BaseConfigurator):

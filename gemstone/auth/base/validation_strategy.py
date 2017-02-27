@@ -13,7 +13,8 @@ class BaseValidationStrategy(metaclass=abc.ABCMeta):
         Given a Tornado Request handler object, extracts the api token required for validation,
         which will be passed to :py:meth:`MicroService.api_token_is_valid`
 
-        :param request_handler: a :py:class:`tornado.web.RequestHandler` that handles the current request
+        :param request_handler: a :py:class:`tornado.web.RequestHandler` that handles the
+                                current request
         :return:
 
         .. versionadded:: 0.3.0

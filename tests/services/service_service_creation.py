@@ -3,6 +3,7 @@ import os.path
 from tornado.web import RequestHandler
 
 from gemstone import MicroService, public_method
+from gemstone.core.handlers import GemstoneCustomHandler
 
 
 class NameMissingService(MicroService):
@@ -26,12 +27,12 @@ def get_template_dir():
     return os.path.join(os.path.dirname(os.path.abspath(__file__)), "template_files")
 
 
-class ExtraHandler1(RequestHandler):
+class ExtraHandler1(GemstoneCustomHandler):
     def get(self):
         self.render("template1.html")
 
 
-class ExtraHandler2(RequestHandler):
+class ExtraHandler2(GemstoneCustomHandler):
     def get(self):
         self.render("template2.html", name="world")
 
