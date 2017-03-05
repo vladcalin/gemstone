@@ -1,6 +1,21 @@
 Changes
 =======
 
+0.8.0 (05.03.2017)
+~~~~~~~~~~~~~~~~~~
+
+- added the ``gemstone.requires_handler_reference`` decorator to enable
+  the methods to get a reference to the Tornado request handler when called.
+- added the ``gemstone.async_method`` decorator to make a method a coroutine
+  and be able to execute things asynchronously on the main thread.
+  For example, a method decorated with ``async_method`` will be able to
+  ``yield self._executor.submit(make_some_network_call)`` without blocking the main
+  thread.
+- added two new examples:
+    - ``example_coroutine_method`` - shows a basic usage if the ``async_method`` decorator
+    - ``example_handler_ref`` - shows a basic usage if the ``requires_handler_reference`` decorator
+
+
 0.7.0 (27.02.2017)
 ~~~~~~~~~~~~~~~~~~
 
