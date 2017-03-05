@@ -47,7 +47,6 @@ LICENSE = "MIT"
 module_content = get_file_content(os.path.join("gemstone", "__init__.py"))
 
 readme = get_file_content("README.rst")
-history = get_file_content("CHANGES.rst")
 
 setup(
     # project metadata
@@ -61,7 +60,7 @@ setup(
     maintainer=get_meta_attr_from_string("__author__", module_content),
     maintainer_email=get_meta_attr_from_string("__email__", module_content),
 
-    long_description=readme + "\n\n" + history,
+    long_description=readme,
     description=DESCRIPTION,
     keywords=KEYWORDS.split(),
     classifiers=[x.strip() for x in CLASSIFIERS.split("\n") if x != ""],
