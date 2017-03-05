@@ -1,4 +1,4 @@
-import functools
+import tornado.gen
 
 __all__ = [
     'public_method',
@@ -45,3 +45,24 @@ def event_handler(event_name):
         return func
 
     return wrapper
+
+
+def requires_handler_reference(func):
+    """
+    Marks a method tha requires access to the :py:class:`gemstone.TornadoJsonRpcHandler` instance
+    when calling the request. If a method is decorated with this, when it is called it will
+    receive a ``handler`` argument as the first argument.
+
+    Useful when you need to do specific operations such as setting a cookie,
+    setting a secure cookie, get the ``current_user`` of the request, etc.
+    """
+    func.__requires_handler_reference__ = True
+    return func
+
+
+def async_method(func):
+    """
+    Marks a function as a Tornado generator (coroutine)
+    """
+    func.__is_async_method__ = True
+    return tornado.gen.coroutine(func)

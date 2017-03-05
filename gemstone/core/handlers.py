@@ -1,9 +1,11 @@
 from functools import partial
 import copy
+import types
 
 import simplejson as json
 from tornado.web import RequestHandler
 from tornado.gen import coroutine
+from tornado import concurrent as tornado_concurrent
 
 from gemstone.core.structs import JsonRpcResponse, JsonRpcRequest, JsonRpcRequestBatch, \
     JsonRpcResponseBatch, \
@@ -155,7 +157,7 @@ class TornadoJsonRpcHandler(RequestHandler):
         method = self.prepare_method_call(method, request_object.params)
 
         # before request hook
-        request_object_copy = copy.deepcopy(request_object)
+        request_object_copy = copy.copy(request_object)
         self.microservice.before_method_call(request_object_copy)
 
         try:
@@ -244,6 +246,12 @@ class TornadoJsonRpcHandler(RequestHandler):
         :param args: dict or list with the parameters for the function
         :return: a 'patched' callable
         """
+        if self._method_requires_handler_ref(method):
+            if isinstance(args, list):
+                args = [self] + args
+            elif isinstance(args, dict):
+                args["handler"] = self
+
         if isinstance(args, list):
             to_call = partial(method, *args)
         elif isinstance(args, dict):
@@ -258,10 +266,16 @@ class TornadoJsonRpcHandler(RequestHandler):
         """
         Calls a blocking method in an executor, in order to preserve the non-blocking behaviour
 
-        :param method: The method to be called (with no arguments).
+        If ``method`` is a coroutine, yields from it and returns, no need to execute in
+        in an executor.
+
+        :param method: The method or coroutine to be called (with no arguments).
         :return: the result of the method call
         """
-        result = yield self.executor.submit(method)
+        if self._method_is_async_generator(method):
+            result = yield method()
+        else:
+            result = yield self.executor.submit(method)
         return result
 
     @coroutine
@@ -275,3 +289,21 @@ class TornadoJsonRpcHandler(RequestHandler):
             token = handler.extract_api_token(self)
             if token:
                 return token
+
+    def _method_requires_handler_ref(self, method):
+        return getattr(method, "__requires_handler_reference__", False)
+
+    def _method_is_async_generator(self, method):
+        """
+        Given a simple callable or a callable wrapped in funtools.partial, determines
+        if it was wrapped with the :py:func:`gemstone.async_method` decorator.
+        
+        :param method:
+        :return:
+        """
+        if hasattr(method, "func"):
+            func = method.func
+        else:
+            func = method
+
+        return getattr(func, "__is_async_method__", False)

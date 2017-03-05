@@ -67,7 +67,7 @@ class MicroService(ABC):
     #: Interval (in seconds) when the microservice will ping all the service registries.
     service_registry_ping_interval = 30
 
-    #: A list of (time_in_seconds, callable) that will enable periodic task execution.
+    #: A list of (callable, time_in_seconds) that will enable periodic task execution.
     periodic_tasks = []
 
     #: A list of Event transports that will enable the Event dispatching feature.
@@ -78,7 +78,10 @@ class MicroService(ABC):
     #: A list of configurable objects that allows the service's running parameters to
     #: be changed dynamically without changing its code.
     configurables = [
-        Configurable("port", type=int, mappings={"random": lambda _: random.randint(8000, 65000)}),
+        Configurable("port", type=int,
+                     mappings=[
+                         ("random", lambda _: random.randint(8000, 65000))
+                     ]),
         Configurable("host"),
         Configurable("accessible_at"),
         Configurable("endpoint"),
