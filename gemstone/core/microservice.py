@@ -517,7 +517,11 @@ class MicroService(ABC):
             item = getattr(self, itemname)
             if getattr(item, "__gemstone_internal_public", False) is True or \
                             getattr(item, "__gemstone_internal_private", False) is True:
-                self.methods[item.__name__] = item
+                exposed_name = getattr(item, '__gemstone_internal_exposed_name', item.__name__)
+
+                if exposed_name in self.methods:
+                    raise ValueError("Cannot expose two methods under the same name: '{}'".format(exposed_name))
+                self.methods[exposed_name] = item
 
     def _gather_event_handlers(self):
         """

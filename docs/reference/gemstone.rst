@@ -102,6 +102,7 @@ Decorators
 .. autofunction:: private_api_method
 .. autofunction:: event_handler
 .. autofunction:: requires_handler_reference
+.. autofunction:: exposed_method
 
 Request handlers
 ----------------

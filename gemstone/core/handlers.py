@@ -272,6 +272,7 @@ class TornadoJsonRpcHandler(RequestHandler):
         :param method: The method or coroutine to be called (with no arguments).
         :return: the result of the method call
         """
+        print(self._method_is_async_generator(method))
         if self._method_is_async_generator(method):
             result = yield method()
         else:

@@ -4,7 +4,7 @@ Build microservices with Python
 
 from gemstone.core.microservice import MicroService
 from gemstone.core.decorators import private_api_method, public_method, event_handler, \
-    requires_handler_reference, async_method
+    requires_handler_reference, async_method, exposed_method
 from gemstone.core.handlers import TornadoJsonRpcHandler, GemstoneCustomHandler
 from gemstone.client.remote_service import RemoteService
 
@@ -25,6 +25,7 @@ __all__ = [
     'private_api_method',
     'event_handler',
     'requires_handler_reference',
+    'exposed_method',
 
     # tornado handler
     'TornadoJsonRpcHandler',
