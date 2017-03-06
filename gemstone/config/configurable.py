@@ -47,6 +47,20 @@ class Configurable(object):
         2. the template
         3. the mappings
 
+        Example (just to see how the transformations are applied. You should not
+        use configurables in this way unless you are writing a custon ``Configurator``)
+
+        ::
+
+            c = Configurable("test", type=int, template=lambda x: x * 2)
+            c.set_value("10")
+            c.get_final_value()  # int("10") * 2 -> 20
+
+            c2 = Configurable("list_of_ints", template=lambda x: [int(y) for y in x.split(",")])
+            c.set_value("1,2,3,4,5")
+            c.get_final_value()  # [1,2,3,4,5]
+
+
         :param name: The name of the configurable parameter
         :param type: The type of the configurable parameter
         :param template: A callable template to apply over the raw extracted value
