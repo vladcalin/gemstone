@@ -1,6 +1,22 @@
 Changes
 =======
 
+0.9.0 (06.03.2017
+~~~~~~~~~~~~~~~~~
+
+- added the ``gemstone.exposed_method`` decorator for general usage that allows
+    - to customize the name of the method
+    - to specify if the method is a coroutine
+    - to specify that the method requires a handler reference
+    - to specify that the method is public or private
+- deprecated
+    - ``gemstone.public_method`` decorator
+    - ``gemstone.private_api_method`` decorator
+    - ``gemstone.async_method`` decorator
+    - ``gemstone.requires_handler_reference`` decorator
+- removed ``gemstone.MicroService.get_cli`` method in favor of the ``CommandLineConfigurator``
+- improved documentation a little bit
+
 0.8.0 (05.03.2017)
 ~~~~~~~~~~~~~~~~~~
 
