@@ -303,93 +303,6 @@ class MicroService(ABC):
         for transport in self.event_transports:
             transport.emit_event(event_name, event_body)
 
-    @classmethod
-    def get_cli(cls):
-        """
-        Creates a command line interface through which the user
-        can override specific options of the microservice. Useful when
-        the user might want to dynamically change the configuration
-        of the microservice.
-
-        For example, having another script that dynamically starts instances
-        of our microservice that each listen to different ports.
-
-        The returned value is a function than when called, parses the arguments,
-        overrides the defaults and then starts the microservice.
-
-        Example usage
-
-        .. code-block:: python
-
-            # in service.py
-
-            cli = MyMicroService.get_cli()
-            cli()
-
-        After that, from the command line, we can do the following
-
-        .. code-block:: bash
-
-            python service.py --help    # show the help
-            python service.py start     # start the microservice with the default parameters
-            python service.py start --help  # show the configurable parameters
-            python service.py start --port=8000 --host=0.0.0.0 --service_registry \
-                http://127.0.0.1/api http://192.168.0.11/api  # override some parameters
-
-
-        :return: a function that can override parameters and start the microservice,
-                 depending on the command line arguments
-
-        .. versionadded:: 0.1.0
-        """
-        parser = argparse.ArgumentParser()
-
-        subparser = parser.add_subparsers()
-
-        # myservice.py start [--opt=val]*
-        start_parser = subparser.add_parser("start")
-        start_parser.add_argument("--name",
-                                  help="The name of the microservice. Currently {}".format(
-                                      cls.name))
-        start_parser.add_argument("--host",
-                                  help="The address to bind to. Currently {}".format(cls.host))
-        start_parser.add_argument("--port",
-                                  help="The port to bind to. Currently {}".format(cls.port),
-                                  type=int)
-        start_parser.add_argument("--accessible_at",
-                                  help="The URL where the service can be accessed")
-        start_parser.add_argument("--max_parallel_tasks",
-                                  help="Maximum number of methods to be"
-                                       "executed concurrently. Currently {}".format(
-                                      cls.max_parallel_blocking_tasks))
-        start_parser.add_argument("--service_registry", nargs="*",
-                                  help="A url where a service "
-                                       "registry can be found. Currently {}".format(
-                                      cls.service_registry_urls))
-
-        def start():
-            cls().start()
-
-        start_parser.set_defaults(func=start)
-
-        def call_argument_parser():
-            args = parser.parse_args()
-
-            cls._set_option_if_available(args, "name")
-            cls._set_option_if_available(args, "host")
-            cls._set_option_if_available(args, "port")
-            cls._set_option_if_available(args, "max_parallel_tasks")
-            cls._set_option_if_available(args, "accessible_at")
-            if getattr(args, "service_registry", None):
-                cls.service_registry_urls = args.service_registry
-
-            if hasattr(args, "func"):
-                args.func()
-            else:
-                parser.print_help()
-
-        return call_argument_parser
-
     def start(self):
         """
         The main method that starts the service. This is blocking.
@@ -515,9 +428,14 @@ class MicroService(ABC):
 
         for itemname in dir(self):
             item = getattr(self, itemname)
-            if getattr(item, "__is_exposed_method__", False) is True or \
-                            getattr(item, "__private_api_method__", False) is True:
-                self.methods[item.__name__] = item
+            if getattr(item, "__gemstone_internal_public", False) is True or \
+                            getattr(item, "__gemstone_internal_private", False) is True:
+                exposed_name = getattr(item, '__gemstone_internal_exposed_name', item.__name__)
+
+                if exposed_name in self.methods:
+                    raise ValueError(
+                        "Cannot expose two methods under the same name: '{}'".format(exposed_name))
+                self.methods[exposed_name] = item
 
     def _gather_event_handlers(self):
         """
@@ -527,8 +445,8 @@ class MicroService(ABC):
         """
         for itemname in dir(self):
             item = getattr(self, itemname)
-            if getattr(item, "__is_event_handler__", False):
-                self.event_handlers.setdefault(item.__handled_event__, item)
+            if getattr(item, "__gemstone_internal_is_event_handler", False):
+                self.event_handlers.setdefault(item.__gemstome_internal_handled_event, item)
 
     def _ping_to_service_registry(self, servreg_remote_service):
         """

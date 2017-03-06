@@ -42,6 +42,41 @@ class BaseConfigurator(abc.ABC):
 
 
 class CommandLineConfigurator(BaseConfigurator):
+    """
+    Configurator that collects values from command line arguments.
+    For each registered configurable, will attempt to get from command line
+    the value designated by the argument ``--name`` where ``name`` is the name of the
+    configurable.
+
+    Example
+
+    For the configurables
+
+        - Configurator("a")
+        - Configurator("b", type=int)
+        - Configurator("c", type=bool)
+
+    the following command line interface will be exposed
+
+    ::
+
+        usage: service.py [-h] [--a A] [--b B] [--c C]
+
+        optional arguments:
+          -h, --help  show this help message and exit
+          --a A
+          --b B
+          --c C
+
+    The ``service.py`` can be called like this
+
+    ::
+
+        python service.py --a=1 --b=2 --c=true
+
+
+    """
+
     def __init__(self):
         super(CommandLineConfigurator, self).__init__()
         self.args = None

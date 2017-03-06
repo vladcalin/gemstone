@@ -3,7 +3,9 @@
 Token validation strategies
 ===========================
 
-.. autoclass:: gemstone.auth.base.validation_strategy.BaseValidationStrategy
+.. py:currentmodule:: gemstone.auth.base.validation_strategy
+
+.. autoclass:: BaseValidationStrategy
     :members:
 
 

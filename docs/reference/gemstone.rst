@@ -31,10 +31,16 @@ Access validation
 
     .. autoattribute:: gemstone.MicroService.validation_strategies
 
+    .. seealso:: :ref:`private_methods`
+
 Event dispatching
 ^^^^^^^^^^^^^^^^^
 
     .. autoattribute:: gemstone.MicroService.event_transports
+
+    .. seealso::
+        - :ref:`publisher-subscriber`
+        - :ref:`event-transports`
 
 Dynamic configuration
 ^^^^^^^^^^^^^^^^^^^^^
@@ -42,6 +48,9 @@ Dynamic configuration
     .. autoattribute:: gemstone.MicroService.skip_configuration
     .. autoattribute:: gemstone.MicroService.configurables
     .. autoattribute:: gemstone.MicroService.configurators
+
+    .. seealso:: :ref:`configurable-framework`
+
 
 Web application functionality
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -98,10 +107,12 @@ Can be called
 Decorators
 ----------
 
+.. autofunction:: exposed_method
+.. autofunction:: event_handler
 .. autofunction:: public_method
 .. autofunction:: private_api_method
-.. autofunction:: event_handler
 .. autofunction:: requires_handler_reference
+
 
 Request handlers
 ----------------

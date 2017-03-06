@@ -147,7 +147,7 @@ class TornadoJsonRpcHandler(RequestHandler):
 
         # check for private access
         method = self.methods[request_object.method]
-        if method.is_private:
+        if self._method_is_private(method):
             token = self.extract_api_token()
             if not self.api_token_handlers(token):
                 resp = GenericResponse.ACCESS_DENIED
@@ -272,6 +272,7 @@ class TornadoJsonRpcHandler(RequestHandler):
         :param method: The method or coroutine to be called (with no arguments).
         :return: the result of the method call
         """
+        print(self._method_is_async_generator(method))
         if self._method_is_async_generator(method):
             result = yield method()
         else:
@@ -291,7 +292,7 @@ class TornadoJsonRpcHandler(RequestHandler):
                 return token
 
     def _method_requires_handler_ref(self, method):
-        return getattr(method, "__requires_handler_reference__", False)
+        return getattr(method, "__gemstone_internal_req_h_ref", False)
 
     def _method_is_async_generator(self, method):
         """
@@ -306,4 +307,8 @@ class TornadoJsonRpcHandler(RequestHandler):
         else:
             func = method
 
-        return getattr(func, "__is_async_method__", False)
+        return getattr(func, "__gemstone_internal_is_coroutine", False)
+
+    @staticmethod
+    def _method_is_private(method):
+        return getattr(method, "__gemstone_internal_private", False)

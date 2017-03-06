@@ -32,6 +32,9 @@ Public methods
 --------------
 TODO
 
+
+.. _private_methods:
+
 Private methods
 ---------------
 
