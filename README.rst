@@ -35,5 +35,5 @@ See the documentation for more info: `documentation <http://gemstone.readthedocs
 
 Check out the issue tracker: `issue tracker <https://github.com/vladcalin/gemstone/issues>`_
 
-Changes: `Changelog <https://github.com/vladcalin/gemstone/blob/master/CHANGES.rst>`_
+Changes: `Changelog <https://github.com/vladcalin/gemstone/blob/master/docs/changes.rst>`_
 
