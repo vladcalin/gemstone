@@ -515,8 +515,8 @@ class MicroService(ABC):
 
         for itemname in dir(self):
             item = getattr(self, itemname)
-            if getattr(item, "__is_exposed_method__", False) is True or \
-                            getattr(item, "__private_api_method__", False) is True:
+            if getattr(item, "__gemstone_internal_public", False) is True or \
+                            getattr(item, "__gemstone_internal_private", False) is True:
                 self.methods[item.__name__] = item
 
     def _gather_event_handlers(self):
@@ -527,8 +527,8 @@ class MicroService(ABC):
         """
         for itemname in dir(self):
             item = getattr(self, itemname)
-            if getattr(item, "__is_event_handler__", False):
-                self.event_handlers.setdefault(item.__handled_event__, item)
+            if getattr(item, "__gemstone_internal_is_event_handler", False):
+                self.event_handlers.setdefault(item.__gemstome_internal_handled_event, item)
 
     def _ping_to_service_registry(self, servreg_remote_service):
         """

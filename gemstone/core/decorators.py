@@ -1,3 +1,7 @@
+import functools
+import re
+import inspect
+
 import tornado.gen
 
 __all__ = [
@@ -11,8 +15,7 @@ def public_method(func):
     Decorates a method to be exposed from a :py:class:`gemstone.PyMicroService` concrete
     implementation. The exposed method will be public.
     """
-    func.__is_exposed_method__ = True
-    func.is_private = False
+    func.__gemstone_internal_public = True
     return func
 
 
@@ -21,8 +24,7 @@ def private_api_method(func):
     Decorates a method to be exposed (privately) from a :py:class:`gemstone.PyMicroService`
     concrete implementation. The exposed method will be private.
     """
-    func.__private_api_method__ = True
-    func.is_private = True
+    func.__gemstone_internal_private = True
     return func
 
 
@@ -40,8 +42,8 @@ def event_handler(event_name):
     """
 
     def wrapper(func):
-        func.__is_event_handler__ = True
-        func.__handled_event__ = event_name
+        func.__gemstone_internal_is_event_handler = True
+        func.__gemstone_internal_handled_event = event_name
         return func
 
     return wrapper
@@ -56,7 +58,7 @@ def requires_handler_reference(func):
     Useful when you need to do specific operations such as setting a cookie,
     setting a secure cookie, get the ``current_user`` of the request, etc.
     """
-    func.__requires_handler_reference__ = True
+    func.__gemstone_internal_req_h_ref = True
     return func
 
 
@@ -64,5 +66,59 @@ def async_method(func):
     """
     Marks a function as a Tornado generator (coroutine)
     """
-    func.__is_async_method__ = True
+    func.__gemstone_is_coroutine = True
     return tornado.gen.coroutine(func)
+
+
+METHOD_NAME_REGEX = re.compile(r'^[a-zA-Z][a-zA-Z0-9_.]*$')
+
+
+def method(name=None, public=True, private=False, is_coroutine=False, requires_handler_reference=False, **kwargs):
+    """
+    Marks a method as exposed via JSON RPC.
+
+    :param name:
+    :param public:
+    :param private:
+    :param is_coroutine:
+    :param kwargs:
+    :return:
+    """
+
+    def wrapper(func):
+
+        # validation
+
+        if name:
+            method_name = name
+        else:
+            method_name = func.__name__
+
+        if not METHOD_NAME_REGEX.match(method_name):
+            raise ValueError("Invalid method name: '{}'".format(method_name))
+
+        if public and private:
+            raise ValueError("A method cannot be public and private in the same time")
+
+        @functools.wraps(func)
+        def real_wrapper(*args, **kwargs):
+            return func(*args, **kwargs)
+
+        # set appropriate flags
+
+        if public:
+            setattr(real_wrapper, "__gemstone_internal_public", True)
+
+        if private:
+            setattr(real_wrapper, "__gemstone_internal_private", True)
+
+        if is_coroutine:
+            real_wrapper = async_method(real_wrapper)
+            setattr(real_wrapper, "__gemstone_internal_is_coroutine", True)
+
+        if requires_handler_reference:
+            setattr(real_wrapper, "__gemstone_internal_req_h_ref", True)
+
+        return real_wrapper
+
+    return wrapper
