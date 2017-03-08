@@ -287,7 +287,7 @@ class MicroService(ABC):
         thread_obj = threading.Thread(target=target, args=args, kwargs=kwargs, daemon=True)
         thread_obj.start()
 
-    def emit_event(self, event_name, event_body):
+    def emit_event(self, event_name, event_body, *, broadcast=True):
         """
         Publishes an event of type ``event_name`` to all subscribers, having the body
         ``event_body``. The event is pushed through all available event transports.
@@ -301,7 +301,7 @@ class MicroService(ABC):
         """
 
         for transport in self.event_transports:
-            transport.emit_event(event_name, event_body)
+            transport.emit_event(event_name, event_body, broadcast=broadcast)
 
     def start(self):
         """
@@ -446,7 +446,8 @@ class MicroService(ABC):
         for itemname in dir(self):
             item = getattr(self, itemname)
             if getattr(item, "__gemstone_internal_is_event_handler", False):
-                self.event_handlers.setdefault(item.__gemstome_internal_handled_event, item)
+                self.event_handlers.setdefault(
+                    getattr(item, "__gemstone_internal_handled_event"), item)
 
     def _ping_to_service_registry(self, servreg_remote_service):
         """
