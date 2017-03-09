@@ -296,8 +296,13 @@ class MicroService(ABC):
 
         :param event_name: a ``str`` representing the event type
         :param event_body: a Python object that can be represented as JSON.
+        :param broadcast: flag that specifies if the event should be received by
+                          all subscribers or only by one
 
         .. versionadded:: 0.5.0
+
+        .. versionchanged:: 0.10.0
+            Added parameter broadcast
         """
 
         for transport in self.event_transports:

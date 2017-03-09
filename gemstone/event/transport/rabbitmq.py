@@ -104,22 +104,3 @@ class RabbitMqEventTransport(BaseEventTransport):
     def __del__(self):
         if hasattr(self, "channel"):
             self.channel.close()
-
-
-if __name__ == '__main__':
-    def handler1(body):
-        print("[!] {}".format(body))
-
-
-    def handler2(body):
-        print("QWQWEQQW {}".format(body))
-
-
-    transport = RabbitMqEventTransport(host="192.168.1.71",
-                                       credentials=pika.PlainCredentials(username="admin",
-                                                                         password="X5f6rPmx1yYz"))
-
-    transport.register_event_handler(handler1, "event_one")
-    transport.register_event_handler(handler2, "event_two")
-
-    transport.start_accepting_events()
