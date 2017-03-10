@@ -82,10 +82,8 @@ class MicroService(ABC):
     #: A list of configurable objects that allows the service's running parameters to
     #: be changed dynamically without changing its code.
     configurables = [
-        Configurable("port", type=int,
-                     mappings=[
-                         ("random", lambda _: random.randint(8000, 65000))
-                     ]),
+        Configurable("port",
+                     template=lambda x: random.randint(8000, 65000) if "random" else int(x)),
         Configurable("host"),
         Configurable("accessible_at"),
         Configurable("endpoint"),

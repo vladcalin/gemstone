@@ -9,6 +9,7 @@ Current
 - added the ``broadcast`` parameter to ``BaseEventTransport.emit_event``
 - added the ``broadcast`` parameter to ``RabbitMqEventTransport.emit_event``
 - improved tests and documentation
+- removed ``mappings`` and ``type`` parameters from ``Configurable``
 
 
 0.9.0 (06.03.2017
