@@ -1,6 +1,16 @@
 Changes
 =======
 
+
+Current
+-------
+
+- added ``broadcast`` parameter to ``MicroService.emit_event``
+- added the ``broadcast`` parameter to ``BaseEventTransport.emit_event``
+- added the ``broadcast`` parameter to ``RabbitMqEventTransport.emit_event``
+- improved tests and documentation
+
+
 0.9.0 (06.03.2017
 ~~~~~~~~~~~~~~~~~
 

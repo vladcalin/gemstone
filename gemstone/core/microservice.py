@@ -15,9 +15,10 @@ from tornado.log import enable_pretty_logging
 
 from gemstone.config.configurable import Configurable
 from gemstone.config.configurator import CommandLineConfigurator
+from gemstone.core.stats import DefaultStatsContainer, DummyStatsContainer
 from gemstone.errors import ServiceConfigurationError
 from gemstone.core.handlers import TornadoJsonRpcHandler
-from gemstone.core.decorators import public_method
+from gemstone.core.decorators import exposed_method
 from gemstone.client.remote_service import RemoteService
 from gemstone.auth.validation_strategies.header_strategy import HeaderValidationStrategy
 
@@ -66,6 +67,9 @@ class MicroService(ABC):
     service_registry_urls = []
     #: Interval (in seconds) when the microservice will ping all the service registries.
     service_registry_ping_interval = 30
+
+    #: Specifies if should record statistics
+    use_statistics = False
 
     #: A list of (callable, time_in_seconds) that will enable periodic task execution.
     periodic_tasks = []
@@ -137,6 +141,13 @@ class MicroService(ABC):
         self.event_handlers = {}
         self._gather_event_handlers()
 
+        # stats
+        if self.use_statistics:
+            self.stats = DefaultStatsContainer()
+            self.methods["statistics"] = lambda: self.stats.as_json()
+        else:
+            self.stats = DummyStatsContainer()
+
         if len(self.methods) == 0:
             raise ServiceConfigurationError("No exposed methods for the microservice")
 
@@ -149,7 +160,7 @@ class MicroService(ABC):
         # ioloop
         self.io_loop = io_loop or IOLoop.current()
 
-    @public_method
+    @exposed_method()
     def get_service_specs(self):
         """
         A default exposed method that returns the current microservice specifications. The returned information is
