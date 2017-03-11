@@ -91,8 +91,7 @@ class MicroService(ABC):
                      template=lambda x: random.randint(8000, 65000) if "random" else int(x)),
         Configurable("host"),
         Configurable("accessible_at"),
-        Configurable("endpoint"),
-        Configurable("service_registry_urls", template=lambda s: s.split(","))
+        Configurable("endpoint")
     ]
     #: A list of configurator objects that will extract in order values for
     #: the defined configurators
@@ -270,17 +269,14 @@ class MicroService(ABC):
         :param name: a pattern for the searched service.
         :return: a :py:class:`gemstone.RemoteService` instance
         :raises ValueError: when the service can not be located
-        :raises ServiceConfigurationError: when there is no configured service registry
+        :raises ServiceConfigurationError: when there is no configured discovery strategy
         """
         if not self.discovery_strategies:
             raise ServiceConfigurationError("No service registry available")
 
-        try:
-            cached = self._remote_service_cache.get_entry(name)
-            if cached:
-                return cached.remote_service
-        except Exception as e:
-            print(e)
+        cached = self._remote_service_cache.get_entry(name)
+        if cached:
+            return cached.remote_service
 
         for strategy in self.discovery_strategies:
             endpoints = strategy.locate(name)

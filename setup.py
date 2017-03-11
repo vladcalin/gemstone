@@ -87,7 +87,7 @@ setup(
             "gemstone = gemstone.cli:cli"
         ]
     },
-    extras_requires={
+    extras_require={
         "events-rabbitmq": ["pika"],
         "discover-redis": ["redis"],
         "discover-etcd": ["python-etcd"]

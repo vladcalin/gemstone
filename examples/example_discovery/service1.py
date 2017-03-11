@@ -1,5 +1,6 @@
 import gemstone
 from gemstone.discovery.default import DefaultDiscoveryStrategy
+from gemstone.discovery.redis_strategy import RedisDiscoveryStrategy
 
 
 class Service1(gemstone.MicroService):
@@ -8,7 +9,7 @@ class Service1(gemstone.MicroService):
     port = 8000
 
     discovery_strategies = [
-        DefaultDiscoveryStrategy("http://localhost:8080/api")
+        RedisDiscoveryStrategy("redis://localhost:6379/0")
     ]
 
     @gemstone.exposed_method()
