@@ -63,7 +63,6 @@ class RabbitMqEventTransport(BaseEventTransport):
         self.channel.start_consuming()
 
     def _callback(self, channel, method, properties, body):
-        print(method.exchange, body)
         if not method.exchange.startswith(self.EXCHANGE_PREFIX_BROADCAST) or \
                 not method.exchange.startswith(self.EXCHANGE_PREFIX_SINGLE):
             return
@@ -81,7 +80,6 @@ class RabbitMqEventTransport(BaseEventTransport):
         self.on_event_received(event_name, body)
 
     def on_event_received(self, event_name, event_body):
-        print(event_name, event_body)
         handler = self._handlers.get(event_name)
         if not handler:
             return
@@ -91,7 +89,6 @@ class RabbitMqEventTransport(BaseEventTransport):
         handler(json.loads(event_body))
 
     def emit_event(self, event_name, event_body, *, broadcast=True):
-        print(event_name, event_body, broadcast)
         exchange_name = (self.EXCHANGE_PREFIX_BROADCAST
                          if broadcast else self.EXCHANGE_PREFIX_SINGLE) + event_name
 
