@@ -67,6 +67,9 @@ class MicroService(ABC):
     service_registry_urls = []
     #: Interval (in seconds) when the microservice will ping all the service registries.
     service_registry_ping_interval = 30
+    discovery_strategies = [
+
+    ]
 
     #: Specifies if should record statistics
     use_statistics = False
@@ -267,11 +270,11 @@ class MicroService(ABC):
         :raises ValueError: when the service can not be located
         :raises ServiceConfigurationError: when there is no configured service registry
         """
-        if not self.registries:
+        if not self.discovery_strategies:
             raise ServiceConfigurationError("No service registry available")
 
-        for service_reg in self.registries:
-            endpoints = service_reg.methods.locate_service(name)
+        for strategy in self.discovery_strategies:
+            endpoints = strategy.locate(name)
             if not endpoints:
                 continue
             random.shuffle(endpoints)
@@ -463,18 +466,6 @@ class MicroService(ABC):
                 self.event_handlers.setdefault(
                     getattr(item, "__gemstone_internal_handled_event"), item)
 
-    def _ping_to_service_registry(self, servreg_remote_service):
-        """
-        Notifies a service registry about the service (its name and http location)
-
-        :param servreg_remote_service: a :py:class:`gemstone.RemoteService` instance
-        """
-        url = self.accessible_at
-        self.logger.debug("Pinging {registry_url} (name={name}, url={url})".format(
-            registry_url=servreg_remote_service.url, name=self.name, url=url
-        ))
-        servreg_remote_service.notifications.ping(name=self.name, url=url)
-
     def _periodic_task_iter(self):
         """
         Iterates through all the periodic tasks:
@@ -485,14 +476,12 @@ class MicroService(ABC):
 
         :return:
         """
-        for url in self.service_registry_urls:
-            registry = RemoteService(url)
-            self.registries.append(registry)
-            periodic_servreg_ping = functools.partial(self._ping_to_service_registry, registry)
-            periodic_servreg_ping()  # initial ping
+        for strategy in self.discovery_strategies:
             self.default_periodic_tasks.append(
-                (periodic_servreg_ping, self.service_registry_ping_interval)
+                (functools.partial(strategy.ping, self.name, self.accessible_at),
+                 self.service_registry_ping_interval)
             )
+            self.default_periodic_tasks[-1][0]()
 
         all_periodic_tasks = self.default_periodic_tasks + self.periodic_tasks
         for func, timer_in_seconds in all_periodic_tasks:
