@@ -16,6 +16,7 @@ from tornado.log import enable_pretty_logging
 from gemstone.config.configurable import Configurable
 from gemstone.config.configurator import CommandLineConfigurator
 from gemstone.core.stats import DefaultStatsContainer, DummyStatsContainer
+from gemstone.discovery.cache import ServiceDiscoveryCache
 from gemstone.errors import ServiceConfigurationError
 from gemstone.core.handlers import TornadoJsonRpcHandler
 from gemstone.core.decorators import exposed_method
@@ -70,6 +71,7 @@ class MicroService(ABC):
     discovery_strategies = [
 
     ]
+    _remote_service_cache = ServiceDiscoveryCache(3600)
 
     #: Specifies if should record statistics
     use_statistics = False
@@ -273,6 +275,13 @@ class MicroService(ABC):
         if not self.discovery_strategies:
             raise ServiceConfigurationError("No service registry available")
 
+        try:
+            cached = self._remote_service_cache.get_entry(name)
+            if cached:
+                return cached.remote_service
+        except Exception as e:
+            print(e)
+
         for strategy in self.discovery_strategies:
             endpoints = strategy.locate(name)
             if not endpoints:
@@ -280,7 +289,9 @@ class MicroService(ABC):
             random.shuffle(endpoints)
             for url in endpoints:
                 try:
-                    return RemoteService(url)
+                    service = RemoteService(url)
+                    self._remote_service_cache.add_entry(name, service)
+                    return service
                 except ConnectionError:
                     continue  # could not establish connection, try next
 
