@@ -37,7 +37,7 @@ class DefaultStatsContainer(object):
             self.method_calls[method]["average_resp_time"] = (method_stats["average_resp_time"] *
                                                               method_stats[
                                                                   "total_calls"] + duration) / (
-                                                             method_stats["total_calls"] + 1)
+                                                                 method_stats["total_calls"] + 1)
             self.method_calls[method]["total_calls"] += 1
 
     def as_json(self):

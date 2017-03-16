@@ -89,7 +89,7 @@ def async_method(func):
 METHOD_NAME_REGEX = re.compile(r'^[a-zA-Z][a-zA-Z0-9_.]*$')
 
 
-def exposed_method(name=None, public=True, private=False, is_coroutine=False, requires_handler_reference=False,
+def exposed_method(name=None, public=True, private=False, is_coroutine=True, requires_handler_reference=False,
                    **kwargs):
     """
     Marks a method as exposed via JSON RPC.
@@ -121,7 +121,7 @@ def exposed_method(name=None, public=True, private=False, is_coroutine=False, re
             raise ValueError("Invalid method name: '{}'".format(method_name))
 
         if public and private:
-            raise ValueError("A method cannot be public and private in the same time")
+            raise ValueError("A method cannot be public and private at the same time")
 
         @functools.wraps(func)
         def real_wrapper(*args, **kwargs):

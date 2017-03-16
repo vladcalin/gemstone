@@ -99,6 +99,11 @@ class MicroService(ABC):
         CommandLineConfigurator()
     ]
 
+    #: a list of ``gemstone.core.modules.Module`` instances
+    modules = [
+
+    ]
+
     # in some situations, on Windows the event loop may hang
     # http://stackoverflow.com/questions/33634956/why-would-a-timeout-avoid-a-tornado-hang/33643631#33643631
     default_periodic_tasks = [(lambda: None, 0.5)] if IS_WINDOWS else []
@@ -122,8 +127,6 @@ class MicroService(ABC):
         self.logger = self.get_logger()
         self.registries = []
 
-        self.logger.info("Initializing")
-
         # name
         if self.name is None:
             raise ServiceConfigurationError("No name defined for the microservice")
@@ -137,21 +140,9 @@ class MicroService(ABC):
 
         # methods
         self.methods = {}
-        self._gather_exposed_methods()
 
         # event handlers
         self.event_handlers = {}
-        self._gather_event_handlers()
-
-        # stats
-        if self.use_statistics:
-            self.stats = DefaultStatsContainer()
-            self.methods["statistics"] = lambda: self.stats.as_json()
-        else:
-            self.stats = DummyStatsContainer()
-
-        if len(self.methods) == 0:
-            raise ServiceConfigurationError("No exposed methods for the microservice")
 
         # executor
         if self.max_parallel_blocking_tasks <= 0:
@@ -293,6 +284,9 @@ class MicroService(ABC):
 
         raise ValueError("Service could not be located")
 
+    def get_io_loop(self):
+        return self.io_loop or IOLoop.current()
+
     def start_thread(self, target, args, kwargs):
         """
         Shortcut method for starting a thread.
@@ -332,8 +326,9 @@ class MicroService(ABC):
         The main method that starts the service. This is blocking.
 
         """
-        self._before_start_setup()
+        self._initial_setup()
         self.on_service_start()
+
         self.app = self.make_tornado_app()
         enable_pretty_logging()
         self.app.listen(self.port, address=self.host)
@@ -341,10 +336,7 @@ class MicroService(ABC):
         for k, v in self.get_current_configuration().items():
             self.logger.debug("{}={}".format(k, v))
 
-        for periodic_task in self._periodic_task_iter():
-            self.logger.debug("Starting periodic task {}".format(periodic_task))
-            periodic_task.start()
-
+        self._start_periodic_tasks()
         # starts the event handlers
         self._initialize_event_handlers()
         self._start_event_handlers()
@@ -355,6 +347,11 @@ class MicroService(ABC):
             # TODO : find a way to check if the io_loop is running before trying to start it
             # this method to check if the loop is running is ugly
             pass
+
+    def _start_periodic_tasks(self):
+        for periodic_task in self._periodic_task_iter():
+            self.logger.debug("Starting periodic task {}".format(periodic_task))
+            periodic_task.start()
 
     def get_current_configuration(self):
         return {
@@ -388,10 +385,24 @@ class MicroService(ABC):
 
     # endregion
 
-    def _before_start_setup(self):
+    def _initial_setup(self):
         if not self.skip_configuration:
             self._prepare_configurators()
             self._activate_configurators()
+
+        # prepare modules
+        for module in self.modules:
+            module.set_microservice(self)
+
+        self._gather_exposed_methods()
+        self._gather_event_handlers()
+
+        # initializing statistics handler
+        if self.use_statistics:
+            self.stats = DefaultStatsContainer()
+            self.methods["statistics"] = lambda: self.stats.as_json()
+        else:
+            self.stats = DummyStatsContainer()
 
     def _initialize_event_handlers(self):
         for event_transport in self.event_transports:
@@ -450,8 +461,14 @@ class MicroService(ABC):
         :py:func:`gemstone.private_api_method`.
         """
 
-        for itemname in dir(self):
-            item = getattr(self, itemname)
+        self._extract_methods_from_container(self)
+
+        for module in self.modules:
+            self._extract_methods_from_container(module)
+
+    def _extract_methods_from_container(self, container):
+        for itemname in dir(container):
+            item = getattr(container, itemname)
             if getattr(item, "__gemstone_internal_public", False) is True or \
                             getattr(item, "__gemstone_internal_private", False) is True:
                 exposed_name = getattr(item, '__gemstone_internal_exposed_name', item.__name__)
@@ -467,8 +484,13 @@ class MicroService(ABC):
 
         :return:
         """
-        for itemname in dir(self):
-            item = getattr(self, itemname)
+        self._extract_event_handlers_from_container(self)
+        for module in self.modules:
+            self._extract_event_handlers_from_container(module)
+
+    def _extract_event_handlers_from_container(self, container):
+        for itemname in dir(container):
+            item = getattr(container, itemname)
             if getattr(item, "__gemstone_internal_is_event_handler", False):
                 self.event_handlers.setdefault(
                     getattr(item, "__gemstone_internal_handled_event"), item)
