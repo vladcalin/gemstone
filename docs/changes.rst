@@ -10,7 +10,10 @@ Current
 - added the ``broadcast`` parameter to ``RabbitMqEventTransport.emit_event``
 - improved tests and documentation
 - removed ``mappings`` and ``type`` parameters from ``Configurable``
-
+- added ``gemstone.Module`` for better modularization of the microservice
+- added ``gemstone.MicroService.authenticate_request`` method for a more flexible
+  authentication mechanism
+- deprecated ``gemstone.MicroService.api_token_is_valid`` method
 
 0.9.0 (06.03.2017
 ~~~~~~~~~~~~~~~~~

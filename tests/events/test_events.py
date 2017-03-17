@@ -47,12 +47,14 @@ class TestServicePublisher(gemstone.MicroService):
 
 def test_event_handler_discovery():
     service = TestServicePublisher()
+    service._gather_event_handlers()
 
     assert service.event_handlers == {"test": service.handler}
 
 
 def test_transport_init():
     service = TestServicePublisher()
+    service._gather_event_handlers()
     service._initialize_event_handlers()
 
     mocked_transport.register_event_handler.assert_has_calls([

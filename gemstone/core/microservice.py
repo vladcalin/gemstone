@@ -21,7 +21,6 @@ from gemstone.errors import ServiceConfigurationError
 from gemstone.core.handlers import TornadoJsonRpcHandler
 from gemstone.core.decorators import exposed_method
 from gemstone.client.remote_service import RemoteService
-from gemstone.auth.validation_strategies.header_strategy import HeaderValidationStrategy
 
 __all__ = [
     'MicroService'
@@ -58,11 +57,6 @@ class MicroService(ABC):
     #: A list of extra Tornado handlers that will be included in the
     #: created Tornado application.
     extra_handlers = []
-
-    #: A list of validation strategies used by the security sub-framework.
-    validation_strategies = [
-        HeaderValidationStrategy(header_name="X-Api-Token")
-    ]
 
     #: A list of service registry complete URL which will enable service auto-discovery.
     service_registry_urls = []
@@ -220,14 +214,16 @@ class MicroService(ABC):
         # TODO: make the json rpc handler use this
         pass
 
-    def api_token_is_valid(self, api_token):
+    def authenticate_request(self, handler):
         """
-        Method that must be overridden by subclasses in order to implement the API token
-        validation logic. Should return ``True`` if the api token is valid, or
-        ``False`` otherwise.
+        Based on the current request handler, checks if the request if valid.
 
-        :param api_token: a string representing the received api token value
-        :return: ``True`` if the api_token is valid, ``False`` otherwise
+        :param handler: a JsonRpcRequestHandler instance for the current request
+        :return: False or None if the method call should be denied, or something whose
+                 boolean value is True otherwise.
+
+        .. versionadded:: 0.10
+
         """
         return True
 
@@ -369,9 +365,6 @@ class MicroService(ABC):
                 "template_dir": self.template_dir,
                 "static_dirs": self.static_dirs,
                 "extra_handlers": [str(h) for h in self.extra_handlers]
-            },
-            "access_control": {
-                "validation_strategies": [str(v) for v in self.validation_strategies]
             },
             "event": {
                 "event_transports": [str(t) for t in self.event_transports]

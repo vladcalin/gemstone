@@ -89,7 +89,7 @@ def async_method(func):
 METHOD_NAME_REGEX = re.compile(r'^[a-zA-Z][a-zA-Z0-9_.]*$')
 
 
-def exposed_method(name=None, public=True, private=False, is_coroutine=True, requires_handler_reference=False,
+def exposed_method(name=None, private=False, is_coroutine=True, requires_handler_reference=False,
                    **kwargs):
     """
     Marks a method as exposed via JSON RPC.
@@ -120,20 +120,15 @@ def exposed_method(name=None, public=True, private=False, is_coroutine=True, req
         if not METHOD_NAME_REGEX.match(method_name):
             raise ValueError("Invalid method name: '{}'".format(method_name))
 
-        if public and private:
-            raise ValueError("A method cannot be public and private at the same time")
-
         @functools.wraps(func)
         def real_wrapper(*args, **kwargs):
             return func(*args, **kwargs)
 
         # set appropriate flags
-
-        if public:
-            setattr(real_wrapper, "__gemstone_internal_public", True)
-
         if private:
             setattr(real_wrapper, "__gemstone_internal_private", True)
+        else:
+            setattr(real_wrapper, "__gemstone_internal_public", True)
 
         if is_coroutine:
             real_wrapper = async_method(real_wrapper)

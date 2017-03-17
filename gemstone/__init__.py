@@ -7,6 +7,7 @@ from gemstone.core.decorators import private_api_method, public_method, event_ha
     requires_handler_reference, async_method, exposed_method
 from gemstone.core.handlers import TornadoJsonRpcHandler, GemstoneCustomHandler
 from gemstone.client.remote_service import RemoteService
+from gemstone.core.modules import Module
 
 from gemstone.util import as_completed, first_completed, make_callbacks
 
@@ -19,6 +20,8 @@ __all__ = [
     # core classes
     'MicroService',
     'RemoteService',
+
+    'Module',
 
     # decorators
     'public_method',

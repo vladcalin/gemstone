@@ -13,7 +13,9 @@ from tests.services.service_jsonrpc_specs import ServiceJsonRpcSpecs
 
 @pytest.fixture
 def app():
-    return ServiceJsonRpcSpecs().make_tornado_app()
+    service = ServiceJsonRpcSpecs()
+    service._initial_setup()
+    return service.make_tornado_app()
 
 
 @pytest.mark.gen_test

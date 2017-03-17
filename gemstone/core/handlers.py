@@ -53,10 +53,11 @@ class TornadoJsonRpcHandler(RequestHandler):
         self.logger = microservice.logger
         self.methods = microservice.methods
         self.executor = microservice._executor
-        self.validation_strategies = microservice.validation_strategies
-        self.api_token_handlers = microservice.api_token_is_valid
         self.response_is_sent = False
         self.microservice = microservice
+
+    def get_current_user(self):
+        return self.microservice.authenticate_request(self)
 
     @coroutine
     def post(self):
@@ -147,8 +148,7 @@ class TornadoJsonRpcHandler(RequestHandler):
         # check for private access
         method = self.methods[request_object.method]
         if self._method_is_private(method):
-            token = self.extract_api_token()
-            if not self.api_token_handlers(token):
+            if not self.get_current_user():
                 resp = GenericResponse.ACCESS_DENIED
                 resp.id = id_
                 return resp
@@ -185,7 +185,8 @@ class TornadoJsonRpcHandler(RequestHandler):
                     return resp
             # generic handling for any exception (even TypeError) that
             # is not generated because of bad parameters
-            self.microservice.stats.after_method_call(request_object.method, time.time() - _method_duration,
+            self.microservice.stats.after_method_call(request_object.method,
+                                                      time.time() - _method_duration,
                                                       is_error=True)
             err = GenericResponse.INTERNAL_ERROR
             err.id = id_
@@ -196,7 +197,8 @@ class TornadoJsonRpcHandler(RequestHandler):
             return err
 
         to_return_resp = JsonRpcResponse(result=result, error=error, id=id_)
-        self.microservice.stats.after_method_call(request_object.method, time.time() - _method_duration, is_error=False)
+        self.microservice.stats.after_method_call(request_object.method,
+                                                  time.time() - _method_duration, is_error=False)
 
         self.microservice.after_method_call(request_object_copy, to_return_resp)
 
@@ -288,12 +290,6 @@ class TornadoJsonRpcHandler(RequestHandler):
         responses = yield [self.handle_single_request(single_req) for single_req in
                            batch_req_obj.iter_items()]
         return responses
-
-    def extract_api_token(self):
-        for handler in self.validation_strategies:
-            token = handler.extract_api_token(self)
-            if token:
-                return token
 
     def _method_requires_handler_ref(self, method):
         return getattr(method, "__gemstone_internal_req_h_ref", False)
