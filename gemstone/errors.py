@@ -6,9 +6,31 @@ class ServiceConfigurationError(GemstoneError):
     pass
 
 
-class AccessDeniedError(GemstoneError):
+# RemoteService related exception
+
+class RemoteServiceError(GemstoneError):
     pass
 
 
-class CalledServiceError(GemstoneError):
+class CalledServiceError(RemoteServiceError):
+    pass
+
+
+class MethodNotFoundError(RemoteServiceError):
+    pass
+
+
+class InvalidParamsError(RemoteServiceError):
+    pass
+
+
+class AccessDeniedError(RemoteServiceError):
+    pass
+
+
+class InternalErrorError(RemoteServiceError):
+    pass
+
+
+class UnknownError(RemoteServiceError):
     pass
