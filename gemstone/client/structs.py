@@ -58,6 +58,9 @@ class BatchResult(object):
     def __iter__(self):
         return iter(self.responses)
 
+    def __len__(self):
+        return len(self.responses)
+
     def get_response_for_call(self, method_call):
         items = [x for x in self.responses if x.method_call == method_call]
         if not items:
@@ -67,20 +70,45 @@ class BatchResult(object):
 
 
 class AsyncMethodCall(object):
-    def __init__(self):
-        pass
+    def __init__(self, req_obj, async_resp_object):
+        self.request = req_obj
+        self._async_resp = async_resp_object
 
-    def is_ready(self):
-        pass
+    def finished(self):
+        return self._async_resp.ready()
 
-    def result(self):
-        pass
+    def result(self, wait=False):
+        """
+        Gets the result of the method call. If the call was successful,
+        return the result, otherwise, reraise the exception.
 
-    def get(self):
-        pass
+        :param wait: Block until the result is available, or just get the result.
+        :raises: RuntimeError when called and the result is not yet available.
+        """
+        if wait:
+            self._async_resp.wait()
+
+        if not self.finished():
+            raise RuntimeError("Result is not ready yet")
+
+        raw_response = self._async_resp.get()
+
+        return Result(result=raw_response["result"], error=raw_response["error"],
+                      id=raw_response["id"], method_call=self.request)
 
     def successful(self):
-        pass
+        return self._async_resp.successful()
 
-    def reraise(self):
-        pass
+    def __repr__(self):
+        return "AsyncMethodCall(ready={}, request={})".format(
+            self.finished(), self.request
+        )
+
+    def __hash__(self):
+        return hash(self.request)
+
+    def __eq__(self, other):
+        if not isinstance(other, AsyncMethodCall):
+            return False
+
+        return self.request == other.request
