@@ -5,8 +5,8 @@ import inspect
 import tornado.gen
 
 __all__ = [
-    'public_method',
-    'private_api_method'
+    'event_handler',
+    'exposed_method'
 ]
 
 
@@ -50,8 +50,8 @@ def event_handler(event_name):
     """
 
     def wrapper(func):
-        func.__gemstone_internal_is_event_handler = True
-        func.__gemstone_internal_handled_event = event_name
+        func._event_handler = True
+        func._handled_event = event_name
         return func
 
     return wrapper
@@ -126,18 +126,18 @@ def exposed_method(name=None, private=False, is_coroutine=True, requires_handler
 
         # set appropriate flags
         if private:
-            setattr(real_wrapper, "__gemstone_internal_private", True)
+            setattr(real_wrapper, "_exposed_private", True)
         else:
-            setattr(real_wrapper, "__gemstone_internal_public", True)
+            setattr(real_wrapper, "_exposed_public", True)
 
         if is_coroutine:
             real_wrapper = async_method(real_wrapper)
-            setattr(real_wrapper, "__gemstone_internal_is_coroutine", True)
+            setattr(real_wrapper, "_is_coroutine", True)
 
         if requires_handler_reference:
-            setattr(real_wrapper, "__gemstone_internal_req_h_ref", True)
+            setattr(real_wrapper, "_req_h_ref", True)
 
-        setattr(real_wrapper, "__gemstone_internal_exposed_name", method_name)
+        setattr(real_wrapper, "_exposed_name", method_name)
 
         return real_wrapper
 

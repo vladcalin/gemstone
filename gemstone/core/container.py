@@ -1,7 +1,7 @@
 import abc
 
 
-class Module(abc.ABC):
+class Container(abc.ABC):
     """
     A container for exposed methods and/or event handlers
     for a better modularization of the application.
@@ -22,6 +22,7 @@ class Module(abc.ABC):
             def users_login(self)
 
     """
+
     def __init__(self):
         self.microservice = None
 

@@ -462,9 +462,9 @@ class MicroService(ABC):
     def _extract_methods_from_container(self, container):
         for itemname in dir(container):
             item = getattr(container, itemname)
-            if getattr(item, "__gemstone_internal_public", False) is True or \
-                            getattr(item, "__gemstone_internal_private", False) is True:
-                exposed_name = getattr(item, '__gemstone_internal_exposed_name', item.__name__)
+            if getattr(item, "_exposed_public", False) is True or \
+                            getattr(item, "_exposed_private", False) is True:
+                exposed_name = getattr(item, '_exposed_name', item.__name__)
 
                 if exposed_name in self.methods:
                     raise ValueError(
@@ -484,9 +484,9 @@ class MicroService(ABC):
     def _extract_event_handlers_from_container(self, container):
         for itemname in dir(container):
             item = getattr(container, itemname)
-            if getattr(item, "__gemstone_internal_is_event_handler", False):
+            if getattr(item, "_event_handler", False):
                 self.event_handlers.setdefault(
-                    getattr(item, "__gemstone_internal_handled_event"), item)
+                    getattr(item, "_handled_event"), item)
 
     def _periodic_task_iter(self):
         """

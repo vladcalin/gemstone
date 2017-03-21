@@ -292,7 +292,7 @@ class TornadoJsonRpcHandler(RequestHandler):
         return responses
 
     def _method_requires_handler_ref(self, method):
-        return getattr(method, "__gemstone_internal_req_h_ref", False)
+        return getattr(method, "_req_h_ref", False)
 
     def _method_is_async_generator(self, method):
         """
@@ -307,8 +307,8 @@ class TornadoJsonRpcHandler(RequestHandler):
         else:
             func = method
 
-        return getattr(func, "__gemstone_internal_is_coroutine", False)
+        return getattr(func, "_is_coroutine", False)
 
     @staticmethod
     def _method_is_private(method):
-        return getattr(method, "__gemstone_internal_private", False)
+        return getattr(method, "_exposed_private", False)
