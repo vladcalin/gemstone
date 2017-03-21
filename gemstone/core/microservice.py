@@ -21,6 +21,7 @@ from gemstone.errors import ServiceConfigurationError
 from gemstone.core.handlers import TornadoJsonRpcHandler
 from gemstone.core.decorators import exposed_method
 from gemstone.client.remote_service import RemoteService
+from gemstone.core.container import Container
 
 __all__ = [
     'MicroService'
@@ -29,7 +30,7 @@ __all__ = [
 IS_WINDOWS = sys.platform.startswith("win32")
 
 
-class MicroService(ABC):
+class MicroService(Container):
     #: The name of the service. Is required.
     name = None
 
@@ -460,16 +461,12 @@ class MicroService(ABC):
             self._extract_methods_from_container(module)
 
     def _extract_methods_from_container(self, container):
-        for itemname in dir(container):
-            item = getattr(container, itemname)
-            if getattr(item, "_exposed_public", False) is True or \
-                            getattr(item, "_exposed_private", False) is True:
-                exposed_name = getattr(item, '_exposed_name', item.__name__)
-
-                if exposed_name in self.methods:
-                    raise ValueError(
-                        "Cannot expose two methods under the same name: '{}'".format(exposed_name))
-                self.methods[exposed_name] = item
+        for item in container.get_exposed_methods():
+            exposed_name = getattr(item, '_exposed_name', item.__name__)
+            if exposed_name in self.methods:
+                raise ValueError(
+                    "Cannot expose two methods under the same name: '{}'".format(exposed_name))
+            self.methods[exposed_name] = item
 
     def _gather_event_handlers(self):
         """
@@ -482,11 +479,8 @@ class MicroService(ABC):
             self._extract_event_handlers_from_container(module)
 
     def _extract_event_handlers_from_container(self, container):
-        for itemname in dir(container):
-            item = getattr(container, itemname)
-            if getattr(item, "_event_handler", False):
-                self.event_handlers.setdefault(
-                    getattr(item, "_handled_event"), item)
+        for item in container.get_event_handlers():
+            self.event_handlers.setdefault(getattr(item, "_handled_event"), item)
 
     def _periodic_task_iter(self):
         """
