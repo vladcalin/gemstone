@@ -1,204 +1,140 @@
-"""
-This test suite asserts the correct functionality of
-the gemstone.RemoteService client class.
+import inspect
+import urllib.request
+import json
 
-Also asserts the correctness of the communication
-between a gemstone.RemoteService instance and a gemstone.MicroService
-based microservice.
-"""
+import pytest
 
-from unittest import TestCase
-from unittest.mock import MagicMock, call
-import threading
-import time
+from gemstone import as_completed
+from gemstone.client.remote_service import RemoteService
+from gemstone.client.structs import Result, MethodCall, BatchResult, AsyncMethodCall
 
-from gemstone.client.remote_service import RemoteService, AsyncMethodCall
-from gemstone import make_callbacks, first_completed
-from gemstone.errors import CalledServiceError
-
-from tests.services.service_client import Service1, Service2
+DUMMY_SERVICE_URL = "http://example.com/api"
 
 
-class ClientTestCase(TestCase):
-    service_thread = None
-    service_thread2 = None
-    service_url = "http://127.0.0.1:6799/api"
-    service_url2 = "http://127.0.0.1:6800/api"
+def test_remote_service_initialize():
+    service = RemoteService(DUMMY_SERVICE_URL)
 
-    @classmethod
-    def setUpClass(cls):
-        service1 = Service1()
-        service2 = Service2(io_loop=service1.io_loop)
-        cls.service_thread = threading.Thread(target=service1.start, daemon=True)
-        cls.service_thread.start()
+    assert service.url == DUMMY_SERVICE_URL
 
-        cls.service_thread2 = threading.Thread(target=service2.start, daemon=True)
-        cls.service_thread2.start()
 
-        time.sleep(1)  # wait for the servers to be ready to accept connections
+def test_remote_service_make_request_obj():
+    service = RemoteService(DUMMY_SERVICE_URL)
 
-    def test_client_connection(self):
-        client = RemoteService(self.service_url)
+    body = {
+        "test": "ok"
+    }
 
-        self.assertEqual(client.name, "test.service.client.1")
-        self.assertCountEqual(client.get_available_methods(),
-                              ["get_service_specs", "method1", "method2", "method3", "method4", "method5", "sleep",
-                               "sleep_with_error"])
+    req_obj = service.build_http_request_obj(body)
 
-    def test_method_call_no_args(self):
-        client = RemoteService(self.service_url)
+    assert isinstance(req_obj, urllib.request.Request)
+    assert req_obj.get_full_url() == DUMMY_SERVICE_URL
+    assert req_obj.method == "POST"
 
-        result = client.methods.method1()
-        self.assertEqual(result, "hello there")
+    assert req_obj.get_header("Content-Type".capitalize()) == 'application/json'
+    assert req_obj.data == b'{"test": "ok"}'
 
-    def test_method_call_with_args(self):
-        client = RemoteService(self.service_url)
 
-        result = client.methods.method2("hello")
-        self.assertEqual(result, "hello there hello")
+def dummy_urlopen(url, *args, **kwargs):
+    class DummyResponse:
+        def __init__(self, id=None, *a, **k):
+            self.id = id
 
-    def test_method_call_with_numeric_args(self):
-        client = RemoteService(self.service_url)
-        result = client.methods.method3(10, 11)
-        self.assertEqual(result, 21)
+        def read(self):
+            return json.dumps(
+                {"jsonrpc": "2.0", "error": None, "result": None, "id": self.id}).encode()
 
-        result = client.methods.method3(1, 1)
-        self.assertEqual(result, 2)
+    if not isinstance(url, urllib.request.Request):
+        return DummyResponse()
 
-        result = client.methods.method3(131, 33)
-        self.assertEqual(result, 164)
+    body = json.loads(url.data.decode())
+    return DummyResponse(body.get('id'))
 
-        with self.assertRaisesRegex(CalledServiceError, "Bad type for a and b"):
-            result = client.methods.method3("abc", "def")
 
-    def test_method_call_with_complex_result(self):
-        client = RemoteService(self.service_url)
-        result = client.methods.method4(arg1="test", arg2="success")
-        self.assertEqual(result, {"arg1": "test", "arg2": "success"})
+def dummy_urlopen_batch(url, *args, **kwargs):
+    class DummyResponse:
+        def __init__(self, *ids):
+            self.ids = ids
 
-        result = client.methods.method4("test", "success")
-        self.assertEqual(result, {"arg1": "test", "arg2": "success"})
+        def read(self):
+            return json.dumps([{"jsonrpc": "2.0", "error": None, "result": None, "id": i} for i in
+                               self.ids]).encode()
 
-    def test_method_call_method_does_not_exist(self):
-        client = RemoteService(self.service_url)
-        with self.assertRaises(AttributeError):
-            result = client.methods.does_not_exist()
+    if not isinstance(url, urllib.request.Request):
+        return DummyResponse()
 
-    def test_method_call_wrong_params(self):
-        client = RemoteService(self.service_url)
-        with self.assertRaises(CalledServiceError):
-            result = client.methods.method1(param="should_not_be_here")
+    body = json.loads(url.data.decode())
+    ids = [x["id"] for x in body]
 
-        with self.assertRaises(CalledServiceError):
-            result = client.methods.method1(1, 2, 3)
+    return DummyResponse(*ids)
 
-    def test_method_call_private_token_missing(self):
-        client = RemoteService(self.service_url)  # no api token
-        with self.assertRaises(CalledServiceError):
-            result = client.methods.method5("test")
 
-    def test_method_call_private_token_ok(self):
-        client = RemoteService(self.service_url, options={"auth_type": "header", "auth_token": "test-token"})
-        result = client.methods.method5("test")
-        self.assertEqual(result, "private test")
+def test_simple_call(monkeypatch):
+    service = RemoteService(DUMMY_SERVICE_URL)
 
-    def test_method_call_private_token_incorrect(self):
-        client = RemoteService(self.service_url, options={"auth_type": "header", "auth_token": "wrong-token"})
-        with self.assertRaises(CalledServiceError):
-            result = client.methods.method5("test")
+    monkeypatch.setattr(urllib.request, 'urlopen', dummy_urlopen)
 
-    def test_method_call_custom_api_token_header(self):
-        client = RemoteService(self.service_url2, options={"auth_type": "header", "auth_params": "Custom-Header",
-                                                           "auth_token": "test-token"})
-        result = client.methods.test()
-        self.assertTrue(result)
+    result = service.call_method("test", [])
+    assert isinstance(result, Result)
+    assert result.id == result.method_call.id
 
-    def test_notifications(self):
-        client = RemoteService(self.service_url)
-        response = client.notifications.method1()
-        self.assertIsNone(response)
 
-    def test_notifications_method_not_found(self):
-        client = RemoteService(self.service_url)
-        with self.assertRaises(AttributeError):
-            response = client.notifications.does_not_exist()
+def test_simple_call_notify(monkeypatch):
+    service = RemoteService(DUMMY_SERVICE_URL)
 
-    def test_notifications_bad_params(self):
-        client = RemoteService(self.service_url)
-        response = client.notifications.method1(1, 2, 3)
-        self.assertTrue(response is None)  # every notification should return None because
-        # do not care about the answer
+    monkeypatch.setattr(urllib.request, 'urlopen', dummy_urlopen)
 
-    def test_async_single_call_valid_result(self):
-        client = RemoteService(self.service_url)
+    result = service.notify("test", [])
+    assert result is None
 
-        r = client.methods.method3(1, 2, __async=True)
 
-        self.assertIsInstance(r, AsyncMethodCall)
+def test_simple_batch_call(monkeypatch):
+    service = RemoteService(DUMMY_SERVICE_URL)
+    monkeypatch.setattr(urllib.request, 'urlopen', dummy_urlopen_batch)
 
-        r.wait()
+    calls = [
+        MethodCall("test", []),
+        MethodCall("test2", []),
+        MethodCall("test3", [])
+    ]
+    result = service.call_batch(*calls)
 
-        self.assertEqual(r.result(), 3)
-        self.assertIsNone(r.error())
-        self.assertTrue(r.finished())
+    assert isinstance(result, BatchResult)
+    assert len(result) == 3
+    assert result.get_response_for_call(calls[0]).id == calls[0].id
+    assert result.get_response_for_call(calls[1]).id == calls[1].id
+    assert result.get_response_for_call(calls[2]).id == calls[2].id
+    assert result.get_response_for_call(MethodCall("invalid")) is None
 
-    def test_async_single_call_error(self):
-        client = RemoteService(self.service_url)
-        r = client.methods.method3("a", "b", __async=True)
 
-        self.assertIsInstance(r, AsyncMethodCall)
+def test_async_call(monkeypatch):
+    service = RemoteService(DUMMY_SERVICE_URL)
+    monkeypatch.setattr(urllib.request, 'urlopen', dummy_urlopen)
 
-        r.wait()
+    result = service.call_method_async("test", [])
+    assert isinstance(result, AsyncMethodCall)
 
-        self.assertIsNone(r.result())
+    result = result.result(wait=True)
 
-        self.assertIsNotNone(r.error())
-        self.assertEqual(r.error()["message"].lower(), "internal error")
-        self.assertEqual(r.error()["code"], -32603)
-        self.assertEqual(r.error()["data"]["class"], "ValueError")
+    assert isinstance(result, Result)
+    assert result.id == result.method_call.id
 
-        self.assertTrue(r.finished())
 
-    def test_async_first_completed_async(self):
-        client = RemoteService(self.service_url)
+def test_batch_call_errors():
+    service = RemoteService(DUMMY_SERVICE_URL)
 
-        requests = [client.methods.sleep(1 - x * 0.25, __async=True) for x in range(4)]
-        first = first_completed(*requests)
+    with pytest.raises(TypeError):
+        service.call_batch(1, 2, 3)
 
-        self.assertIsInstance(first, AsyncMethodCall)
-        self.assertTrue(first in requests)
 
-    def test_async_add_callbacks_main_thread(self):
-        client = RemoteService(self.service_url)
-        requests = [client.methods.sleep(1 - x * 0.25, __async=True) for x in range(4)]
+def test_as_completed(monkeypatch):
+    service = RemoteService(DUMMY_SERVICE_URL)
+    monkeypatch.setattr(urllib.request, 'urlopen', dummy_urlopen)
 
-        success_callback = MagicMock()
-        fail_callback = MagicMock()
+    items = [service.call_method_async("test", []) for _ in range(10)]
 
-        make_callbacks(requests, on_result=success_callback, on_error=fail_callback)
+    data = as_completed(*items)
 
-        success_callback.assert_has_calls(
-            [call(0.25), call(0.5), call(0.75), call(1.0)], any_order=True)
-        fail_callback.assert_not_called()
+    assert inspect.isgenerator(data)
 
-    def test_async_add_callbacks_errors(self):
-        client = RemoteService(self.service_url)
-        requests = [client.methods.sleep_with_error(1 - x * 0.25, __async=True) for x in range(4)]
-
-        success_callback = MagicMock()
-        fail_callback = MagicMock()
-
-        make_callbacks(requests, on_result=success_callback, on_error=fail_callback)
-
-        success_callback.assert_not_called()
-
-        # TODO: investigate to see why this part randomly fails
-        #
-        # call that causes the test to fail: call({'message': 'Internal error', 'data': {'info': '0.25', ...
-        #
-        # fail_callback.assert_has_calls([
-        #     call({'message': 'Internal error', 'data': {'info': '0.25', 'class': 'ValueError'}, 'code': -32603}),
-        #     call({'message': 'Internal error', 'data': {'info': '0.5', 'class': 'ValueError'}, 'code': -32603}),
-        #     call({'message': 'Internal error', 'data': {'info': '0.75', 'class': 'ValueError'}, 'code': -32603}),
-        #     call({'message': 'Internal error', 'data': {'info': '1.0', 'class': 'ValueError'}, 'code': -32603})
-        # ], any_order=True)
+    results = list(data)
+    assert len(results) == 10

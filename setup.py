@@ -76,11 +76,20 @@ setup(
     test_suite="tests",
     test_requires="pytest",
 
-    install_requires=read_dependencies("requirements.txt"),
+    install_requires=[
+        "tornado",
+        "simplejson",
+        "click"
+    ],
 
     entry_points={
         "console_scripts": [
             "gemstone = gemstone.cli:cli"
         ]
+    },
+    extras_require={
+        "events-rabbitmq": ["pika"],
+        "discover-redis": ["redis"],
+        "discover-etcd": ["python-etcd"]
     }
 )

@@ -45,13 +45,15 @@ class BaseEventTransport(ABC):
         pass
 
     @abstractmethod
-    def emit_event(self, event_name, event_body):
+    def emit_event(self, event_name, event_body, *, broadcast=False):
         """
         Emits an event of type ``event_name`` with the ``event_body`` content using the current
         event transport.
 
         :param event_name:
         :param event_body:
+        :param broadcast: flag that specifies if the event should go to all
+                          subscribers or only to one.
         :return:
         """
         pass

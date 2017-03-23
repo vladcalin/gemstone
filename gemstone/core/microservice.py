@@ -15,11 +15,13 @@ from tornado.log import enable_pretty_logging
 
 from gemstone.config.configurable import Configurable
 from gemstone.config.configurator import CommandLineConfigurator
+from gemstone.core.stats import DefaultStatsContainer, DummyStatsContainer
+from gemstone.discovery.cache import ServiceDiscoveryCache
 from gemstone.errors import ServiceConfigurationError
 from gemstone.core.handlers import TornadoJsonRpcHandler
-from gemstone.core.decorators import public_method
+from gemstone.core.decorators import exposed_method
 from gemstone.client.remote_service import RemoteService
-from gemstone.auth.validation_strategies.header_strategy import HeaderValidationStrategy
+from gemstone.core.container import Container
 
 __all__ = [
     'MicroService'
@@ -28,7 +30,7 @@ __all__ = [
 IS_WINDOWS = sys.platform.startswith("win32")
 
 
-class MicroService(ABC):
+class MicroService(Container):
     #: The name of the service. Is required.
     name = None
 
@@ -57,15 +59,17 @@ class MicroService(ABC):
     #: created Tornado application.
     extra_handlers = []
 
-    #: A list of validation strategies used by the security sub-framework.
-    validation_strategies = [
-        HeaderValidationStrategy(header_name="X-Api-Token")
-    ]
-
     #: A list of service registry complete URL which will enable service auto-discovery.
     service_registry_urls = []
     #: Interval (in seconds) when the microservice will ping all the service registries.
     service_registry_ping_interval = 30
+    discovery_strategies = [
+
+    ]
+    _remote_service_cache = ServiceDiscoveryCache(3600)
+
+    #: Specifies if should record statistics
+    use_statistics = False
 
     #: A list of (callable, time_in_seconds) that will enable periodic task execution.
     periodic_tasks = []
@@ -78,19 +82,21 @@ class MicroService(ABC):
     #: A list of configurable objects that allows the service's running parameters to
     #: be changed dynamically without changing its code.
     configurables = [
-        Configurable("port", type=int,
-                     mappings=[
-                         ("random", lambda _: random.randint(8000, 65000))
-                     ]),
+        Configurable("port",
+                     template=lambda x: random.randint(8000, 65000) if "random" else int(x)),
         Configurable("host"),
         Configurable("accessible_at"),
-        Configurable("endpoint"),
-        Configurable("service_registry_urls", template=lambda s: s.split(","))
+        Configurable("endpoint")
     ]
     #: A list of configurator objects that will extract in order values for
     #: the defined configurators
     configurators = [
         CommandLineConfigurator()
+    ]
+
+    #: a list of ``gemstone.core.modules.Module`` instances
+    modules = [
+
     ]
 
     # in some situations, on Windows the event loop may hang
@@ -116,8 +122,6 @@ class MicroService(ABC):
         self.logger = self.get_logger()
         self.registries = []
 
-        self.logger.info("Initializing")
-
         # name
         if self.name is None:
             raise ServiceConfigurationError("No name defined for the microservice")
@@ -131,14 +135,9 @@ class MicroService(ABC):
 
         # methods
         self.methods = {}
-        self._gather_exposed_methods()
 
         # event handlers
         self.event_handlers = {}
-        self._gather_event_handlers()
-
-        if len(self.methods) == 0:
-            raise ServiceConfigurationError("No exposed methods for the microservice")
 
         # executor
         if self.max_parallel_blocking_tasks <= 0:
@@ -149,7 +148,7 @@ class MicroService(ABC):
         # ioloop
         self.io_loop = io_loop or IOLoop.current()
 
-    @public_method
+    @exposed_method()
     def get_service_specs(self):
         """
         A default exposed method that returns the current microservice specifications. The returned information is
@@ -216,14 +215,16 @@ class MicroService(ABC):
         # TODO: make the json rpc handler use this
         pass
 
-    def api_token_is_valid(self, api_token):
+    def authenticate_request(self, handler):
         """
-        Method that must be overridden by subclasses in order to implement the API token
-        validation logic. Should return ``True`` if the api token is valid, or
-        ``False`` otherwise.
+        Based on the current request handler, checks if the request if valid.
 
-        :param api_token: a string representing the received api token value
-        :return: ``True`` if the api_token is valid, ``False`` otherwise
+        :param handler: a JsonRpcRequestHandler instance for the current request
+        :return: False or None if the method call should be denied, or something whose
+                 boolean value is True otherwise.
+
+        .. versionadded:: 0.10
+
         """
         return True
 
@@ -256,23 +257,32 @@ class MicroService(ABC):
         :param name: a pattern for the searched service.
         :return: a :py:class:`gemstone.RemoteService` instance
         :raises ValueError: when the service can not be located
-        :raises ServiceConfigurationError: when there is no configured service registry
+        :raises ServiceConfigurationError: when there is no configured discovery strategy
         """
-        if not self.registries:
+        if not self.discovery_strategies:
             raise ServiceConfigurationError("No service registry available")
 
-        for service_reg in self.registries:
-            endpoints = service_reg.methods.locate_service(name)
+        cached = self._remote_service_cache.get_entry(name)
+        if cached:
+            return cached.remote_service
+
+        for strategy in self.discovery_strategies:
+            endpoints = strategy.locate(name)
             if not endpoints:
                 continue
             random.shuffle(endpoints)
             for url in endpoints:
                 try:
-                    return RemoteService(url)
+                    service = RemoteService(url)
+                    self._remote_service_cache.add_entry(name, service)
+                    return service
                 except ConnectionError:
                     continue  # could not establish connection, try next
 
         raise ValueError("Service could not be located")
+
+    def get_io_loop(self):
+        return self.io_loop or IOLoop.current()
 
     def start_thread(self, target, args, kwargs):
         """
@@ -287,7 +297,7 @@ class MicroService(ABC):
         thread_obj = threading.Thread(target=target, args=args, kwargs=kwargs, daemon=True)
         thread_obj.start()
 
-    def emit_event(self, event_name, event_body):
+    def emit_event(self, event_name, event_body, *, broadcast=True):
         """
         Publishes an event of type ``event_name`` to all subscribers, having the body
         ``event_body``. The event is pushed through all available event transports.
@@ -296,20 +306,26 @@ class MicroService(ABC):
 
         :param event_name: a ``str`` representing the event type
         :param event_body: a Python object that can be represented as JSON.
+        :param broadcast: flag that specifies if the event should be received by
+                          all subscribers or only by one
 
         .. versionadded:: 0.5.0
+
+        .. versionchanged:: 0.10.0
+            Added parameter broadcast
         """
 
         for transport in self.event_transports:
-            transport.emit_event(event_name, event_body)
+            transport.emit_event(event_name, event_body, broadcast=broadcast)
 
     def start(self):
         """
         The main method that starts the service. This is blocking.
 
         """
-        self._before_start_setup()
+        self._initial_setup()
         self.on_service_start()
+
         self.app = self.make_tornado_app()
         enable_pretty_logging()
         self.app.listen(self.port, address=self.host)
@@ -317,10 +333,7 @@ class MicroService(ABC):
         for k, v in self.get_current_configuration().items():
             self.logger.debug("{}={}".format(k, v))
 
-        for periodic_task in self._periodic_task_iter():
-            self.logger.debug("Starting periodic task {}".format(periodic_task))
-            periodic_task.start()
-
+        self._start_periodic_tasks()
         # starts the event handlers
         self._initialize_event_handlers()
         self._start_event_handlers()
@@ -331,6 +344,11 @@ class MicroService(ABC):
             # TODO : find a way to check if the io_loop is running before trying to start it
             # this method to check if the loop is running is ugly
             pass
+
+    def _start_periodic_tasks(self):
+        for periodic_task in self._periodic_task_iter():
+            self.logger.debug("Starting periodic task {}".format(periodic_task))
+            periodic_task.start()
 
     def get_current_configuration(self):
         return {
@@ -349,9 +367,6 @@ class MicroService(ABC):
                 "static_dirs": self.static_dirs,
                 "extra_handlers": [str(h) for h in self.extra_handlers]
             },
-            "access_control": {
-                "validation_strategies": [str(v) for v in self.validation_strategies]
-            },
             "event": {
                 "event_transports": [str(t) for t in self.event_transports]
             },
@@ -364,10 +379,24 @@ class MicroService(ABC):
 
     # endregion
 
-    def _before_start_setup(self):
+    def _initial_setup(self):
         if not self.skip_configuration:
             self._prepare_configurators()
             self._activate_configurators()
+
+        # prepare modules
+        for module in self.modules:
+            module.set_microservice(self)
+
+        self._gather_exposed_methods()
+        self._gather_event_handlers()
+
+        # initializing statistics handler
+        if self.use_statistics:
+            self.stats = DefaultStatsContainer()
+            self.methods["statistics"] = lambda: self.stats.as_json()
+        else:
+            self.stats = DummyStatsContainer()
 
     def _initialize_event_handlers(self):
         for event_transport in self.event_transports:
@@ -426,16 +455,18 @@ class MicroService(ABC):
         :py:func:`gemstone.private_api_method`.
         """
 
-        for itemname in dir(self):
-            item = getattr(self, itemname)
-            if getattr(item, "__gemstone_internal_public", False) is True or \
-                            getattr(item, "__gemstone_internal_private", False) is True:
-                exposed_name = getattr(item, '__gemstone_internal_exposed_name', item.__name__)
+        self._extract_methods_from_container(self)
 
-                if exposed_name in self.methods:
-                    raise ValueError(
-                        "Cannot expose two methods under the same name: '{}'".format(exposed_name))
-                self.methods[exposed_name] = item
+        for module in self.modules:
+            self._extract_methods_from_container(module)
+
+    def _extract_methods_from_container(self, container):
+        for item in container.get_exposed_methods():
+            exposed_name = getattr(item, '_exposed_name', item.__name__)
+            if exposed_name in self.methods:
+                raise ValueError(
+                    "Cannot expose two methods under the same name: '{}'".format(exposed_name))
+            self.methods[exposed_name] = item
 
     def _gather_event_handlers(self):
         """
@@ -443,22 +474,13 @@ class MicroService(ABC):
 
         :return:
         """
-        for itemname in dir(self):
-            item = getattr(self, itemname)
-            if getattr(item, "__gemstone_internal_is_event_handler", False):
-                self.event_handlers.setdefault(item.__gemstome_internal_handled_event, item)
+        self._extract_event_handlers_from_container(self)
+        for module in self.modules:
+            self._extract_event_handlers_from_container(module)
 
-    def _ping_to_service_registry(self, servreg_remote_service):
-        """
-        Notifies a service registry about the service (its name and http location)
-
-        :param servreg_remote_service: a :py:class:`gemstone.RemoteService` instance
-        """
-        url = self.accessible_at
-        self.logger.debug("Pinging {registry_url} (name={name}, url={url})".format(
-            registry_url=servreg_remote_service.url, name=self.name, url=url
-        ))
-        servreg_remote_service.notifications.ping(name=self.name, url=url)
+    def _extract_event_handlers_from_container(self, container):
+        for item in container.get_event_handlers():
+            self.event_handlers.setdefault(getattr(item, "_handled_event"), item)
 
     def _periodic_task_iter(self):
         """
@@ -470,14 +492,12 @@ class MicroService(ABC):
 
         :return:
         """
-        for url in self.service_registry_urls:
-            registry = RemoteService(url)
-            self.registries.append(registry)
-            periodic_servreg_ping = functools.partial(self._ping_to_service_registry, registry)
-            periodic_servreg_ping()  # initial ping
+        for strategy in self.discovery_strategies:
             self.default_periodic_tasks.append(
-                (periodic_servreg_ping, self.service_registry_ping_interval)
+                (functools.partial(strategy.ping, self.name, self.accessible_at),
+                 self.service_registry_ping_interval)
             )
+            self.default_periodic_tasks[-1][0]()
 
         all_periodic_tasks = self.default_periodic_tasks + self.periodic_tasks
         for func, timer_in_seconds in all_periodic_tasks:

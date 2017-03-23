@@ -18,16 +18,12 @@ def as_completed(*async_result_wrappers):
 
     ::
 
-        async_calls = [service.methods.do_stuff(x, __async=True) for x in range(25)]
+        async_calls = [service.call_method_async("do_stuff", (x,)) for x in range(25)]
 
         for async_call in gemstone.as_completed(*async_calls):
             print("just finished with result ", async_call.result())
 
-    .. note::
-             This generator yields the same items that were submitted through parameters, but in the order
-             their result become available.
-
-    :param async_result_wrappers: :py:class:`gemstone.client.remote_service.AsyncMethodCall` instances.
+    :param async_result_wrappers: :py:class:`gemstone.client.structs.AsyncMethodCall` instances.
     :return: a generator that yields items as soon they results become available.
 
     .. versionadded:: 0.5.0

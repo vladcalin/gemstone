@@ -8,7 +8,10 @@ from tests.services.service_microservice import TestService
 
 @pytest.fixture
 def app():
-    return TestService().make_tornado_app()
+    service = TestService()
+    service.skip_configuration = True
+    service._initial_setup()
+    return service.make_tornado_app()
 
 
 @pytest.mark.gen_test

@@ -2,6 +2,8 @@ import random
 import time
 import gemstone
 
+from tornado.gen import sleep
+
 
 class TestMicroservice(gemstone.MicroService):
     name = "test"
@@ -9,13 +11,13 @@ class TestMicroservice(gemstone.MicroService):
     port = 8000
     endpoint = "/api"
 
-    @gemstone.public_method
+    @gemstone.exposed_method()
     def say_hello(self, name):
         return "hello {}".format(name)
 
-    @gemstone.public_method
+    @gemstone.exposed_method(is_coroutine=True)
     def slow_method(self, seconds):
-        time.sleep(seconds)
+        yield sleep(seconds)
         return "finished sleeping for {} seconds".format(seconds)
 
 

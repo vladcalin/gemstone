@@ -2,7 +2,7 @@ import os.path
 
 from tornado.web import RequestHandler
 
-from gemstone import MicroService, public_method
+from gemstone import MicroService, exposed_method
 from gemstone.core.handlers import GemstoneCustomHandler
 
 
@@ -50,6 +50,6 @@ class TestService2(MicroService):
         (r"/tmp2", ExtraHandler2)
     ]
 
-    @public_method
+    @exposed_method()
     def say_hello(self, who):
         return "hello " + who
