@@ -41,10 +41,8 @@ class Container(abc.ABC):
     def get_event_handlers(self):
         handlers = []
         for item in self._iter_methods():
-            print(item, getattr(item, "_event_handlers", False))
             if getattr(item, "_event_handlers", False):
                 handlers.append(item)
-        print(handlers)
         return handlers
 
     def _iter_methods(self):
