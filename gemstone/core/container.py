@@ -30,6 +30,9 @@ class Container(abc.ABC):
     def set_microservice(self, microservice):
         self.microservice = microservice
 
+    def get_executor(self):
+        return self.microservice.get_executor()
+
     def get_exposed_methods(self):
         exposed = []
         for item in self._iter_methods():

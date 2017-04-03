@@ -77,8 +77,6 @@ class MicroService(Container):
     #: A list of Event transports that will enable the Event dispatching feature.
     event_transports = []
 
-    #: Flag that if set to True, will disable the configurable sub-framework.
-    skip_configuration = False
     #: A list of configurable objects that allows the service's running parameters to
     #: be changed dynamically without changing its code.
     configurables = [
@@ -284,6 +282,9 @@ class MicroService(Container):
     def get_io_loop(self):
         return self.io_loop or IOLoop.current()
 
+    def get_executor(self):
+        return self._executor
+
     def start_thread(self, target, args, kwargs):
         """
         Shortcut method for starting a thread.
@@ -345,6 +346,33 @@ class MicroService(Container):
             # this method to check if the loop is running is ugly
             pass
 
+    def configure(self):
+        """
+        Called to explicitly use the configurators.
+
+        Example usage ::
+
+            class MyMicroservice(MicroService):
+                name = "test"
+                host = "127.0.0.1"
+                port = 8000
+                configurables = [
+                    Configurable("host"), Configurable("port", template=lambda x: int(x))
+                ]
+                configurators = [CommandLineConfigurator()]
+
+            service = MyMicroservice()
+            print(service.host, service.port)
+            # 127.0.0.1 8000
+            sys.argv[1:] = ["--port", "80", "--host", "0.0.0.0"]
+            service.configure() # we use the defined CommandLineConfigurator()
+            print(service.host, service.port)
+            # 0.0.0.0 80
+
+        """
+        self._prepare_configurators()
+        self._activate_configurators()
+
     def _start_periodic_tasks(self):
         for periodic_task in self._periodic_task_iter():
             self.logger.debug("Starting periodic task {}".format(periodic_task))
@@ -380,10 +408,6 @@ class MicroService(Container):
     # endregion
 
     def _initial_setup(self):
-        if not self.skip_configuration:
-            self._prepare_configurators()
-            self._activate_configurators()
-
         # prepare modules
         for module in self.modules:
             module.set_microservice(self)

@@ -29,7 +29,6 @@ Identification
 Access validation
 ^^^^^^^^^^^^^^^^^
 
-    .. autoattribute:: gemstone.MicroService.validation_strategies
 
     .. seealso:: :ref:`private_methods`
 
@@ -45,7 +44,6 @@ Event dispatching
 Dynamic configuration
 ^^^^^^^^^^^^^^^^^^^^^
 
-    .. autoattribute:: gemstone.MicroService.skip_configuration
     .. autoattribute:: gemstone.MicroService.configurables
     .. autoattribute:: gemstone.MicroService.configurators
 
@@ -67,13 +65,15 @@ Periodic tasks
 Service auto-discovery
 ^^^^^^^^^^^^^^^^^^^^^^
 
-    .. autoattribute:: gemstone.MicroService.service_registry_urls
+    .. autoattribute:: gemstone.MicroService.discovery_strategies
     .. autoattribute:: gemstone.MicroService.service_registry_ping_interval
 
 Misc
 ^^^^
 
     .. autoattribute:: gemstone.MicroService.max_parallel_blocking_tasks
+    .. autoattribute:: gemstone.MicroService.modules
+
 
 Methods
 ~~~~~~~
@@ -82,7 +82,6 @@ Can be overridden
 ^^^^^^^^^^^^^^^^^
 
     .. automethod:: gemstone.MicroService.on_service_start
-    .. automethod:: gemstone.MicroService.api_token_is_valid
     .. automethod:: gemstone.MicroService.get_logger
 
 Can be called
@@ -94,13 +93,16 @@ Can be called
     .. automethod:: gemstone.MicroService.get_current_configuration
     .. automethod:: gemstone.MicroService.make_tornado_app
     .. automethod:: gemstone.MicroService.start
+    .. automethod:: gemstone.MicroService.configure
 
 
 
 .. autoclass:: RemoteService
 
-    .. autoattribute:: gemstone.RemoteService.methods
-    .. autoattribute:: gemstone.RemoteService.notifications
+    .. autoattribute:: gemstone.RemoteService.call_method
+    .. autoattribute:: gemstone.RemoteService.call_method_async
+    .. autoattribute:: gemstone.RemoteService.notify
+    .. autoattribute:: gemstone.RemoteService.call_batch
 
 
 
@@ -109,9 +111,6 @@ Decorators
 
 .. autofunction:: exposed_method
 .. autofunction:: event_handler
-.. autofunction:: public_method
-.. autofunction:: private_api_method
-.. autofunction:: requires_handler_reference
 
 
 Request handlers

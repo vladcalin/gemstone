@@ -13,7 +13,6 @@ Currently, the available confugurators are:
 
 - :py:class:`gemstone.config.configurator.CommandLineConfigurator` - collects values from
   the command line arguments
-- :py:class:`gemstone.config.configurator.JsonFileConfigurator` - collects values from a JSON file
 
 In order to specify configurables for the microservice, you have to provide
 set the :py:data:`gemstone.MicroService.configurables` attribute to a list of
@@ -46,6 +45,4 @@ Configurators
 .. autoclass:: CommandLineConfigurator
     :members:
 
-.. autoclass:: JsonFileConfigurator
-    :members:
 
