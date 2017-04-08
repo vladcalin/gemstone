@@ -1,0 +1,2 @@
+The ``gemstone.client`` module
+==============================

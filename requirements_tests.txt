@@ -10,3 +10,6 @@ pytest
 pytest-tornado
 pytest-cov
 coveralls
+
+# documentation
+sphinx

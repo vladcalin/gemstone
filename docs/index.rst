@@ -20,7 +20,6 @@ This library offers support for writing a microservice that:
 
 This documentation is structured in multiple parts:
 
-- :ref:`overview-top` - General information to get you started.
 - :ref:`topics-top` - A compilation in-depth explanations on various topics of interest.
 - :ref:`reference-top` - The reference to the classes, functions, constants that can be used.
 
@@ -93,7 +92,6 @@ Table of contents:
 .. toctree::
     :maxdepth: 2
 
-    intro/index
     topics/index
     reference/index
     changes

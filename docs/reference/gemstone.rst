@@ -1,8 +1,5 @@
-The ``gemstone`` module (main classes)
-======================================
-
 Core classes
-------------
+============
 
 .. py:currentmodule:: gemstone
 
