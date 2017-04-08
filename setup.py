@@ -79,11 +79,11 @@ setup(
     install_requires=[
         "tornado",
         "simplejson",
-        "click"
+        "click",
+        "redis"
     ],
 
     extras_require={
         "rabbitmq": ["pika"],
-        "redis": ["redis"]
     }
 )
