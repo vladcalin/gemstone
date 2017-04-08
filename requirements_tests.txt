@@ -6,7 +6,7 @@ simplejson
 redis
 
 # testing
-pytest
+pytest>=3
 pytest-tornado
 pytest-cov
 coveralls
