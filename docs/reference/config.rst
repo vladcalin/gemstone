@@ -3,27 +3,6 @@
 Configurables and configurators
 ===============================
 
-In the context of this framework, configurables are
-entities that designate what properties of the microservice
-can be dynamically set and configurators are strategies
-that, on service startup, collects the required
-properties from the environment.
-
-Currently, the available confugurators are:
-
-- :py:class:`gemstone.config.configurator.CommandLineConfigurator` - collects values from
-  the command line arguments
-- :py:class:`gemstone.config.configurator.JsonFileConfigurator` - collects values from a JSON file
-
-In order to specify configurables for the microservice, you have to provide
-set the :py:data:`gemstone.MicroService.configurables` attribute to a list of
-:py:class:`Configurable` objects.
-
-Configurators are specified in the :py:data:`gemstone.MicroService.configurators` attribute.
-On service startup, each configurator tries to extract the required values from the environment in
-the order they are defined.
-
-
 
 
 Configurable
@@ -46,6 +25,4 @@ Configurators
 .. autoclass:: CommandLineConfigurator
     :members:
 
-.. autoclass:: JsonFileConfigurator
-    :members:
 

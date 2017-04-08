@@ -1,8 +1,6 @@
 import abc
 import argparse
 
-import simplejson as json
-
 
 class BaseConfigurator(abc.ABC):
     """
@@ -53,8 +51,8 @@ class CommandLineConfigurator(BaseConfigurator):
     For the configurables
 
         - Configurator("a")
-        - Configurator("b", type=int)
-        - Configurator("c", type=bool)
+        - Configurator("b")
+        - Configurator("c")
 
     the following command line interface will be exposed
 
@@ -72,7 +70,7 @@ class CommandLineConfigurator(BaseConfigurator):
 
     ::
 
-        python service.py --a=1 --b=2 --c=true
+        python service.py --a=1 --b=2 --c=3
 
 
     """

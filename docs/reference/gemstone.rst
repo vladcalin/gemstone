@@ -1,8 +1,5 @@
-The ``gemstone`` module (main classes)
-======================================
-
 Core classes
-------------
+============
 
 .. py:currentmodule:: gemstone
 
@@ -29,7 +26,6 @@ Identification
 Access validation
 ^^^^^^^^^^^^^^^^^
 
-    .. autoattribute:: gemstone.MicroService.validation_strategies
 
     .. seealso:: :ref:`private_methods`
 
@@ -45,7 +41,6 @@ Event dispatching
 Dynamic configuration
 ^^^^^^^^^^^^^^^^^^^^^
 
-    .. autoattribute:: gemstone.MicroService.skip_configuration
     .. autoattribute:: gemstone.MicroService.configurables
     .. autoattribute:: gemstone.MicroService.configurators
 
@@ -67,13 +62,15 @@ Periodic tasks
 Service auto-discovery
 ^^^^^^^^^^^^^^^^^^^^^^
 
-    .. autoattribute:: gemstone.MicroService.service_registry_urls
+    .. autoattribute:: gemstone.MicroService.discovery_strategies
     .. autoattribute:: gemstone.MicroService.service_registry_ping_interval
 
 Misc
 ^^^^
 
     .. autoattribute:: gemstone.MicroService.max_parallel_blocking_tasks
+    .. autoattribute:: gemstone.MicroService.modules
+
 
 Methods
 ~~~~~~~
@@ -82,25 +79,20 @@ Can be overridden
 ^^^^^^^^^^^^^^^^^
 
     .. automethod:: gemstone.MicroService.on_service_start
-    .. automethod:: gemstone.MicroService.api_token_is_valid
     .. automethod:: gemstone.MicroService.get_logger
 
 Can be called
 ^^^^^^^^^^^^^
 
+    .. automethod:: gemstone.MicroService.emit_event
     .. automethod:: gemstone.MicroService.get_service
     .. automethod:: gemstone.MicroService.start_thread
-    .. automethod:: gemstone.MicroService.emit_event
     .. automethod:: gemstone.MicroService.get_current_configuration
+    .. automethod:: gemstone.MicroService.get_io_loop
+    .. automethod:: gemstone.MicroService.get_executor
     .. automethod:: gemstone.MicroService.make_tornado_app
     .. automethod:: gemstone.MicroService.start
-
-
-
-.. autoclass:: RemoteService
-
-    .. autoattribute:: gemstone.RemoteService.methods
-    .. autoattribute:: gemstone.RemoteService.notifications
+    .. automethod:: gemstone.MicroService.configure
 
 
 
@@ -109,9 +101,6 @@ Decorators
 
 .. autofunction:: exposed_method
 .. autofunction:: event_handler
-.. autofunction:: public_method
-.. autofunction:: private_api_method
-.. autofunction:: requires_handler_reference
 
 
 Request handlers

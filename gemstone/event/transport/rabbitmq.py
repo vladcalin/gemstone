@@ -7,7 +7,6 @@ from gemstone.event.transport.base import BaseEventTransport
 
 class RabbitMqEventTransport(BaseEventTransport):
     EXCHANGE_PREFIX_BROADCAST = "gemstone.broadcast."
-    EXCHANGE_PREFIX_SINGLE = "gemstone.tasks."
 
     def __init__(self, host="127.0.0.1", port=5672, username="", password="", **connection_options):
         """
@@ -20,6 +19,7 @@ class RabbitMqEventTransport(BaseEventTransport):
         :param connection_options: extra arguments that will be used in
                                    :py:class:`pika.BlockingConnection` initialization.
         """
+        super(RabbitMqEventTransport, self).__init__()
         self._handlers = {}
 
         self.connection = pika.BlockingConnection(
@@ -48,33 +48,11 @@ class RabbitMqEventTransport(BaseEventTransport):
             self.channel.queue_bind(exchange=current_exchange_name, queue=queue_name)
             self.channel.basic_consume(self._callback, queue=queue_name, no_ack=True)
 
-            # prepare tasks queues (not broadcast)
-            current_exchange_name = self.EXCHANGE_PREFIX_SINGLE + event_name
-            self.channel.exchange_declare(
-                exchange=current_exchange_name,
-                type="direct"
-            )
-            self.channel.queue_declare(queue=event_name)
-            queue_name = event_name
-            self.channel.queue_bind(exchange=current_exchange_name, queue=queue_name,
-                                    routing_key='tasks')
-            self.channel.basic_consume(self._callback, queue=queue_name)
-
         self.channel.start_consuming()
 
     def _callback(self, channel, method, properties, body):
-        if not method.exchange.startswith(self.EXCHANGE_PREFIX_BROADCAST) or \
-                not method.exchange.startswith(self.EXCHANGE_PREFIX_SINGLE):
+        if not method.exchange.startswith(self.EXCHANGE_PREFIX_BROADCAST):
             return
-
-        if method.exchange.startswith(self.EXCHANGE_PREFIX_SINGLE):
-            event_name = method.exchange[len(self.EXCHANGE_PREFIX_SINGLE):]
-            try:
-                self.on_event_received(event_name, body)
-            except Exception:
-                self.channel.basic_reject(delivery_tag=method.delivery_tag, requeue=True)
-            else:
-                self.channel.basic_ack(delivery_tag=method.delivery_tag)
 
         event_name = method.exchange[len(self.EXCHANGE_PREFIX_BROADCAST):]
         self.on_event_received(event_name, body)
@@ -86,15 +64,15 @@ class RabbitMqEventTransport(BaseEventTransport):
         if isinstance(event_body, bytes):
             event_body = event_body.decode()
 
-        handler(json.loads(event_body))
+        event_body = json.loads(event_body)
+        self.run_on_main_thread(handler, [event_body], {})
 
-    def emit_event(self, event_name, event_body, *, broadcast=True):
-        exchange_name = (self.EXCHANGE_PREFIX_BROADCAST
-                         if broadcast else self.EXCHANGE_PREFIX_SINGLE) + event_name
+    def emit_event(self, event_name, event_body):
+        exchange_name = self.EXCHANGE_PREFIX_BROADCAST + event_name
 
         self.channel.basic_publish(
             exchange=exchange_name,
-            routing_key='' if broadcast else "tasks",
+            routing_key='',
             body=json.dumps(event_body)
         )
 

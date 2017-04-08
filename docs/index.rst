@@ -14,13 +14,11 @@ This library offers support for writing a microservice that:
 
 - exposes a public Json RPC 2.0 HTTP API
   (see `The JSON RPC 2.0 specifications <http://www.jsonrpc.org/specification>`_ )
-- can protect API access based on API token identification.
 - can communicate with other microservices through the JSON RPC protocol.
 - can communicate with other microservices through events (messages).
 
 This documentation is structured in multiple parts:
 
-- :ref:`overview-top` - General information to get you started.
 - :ref:`topics-top` - A compilation in-depth explanations on various topics of interest.
 - :ref:`reference-top` - The reference to the classes, functions, constants that can be used.
 
@@ -29,8 +27,20 @@ This documentation is structured in multiple parts:
     - JSON RPC 2.0 specifications: http://www.jsonrpc.org/specification
     - Tornado: http://www.tornadoweb.org/en/stable/
 
-Hello world
------------
+
+Installation
+------------
+
+::
+    pip install gemstone
+    # or
+    pip install gemstone[redis] # to use the Redis features
+    # or
+    pip install gemstone[rabbitmq] # to use the RabbitMq features
+
+
+First look
+----------
 
 In a script ``hello_world.py`` write the following:
 
@@ -93,7 +103,6 @@ Table of contents:
 .. toctree::
     :maxdepth: 2
 
-    intro/index
     topics/index
     reference/index
     changes

@@ -1,5 +1,5 @@
 import gemstone
-from gemstone.discovery.default import DefaultDiscoveryStrategy
+from gemstone.discovery.default import HttpDiscoveryStrategy
 from gemstone.discovery.redis_strategy import RedisDiscoveryStrategy
 
 
@@ -16,8 +16,8 @@ class Service1(gemstone.MicroService):
     def say_hello(self, name):
         remote_service = self.get_service("service.2")
         print(remote_service)
-        result = remote_service.methods.say_hello(name)
-        return result
+        result = remote_service.call_method("say_hello", params=[name])
+        return result.result
 
 
 if __name__ == '__main__':

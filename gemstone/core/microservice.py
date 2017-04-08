@@ -2,10 +2,8 @@ import logging
 import os
 import functools
 import random
-import argparse
 import threading
 import sys
-from abc import ABC
 from concurrent.futures import ThreadPoolExecutor
 
 from tornado.web import StaticFileHandler
@@ -66,7 +64,7 @@ class MicroService(Container):
     discovery_strategies = [
 
     ]
-    _remote_service_cache = ServiceDiscoveryCache(3600)
+    remote_service_cache = ServiceDiscoveryCache(3600)
 
     #: Specifies if should record statistics
     use_statistics = False
@@ -77,8 +75,6 @@ class MicroService(Container):
     #: A list of Event transports that will enable the Event dispatching feature.
     event_transports = []
 
-    #: Flag that if set to True, will disable the configurable sub-framework.
-    skip_configuration = False
     #: A list of configurable objects that allows the service's running parameters to
     #: be changed dynamically without changing its code.
     configurables = [
@@ -108,9 +104,9 @@ class MicroService(Container):
     max_parallel_blocking_tasks = os.cpu_count()
     _executor = None
 
+    # noinspection PyMissingConstructor
     def __init__(self, io_loop=None):
         """
-
         The base class for implementing microservices.
 
         :param io_loop: A :py:class:`tornado.ioloop.IOLoop` instance -
@@ -147,6 +143,33 @@ class MicroService(Container):
 
         # ioloop
         self.io_loop = io_loop or IOLoop.current()
+
+    def start(self):
+        """
+        The main method that starts the service. This is blocking.
+
+        """
+        self._initial_setup()
+        self.on_service_start()
+
+        self.app = self.make_tornado_app()
+        enable_pretty_logging()
+        self.app.listen(self.port, address=self.host)
+
+        for k, v in self.get_current_configuration().items():
+            self.logger.debug("{}={}".format(k, v))
+
+        self._start_periodic_tasks()
+        # starts the event handlers
+        self._initialize_event_handlers()
+        self._start_event_handlers()
+
+        try:
+            self.io_loop.start()
+        except RuntimeError:
+            # TODO : find a way to check if the io_loop is running before trying to start it
+            # this method to check if the loop is running is ugly
+            pass
 
     @exposed_method()
     def get_service_specs(self):
@@ -262,7 +285,7 @@ class MicroService(Container):
         if not self.discovery_strategies:
             raise ServiceConfigurationError("No service registry available")
 
-        cached = self._remote_service_cache.get_entry(name)
+        cached = self.remote_service_cache.get_entry(name)
         if cached:
             return cached.remote_service
 
@@ -274,7 +297,7 @@ class MicroService(Container):
             for url in endpoints:
                 try:
                     service = RemoteService(url)
-                    self._remote_service_cache.add_entry(name, service)
+                    self.remote_service_cache.add_entry(name, service)
                     return service
                 except ConnectionError:
                     continue  # could not establish connection, try next
@@ -282,7 +305,16 @@ class MicroService(Container):
         raise ValueError("Service could not be located")
 
     def get_io_loop(self):
+        """
+        Returns the current IOLoop used by the microservice
+        """
         return self.io_loop or IOLoop.current()
+
+    def get_executor(self):
+        """
+        Returns the ThreadPoolExecutor used by the microservice.
+        """
+        return self._executor
 
     def start_thread(self, target, args, kwargs):
         """
@@ -297,7 +329,7 @@ class MicroService(Container):
         thread_obj = threading.Thread(target=target, args=args, kwargs=kwargs, daemon=True)
         thread_obj.start()
 
-    def emit_event(self, event_name, event_body, *, broadcast=True):
+    def emit_event(self, event_name, event_body):
         """
         Publishes an event of type ``event_name`` to all subscribers, having the body
         ``event_body``. The event is pushed through all available event transports.
@@ -306,8 +338,6 @@ class MicroService(Container):
 
         :param event_name: a ``str`` representing the event type
         :param event_body: a Python object that can be represented as JSON.
-        :param broadcast: flag that specifies if the event should be received by
-                          all subscribers or only by one
 
         .. versionadded:: 0.5.0
 
@@ -316,34 +346,34 @@ class MicroService(Container):
         """
 
         for transport in self.event_transports:
-            transport.emit_event(event_name, event_body, broadcast=broadcast)
+            transport.emit_event(event_name, event_body)
 
-    def start(self):
+    def configure(self):
         """
-        The main method that starts the service. This is blocking.
+        Called to explicitly use the configurators.
+
+        Example usage ::
+
+            class MyMicroservice(MicroService):
+                name = "test"
+                host = "127.0.0.1"
+                port = 8000
+                configurables = [
+                    Configurable("host"), Configurable("port", template=lambda x: int(x))
+                ]
+                configurators = [CommandLineConfigurator()]
+
+            service = MyMicroservice()
+            print(service.host, service.port)
+            # 127.0.0.1 8000
+            sys.argv[1:] = ["--port", "80", "--host", "0.0.0.0"]
+            service.configure() # we use the defined CommandLineConfigurator()
+            print(service.host, service.port)
+            # 0.0.0.0 80
 
         """
-        self._initial_setup()
-        self.on_service_start()
-
-        self.app = self.make_tornado_app()
-        enable_pretty_logging()
-        self.app.listen(self.port, address=self.host)
-
-        for k, v in self.get_current_configuration().items():
-            self.logger.debug("{}={}".format(k, v))
-
-        self._start_periodic_tasks()
-        # starts the event handlers
-        self._initialize_event_handlers()
-        self._start_event_handlers()
-
-        try:
-            self.io_loop.start()
-        except RuntimeError:
-            # TODO : find a way to check if the io_loop is running before trying to start it
-            # this method to check if the loop is running is ugly
-            pass
+        self._prepare_configurators()
+        self._activate_configurators()
 
     def _start_periodic_tasks(self):
         for periodic_task in self._periodic_task_iter():
@@ -380,10 +410,6 @@ class MicroService(Container):
     # endregion
 
     def _initial_setup(self):
-        if not self.skip_configuration:
-            self._prepare_configurators()
-            self._activate_configurators()
-
         # prepare modules
         for module in self.modules:
             module.set_microservice(self)
@@ -401,6 +427,7 @@ class MicroService(Container):
     def _initialize_event_handlers(self):
         for event_transport in self.event_transports:
             self.logger.debug("Initializing transport {}".format(event_transport))
+            event_transport.set_microservice(self)
             for event_name, event_handler in self.event_handlers.items():
                 self.logger.debug("Setting handler for {}".format(event_name))
                 event_transport.register_event_handler(event_handler, event_name)

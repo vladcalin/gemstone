@@ -1,15 +1,18 @@
 import random
 import string
 
-from tornado.gen import coroutine
-from tornado.ioloop import IOLoop
 from tornado.httpclient import HTTPClient, HTTPRequest
 import simplejson as json
 
 from gemstone.discovery.base import BaseDiscoveryStrategy
 
 
-class DefaultDiscoveryStrategy(BaseDiscoveryStrategy):
+class HttpDiscoveryStrategy(BaseDiscoveryStrategy):
+    """
+    A discovery strategy that uses the HTTP protocol as transport. Each ``ping`` and ``locate``
+    calls translate to HTTP requests.
+
+    """
     def __init__(self, registry_location):
         self.registry = registry_location
 

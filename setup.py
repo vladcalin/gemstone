@@ -82,14 +82,8 @@ setup(
         "click"
     ],
 
-    entry_points={
-        "console_scripts": [
-            "gemstone = gemstone.cli:cli"
-        ]
-    },
     extras_require={
-        "events-rabbitmq": ["pika"],
-        "discover-redis": ["redis"],
-        "discover-etcd": ["python-etcd"]
+        "rabbitmq": ["pika"],
+        "redis": ["redis"]
     }
 )

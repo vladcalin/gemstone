@@ -1,5 +1,5 @@
 from gemstone import MicroService, event_handler
-from gemstone.event.transport import rabbitmq
+from gemstone.event.transport import rabbitmq, redis_transport
 
 
 class EventTestService(MicroService):
@@ -8,7 +8,7 @@ class EventTestService(MicroService):
     port = 8080
 
     event_transports = [
-        rabbitmq.RabbitMqEventTransport(host="192.168.1.71", username="admin", password="X5f6rPmx1yYz")
+        redis_transport.RedisEventTransport("redis://127.0.0.1:6379/0")
     ]
 
     @event_handler("said_hello")
@@ -18,5 +18,5 @@ class EventTestService(MicroService):
 
 
 if __name__ == '__main__':
-    cli = EventTestService.get_cli()
-    cli()
+    service = EventTestService()
+    service.start()

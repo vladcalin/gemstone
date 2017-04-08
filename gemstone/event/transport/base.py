@@ -11,9 +11,13 @@ class BaseEventTransport(ABC):
       method
     - the :py:meth:`BaseEventTransport.start_accepting_events` is invoked
     - for each incoming event, call :py:meth:`BaseEventTransport.on_event_received`
-      whose responsibility is to invoke the proper handler function.
+      whose responsibility is to invoke the proper handler function (recommended
+      to use the ``run_on_main_thread`` method)
 
     """
+
+    def __init__(self):
+        self.microservice = None
 
     @abstractmethod
     def register_event_handler(self, handler_func, handled_event_name):
@@ -45,15 +49,38 @@ class BaseEventTransport(ABC):
         pass
 
     @abstractmethod
-    def emit_event(self, event_name, event_body, *, broadcast=False):
+    def emit_event(self, event_name, event_body):
         """
         Emits an event of type ``event_name`` with the ``event_body`` content using the current
         event transport.
 
         :param event_name:
         :param event_body:
-        :param broadcast: flag that specifies if the event should go to all
-                          subscribers or only to one.
         :return:
         """
         pass
+
+    def set_microservice(self, microservice):
+        """
+        Used by the microservice instance to send reference to itself.
+
+        :param microservice:
+        :return:
+        """
+        self.microservice = microservice
+
+    def run_on_main_thread(self, func, args=None, kwargs=None):
+        """
+        Runs the ``func`` callable on the main thread, by using the provided microservice
+        instance's IOLoop.
+
+        :param func: callable to run on the main thread
+        :param args: tuple or list with the positional arguments.
+        :param kwargs: dict with the keyword arguments.
+        :return:
+        """
+        if not args:
+            args = ()
+        if not kwargs:
+            kwargs = {}
+        self.microservice.get_io_loop().add_callback(func, *args, **kwargs)

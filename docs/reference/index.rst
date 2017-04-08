@@ -9,9 +9,10 @@ Reference
    :maxdepth: 2
 
    gemstone
-   validation
-   config
+   client
+   discovery
    event_transport
+   config
    utility
 
 
