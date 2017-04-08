@@ -12,7 +12,7 @@ from gemstone.util import as_completed, first_completed
 __author__ = "Vlad Calin"
 __email__ = "vlad.s.calin@gmail.com"
 
-__version__ = "0.10.1"
+__version__ = "0.11.0"
 
 __all__ = [
     # core classes

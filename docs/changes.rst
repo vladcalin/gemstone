@@ -1,6 +1,19 @@
 Changes
 =======
 
+
+0.11.0 (08.04.2017)
+~~~~~~~~~~~~~~~~~~~
+
+- added ``Container.get_io_loop`` method
+- added ``Container.get_executor`` method
+- added ``RedisEventTransport``
+- ``emit_event`` now emits just events. Removed the ``broadcast`` parameter.
+  A task handling functionality will be added in a further version
+- improved docs (still a work in progress)
+- added some more tests (still a work in progress)
+
+
 0.10.1 (27.03.2017)
 ~~~~~~~~~~~~~~~~~~~
 
