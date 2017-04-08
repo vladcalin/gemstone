@@ -3,6 +3,7 @@ tornado
 click
 pika
 simplejson
+redis
 
 # testing
 pytest

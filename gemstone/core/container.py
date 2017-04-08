@@ -33,6 +33,9 @@ class Container(abc.ABC):
     def get_executor(self):
         return self.microservice.get_executor()
 
+    def get_io_loop(self):
+        return self.microservice.get_io_loop()
+
     def get_exposed_methods(self):
         exposed = []
         for item in self._iter_methods():
@@ -44,7 +47,7 @@ class Container(abc.ABC):
     def get_event_handlers(self):
         handlers = []
         for item in self._iter_methods():
-            if getattr(item, "_event_handlers", False):
+            if getattr(item, "_event_handler", False):
                 handlers.append(item)
         return handlers
 

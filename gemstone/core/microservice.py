@@ -106,9 +106,9 @@ class MicroService(Container):
     max_parallel_blocking_tasks = os.cpu_count()
     _executor = None
 
+    # noinspection PyMissingConstructor
     def __init__(self, io_loop=None):
         """
-
         The base class for implementing microservices.
 
         :param io_loop: A :py:class:`tornado.ioloop.IOLoop` instance -
@@ -145,6 +145,33 @@ class MicroService(Container):
 
         # ioloop
         self.io_loop = io_loop or IOLoop.current()
+
+    def start(self):
+        """
+        The main method that starts the service. This is blocking.
+
+        """
+        self._initial_setup()
+        self.on_service_start()
+
+        self.app = self.make_tornado_app()
+        enable_pretty_logging()
+        self.app.listen(self.port, address=self.host)
+
+        for k, v in self.get_current_configuration().items():
+            self.logger.debug("{}={}".format(k, v))
+
+        self._start_periodic_tasks()
+        # starts the event handlers
+        self._initialize_event_handlers()
+        self._start_event_handlers()
+
+        try:
+            self.io_loop.start()
+        except RuntimeError:
+            # TODO : find a way to check if the io_loop is running before trying to start it
+            # this method to check if the loop is running is ugly
+            pass
 
     @exposed_method()
     def get_service_specs(self):
@@ -298,7 +325,7 @@ class MicroService(Container):
         thread_obj = threading.Thread(target=target, args=args, kwargs=kwargs, daemon=True)
         thread_obj.start()
 
-    def emit_event(self, event_name, event_body, *, broadcast=True):
+    def emit_event(self, event_name, event_body):
         """
         Publishes an event of type ``event_name`` to all subscribers, having the body
         ``event_body``. The event is pushed through all available event transports.
@@ -317,34 +344,7 @@ class MicroService(Container):
         """
 
         for transport in self.event_transports:
-            transport.emit_event(event_name, event_body, broadcast=broadcast)
-
-    def start(self):
-        """
-        The main method that starts the service. This is blocking.
-
-        """
-        self._initial_setup()
-        self.on_service_start()
-
-        self.app = self.make_tornado_app()
-        enable_pretty_logging()
-        self.app.listen(self.port, address=self.host)
-
-        for k, v in self.get_current_configuration().items():
-            self.logger.debug("{}={}".format(k, v))
-
-        self._start_periodic_tasks()
-        # starts the event handlers
-        self._initialize_event_handlers()
-        self._start_event_handlers()
-
-        try:
-            self.io_loop.start()
-        except RuntimeError:
-            # TODO : find a way to check if the io_loop is running before trying to start it
-            # this method to check if the loop is running is ugly
-            pass
+            transport.emit_event(event_name, event_body)
 
     def configure(self):
         """
@@ -425,6 +425,7 @@ class MicroService(Container):
     def _initialize_event_handlers(self):
         for event_transport in self.event_transports:
             self.logger.debug("Initializing transport {}".format(event_transport))
+            event_transport.set_microservice(self)
             for event_name, event_handler in self.event_handlers.items():
                 self.logger.debug("Setting handler for {}".format(event_name))
                 event_transport.register_event_handler(event_handler, event_name)

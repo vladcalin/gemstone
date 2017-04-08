@@ -15,6 +15,9 @@ class BaseEventTransport(ABC):
 
     """
 
+    def __init__(self):
+        self.microservice = None
+
     @abstractmethod
     def register_event_handler(self, handler_func, handled_event_name):
         """
@@ -45,15 +48,19 @@ class BaseEventTransport(ABC):
         pass
 
     @abstractmethod
-    def emit_event(self, event_name, event_body, *, broadcast=False):
+    def emit_event(self, event_name, event_body):
         """
         Emits an event of type ``event_name`` with the ``event_body`` content using the current
         event transport.
 
         :param event_name:
         :param event_body:
-        :param broadcast: flag that specifies if the event should go to all
-                          subscribers or only to one.
         :return:
         """
         pass
+
+    def set_microservice(self, microservice):
+        self.microservice = microservice
+
+    def run_on_main_thread(self, func, args, kwargs):
+        self.microservice.get_io_loop().add_callback(func, *args, **kwargs)
