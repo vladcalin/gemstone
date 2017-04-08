@@ -1,15 +1,12 @@
 import urllib.request
 import os
-import time
-import random
 
 from multiprocessing.pool import ThreadPool
 import simplejson as json
 
 from gemstone.client.structs import MethodCall, Notification, Result, BatchResult, AsyncMethodCall
 from gemstone.core.structs import GenericResponse
-from gemstone.errors import CalledServiceError, MethodNotFoundError, AccessDeniedError, \
-    InternalErrorError, InvalidParamsError, UnknownError
+from gemstone.errors import CalledServiceError
 
 
 class RemoteService(object):

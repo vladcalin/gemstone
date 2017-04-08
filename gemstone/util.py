@@ -1,6 +1,4 @@
-import sys
 import logging
-from multiprocessing.pool import ThreadPool
 
 from gemstone.client.structs import AsyncMethodCall
 

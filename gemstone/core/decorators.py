@@ -1,6 +1,5 @@
 import functools
 import re
-import inspect
 
 import tornado.gen
 

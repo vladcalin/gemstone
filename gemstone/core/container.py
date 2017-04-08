@@ -1,5 +1,4 @@
 import abc
-import inspect
 
 
 class Container(abc.ABC):

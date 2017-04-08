@@ -1,8 +1,6 @@
 import random
 import string
 
-from tornado.gen import coroutine
-from tornado.ioloop import IOLoop
 from tornado.httpclient import HTTPClient, HTTPRequest
 import simplejson as json
 

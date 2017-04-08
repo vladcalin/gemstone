@@ -1,8 +1,6 @@
 import abc
 import argparse
 
-import simplejson as json
-
 
 class BaseConfigurator(abc.ABC):
     """

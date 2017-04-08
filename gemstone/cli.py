@@ -2,7 +2,7 @@ import pprint
 import time
 import click
 
-from gemstone import RemoteService
+from gemstone.client import RemoteService
 
 
 def format_params(params):
