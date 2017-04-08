@@ -8,6 +8,16 @@ from gemstone.event.transport.base import BaseEventTransport
 
 class RedisEventTransport(BaseEventTransport):
     def __init__(self, redis_url):
+        """
+        Event transport that uses a Redis server as message transport by using
+        the PUBSUB mechanism.
+
+        :param redis_url: A string that specifies the network location of the redis server:
+                            - ``redis://[:password@]hostaddr:port/dbnumber`` (plaintext)
+                            - ``rediss://[:password@]hostaddr:port/dbnumber`` (over TLS)
+                            - ``unix://[:password@]/path/to/socket?db=dbnumber`` (Unix socket)
+
+        """
         super(RedisEventTransport, self).__init__()
         conn_details = urllib.parse.urlparse(redis_url)
         if conn_details.scheme not in ("redis", "rediss", "unix"):
