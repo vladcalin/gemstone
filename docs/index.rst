@@ -27,6 +27,18 @@ This documentation is structured in multiple parts:
     - JSON RPC 2.0 specifications: http://www.jsonrpc.org/specification
     - Tornado: http://www.tornadoweb.org/en/stable/
 
+
+Installation
+------------
+
+::
+    pip install gemstone
+    # or
+    pip install gemstone[redis] # to use the Redis features
+    # or
+    pip install gemstone[rabbitmq] # to use the RabbitMq features
+
+
 First look
 ----------
 
