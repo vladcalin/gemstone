@@ -26,7 +26,7 @@ class SemiMockedEventTransport(BaseEventTransport):
     def on_event_received(self, event_name, event_body):
         self.handlers[event_name](event_body)
 
-    def emit_event(self, event_name, event_body, *, broadcast=False):
+    def emit_event(self, event_name, event_body):
         pass
 
 
@@ -77,11 +77,11 @@ def test_emit_event():
     service = TestServicePublisher()
 
     service.emit_event("testing", "test_value")
-    service.emit_event("testing2", "test_value2", broadcast=False)
+    service.emit_event("testing2", "test_value2")
 
     mocked_transport.emit_event.assert_has_calls([
-        unittest.mock.call("testing", "test_value", broadcast=True),
-        unittest.mock.call("testing2", "test_value2", broadcast=False)
+        unittest.mock.call("testing", "test_value"),
+        unittest.mock.call("testing2", "test_value2")
     ])
 
 

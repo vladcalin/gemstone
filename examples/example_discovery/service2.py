@@ -1,5 +1,5 @@
 import gemstone
-from gemstone.discovery.default import DefaultDiscoveryStrategy
+from gemstone.discovery.default import HttpDiscoveryStrategy
 from gemstone.discovery.redis_strategy import RedisDiscoveryStrategy
 
 
