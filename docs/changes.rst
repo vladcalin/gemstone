@@ -2,13 +2,13 @@ Changes
 =======
 
 0.10.1 (27.03.2017)
--------------------
+~~~~~~~~~~~~~~~~~~~
 
 - removed some forgotten debug messages
 
 
 0.10.0 (23.03.2017)
--------------------
+~~~~~~~~~~~~~~~~~~~
 
 - added ``broadcast`` parameter to ``MicroService.emit_event``
 - added the ``broadcast`` parameter to ``BaseEventTransport.emit_event``

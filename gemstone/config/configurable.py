@@ -15,23 +15,17 @@ Example usage of configurables
         registry_urls = [...]
 
         configurables = [
-            Configurable("port", type=int, mappings={
-                "random": random.randint(8000, 65000)
-            }),
-            Configurable("host", type=str)
+            Configurable("port", template=lambda x: int(x)),
+            Configurable("host")
         ]
         configurators = [
-            CommandLineConfigurator(),
-            IniFileConfigurator("config.ini"),
-            JsonFileConfigurator("config.json"),
-            XmlFileConfigurator("config.xml")
+            CommandLineConfigurator()
         ]
 
-When :py:meth:`Microservice.start` is called, the configurators
+When :py:meth:`Microservice.configure` is called, the configurators
 search for values that can override the specified configurables defaults.
 
-The configurators resolve in the order they are declared, meaning that a value
-that was set by a configurator can be overriden by a configurator that is
+The configurators resolve in the order they are declared.
 
 """
 
@@ -48,7 +42,7 @@ class Configurable(object):
 
             c = Configurable("test", template=lambda x: x * 2)
             c.set_value("10")
-            c.get_final_value()  # int("10") * 2 -> 20
+            c.get_final_value()  # "10" * 2 -> 1010
 
             c2 = Configurable("list_of_ints", template=lambda x: [int(y) for y in x.split(",")])
             c.set_value("1,2,3,4,5")

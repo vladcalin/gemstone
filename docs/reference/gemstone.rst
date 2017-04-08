@@ -84,22 +84,15 @@ Can be overridden
 Can be called
 ^^^^^^^^^^^^^
 
+    .. automethod:: gemstone.MicroService.emit_event
     .. automethod:: gemstone.MicroService.get_service
     .. automethod:: gemstone.MicroService.start_thread
-    .. automethod:: gemstone.MicroService.emit_event
     .. automethod:: gemstone.MicroService.get_current_configuration
+    .. automethod:: gemstone.MicroService.get_io_loop
+    .. automethod:: gemstone.MicroService.get_executor
     .. automethod:: gemstone.MicroService.make_tornado_app
     .. automethod:: gemstone.MicroService.start
     .. automethod:: gemstone.MicroService.configure
-
-
-
-.. autoclass:: RemoteService
-
-    .. autoattribute:: gemstone.RemoteService.call_method
-    .. autoattribute:: gemstone.RemoteService.call_method_async
-    .. autoattribute:: gemstone.RemoteService.notify
-    .. autoattribute:: gemstone.RemoteService.call_batch
 
 
 

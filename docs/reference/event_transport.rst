@@ -11,3 +11,6 @@ Event transports
 .. autoclass:: RabbitMqEventTransport
     :members:
 
+.. autoclass:: RedisEventTransport
+    :members:
+

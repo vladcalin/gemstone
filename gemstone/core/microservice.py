@@ -66,7 +66,7 @@ class MicroService(Container):
     discovery_strategies = [
 
     ]
-    _remote_service_cache = ServiceDiscoveryCache(3600)
+    remote_service_cache = ServiceDiscoveryCache(3600)
 
     #: Specifies if should record statistics
     use_statistics = False
@@ -287,7 +287,7 @@ class MicroService(Container):
         if not self.discovery_strategies:
             raise ServiceConfigurationError("No service registry available")
 
-        cached = self._remote_service_cache.get_entry(name)
+        cached = self.remote_service_cache.get_entry(name)
         if cached:
             return cached.remote_service
 
@@ -299,7 +299,7 @@ class MicroService(Container):
             for url in endpoints:
                 try:
                     service = RemoteService(url)
-                    self._remote_service_cache.add_entry(name, service)
+                    self.remote_service_cache.add_entry(name, service)
                     return service
                 except ConnectionError:
                     continue  # could not establish connection, try next
@@ -307,9 +307,15 @@ class MicroService(Container):
         raise ValueError("Service could not be located")
 
     def get_io_loop(self):
+        """
+        Returns the current IOLoop used by the microservice
+        """
         return self.io_loop or IOLoop.current()
 
     def get_executor(self):
+        """
+        Returns the ThreadPoolExecutor used by the microservice.
+        """
         return self._executor
 
     def start_thread(self, target, args, kwargs):
@@ -334,8 +340,6 @@ class MicroService(Container):
 
         :param event_name: a ``str`` representing the event type
         :param event_body: a Python object that can be represented as JSON.
-        :param broadcast: flag that specifies if the event should be received by
-                          all subscribers or only by one
 
         .. versionadded:: 0.5.0
 

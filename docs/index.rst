@@ -14,7 +14,6 @@ This library offers support for writing a microservice that:
 
 - exposes a public Json RPC 2.0 HTTP API
   (see `The JSON RPC 2.0 specifications <http://www.jsonrpc.org/specification>`_ )
-- can protect API access based on API token identification.
 - can communicate with other microservices through the JSON RPC protocol.
 - can communicate with other microservices through events (messages).
 
@@ -28,8 +27,8 @@ This documentation is structured in multiple parts:
     - JSON RPC 2.0 specifications: http://www.jsonrpc.org/specification
     - Tornado: http://www.tornadoweb.org/en/stable/
 
-Hello world
------------
+First look
+----------
 
 In a script ``hello_world.py`` write the following:
 

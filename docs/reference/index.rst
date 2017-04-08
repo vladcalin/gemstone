@@ -10,9 +10,9 @@ Reference
 
    gemstone
    client
-   config
    discovery
    event_transport
+   config
    utility
 
 
