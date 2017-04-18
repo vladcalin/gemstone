@@ -8,8 +8,8 @@ class HelloWorldService(gemstone.MicroService):
 
     configurables = [
         Configurable("a"),
-        Configurable("b", type=int),
-        Configurable("c", type=bool),
+        Configurable("b"),
+        Configurable("c"),
     ]
 
     @gemstone.exposed_method()
@@ -23,4 +23,5 @@ class HelloWorldService(gemstone.MicroService):
 
 if __name__ == '__main__':
     service = HelloWorldService()
+    service.configure()
     service.start()
