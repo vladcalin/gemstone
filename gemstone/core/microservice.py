@@ -340,9 +340,8 @@ class MicroService(Container):
             periodic_task.start()
 
     def __del__(self):
-        self.io_loop.close()
         for plugin in self.plugins:
-            plugin.on_service_stop()
+            self.io_loop.add_callback(plugin.on_service_stop)
 
     # endregion
 
