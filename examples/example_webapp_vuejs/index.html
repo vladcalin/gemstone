@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Vue.js example</title>
+
+    <!--<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">-->
+    <!-- Add this to <head> -->
+
+    <link type="text/css" rel="stylesheet" href="//unpkg.com/bootstrap@next/dist/css/bootstrap.min.css"/>
+    <link type="text/css" rel="stylesheet" href="//unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue.css"/>
+
+    <script src="//unpkg.com/vue@2.2.6"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+</head>
+<body>
+
+<div id="app">
+
+    <h3>Hello {{! userInfo.username }}</h3>
+
+    <p>
+        Your email is {{! userInfo.email }}
+    </p>
+
+    <p>
+        We last saw you {{! userInfo.last_seen }}
+    </p>
+</div>
+
+
+<script>
+
+    function sendJsonRpcRequest(url, method, params, onSuccess, onError) {
+        var request = new XMLHttpRequest();
+        request.open('POST', url, true);
+        request.setRequestHeader('Content-Type', 'application/json');
+
+        request.onload = function () {
+            if (this.status >= 200 && this.status < 400) {
+                var resp = this.response;
+                if (onSuccess !== undefined) {
+                    onSuccess(resp);
+                }
+            } else {
+                if (onError !== undefined) {
+                    onError("error");
+                }
+            }
+        };
+
+        request.onerror = function () {
+            if (onError !== undefined) {
+                onError("connection_error");
+            }
+        };
+
+        request.send(JSON.stringify({
+            id: 1,
+            method: method,
+            params: params,
+            jsonrpc: "2.0"
+        }));
+    }
+
+
+    sendJsonRpcRequest("/api", "get_user_info", {},
+            function (resp) {
+                var dataObj = JSON.parse(resp);
+
+                var app = new Vue({
+                    el: "#app",
+                    data: {
+                        userInfo: dataObj.result
+                    }
+                })
+
+            }, function (error) {
+                alert(error);
+            })
+
+
+</script>
+
+</body>
+</html>

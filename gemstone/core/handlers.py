@@ -60,7 +60,7 @@ class TornadoJsonRpcHandler(RequestHandler):
 
     @coroutine
     def post(self):
-        if self.request.headers.get("Content-type") != "application/json":
+        if self.request.headers.get("Content-type").split(";")[0] != "application/json":
             self.write_single_response(GenericResponse.INVALID_REQUEST)
             return
 

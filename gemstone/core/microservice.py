@@ -79,7 +79,7 @@ class MicroService(Container):
     #: be changed dynamically without changing its code.
     configurables = [
         Configurable("port",
-                     template=lambda x: random.randint(8000, 65000) if "random" else int(x)),
+                     template=lambda x: random.randint(8000, 65000) if x == "random" else int(x)),
         Configurable("host"),
         Configurable("accessible_at"),
         Configurable("endpoint")
