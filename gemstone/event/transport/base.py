@@ -62,10 +62,7 @@ class BaseEventTransport(ABC):
 
     def set_microservice(self, microservice):
         """
-        Used by the microservice instance to send reference to itself.
-
-        :param microservice:
-        :return:
+        Used by the microservice instance to send reference to itself. Do not override this.
         """
         self.microservice = microservice
 

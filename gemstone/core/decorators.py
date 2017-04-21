@@ -20,8 +20,8 @@ def event_handler(event_name):
     which will be a Python object that can be encoded as a JSON (dict, list, str, int,
     bool, float or None)
 
-    :param event_name:
-    :return:
+    :param event_name: The name of the event that will be handled. Only one handler per
+                       event name is supported by the same microservice.
     """
 
     def wrapper(func):
@@ -32,8 +32,7 @@ def event_handler(event_name):
     return wrapper
 
 
-def exposed_method(name=None, private=False, is_coroutine=True, requires_handler_reference=False,
-                   **kwargs):
+def exposed_method(name=None, private=False, is_coroutine=True, requires_handler_reference=False):
     """
     Marks a method as exposed via JSON RPC.
 
@@ -41,11 +40,18 @@ def exposed_method(name=None, private=False, is_coroutine=True, requires_handler
                  If not present or is set explicitly to ``None``, this parameter will default to the name
                  of the exposed method.
                  If two methods with the same name are exposed, a ``ValueError`` is raised.
-    :param public: Flag that specifies if the exposed method is public (can be accessed without token)
+    :type name: str
     :param private: Flag that specifies if the exposed method is private.
+    :type private: bool
     :param is_coroutine: Flag that specifies if the method is a Tornado coroutine. If True, it will be wrapped
                          with the :py:func:`tornado.gen.coroutine` decorator.
-    :param kwargs: Not used.
+    :type is_coroutine: bool
+    :param requires_handler_reference: If ``True``, the handler method will receive as the first
+                                       parameter a ``handler`` argument with the Tornado
+                                       request handler for the current request. This request handler
+                                       can be further used to extract various information from the
+                                       request, such as headers, cookies, etc.
+    :type requires_handler_reference: bool
 
     .. versionadded:: 0.9.0
 

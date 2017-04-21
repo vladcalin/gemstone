@@ -32,6 +32,7 @@ Installation
 ------------
 
 ::
+
     pip install gemstone
     # or
     pip install gemstone[redis] # to use the Redis features
@@ -104,7 +105,7 @@ Table of contents:
     :maxdepth: 2
 
     topics/index
-    reference/index
+    reference/modules
     changes
 
 

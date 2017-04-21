@@ -6,6 +6,10 @@ from gemstone.plugins.error import MissingPluginNameError
 
 
 class BasePlugin(abc.ABC):
+    """
+    Base class for creating a plugin.
+
+    """
     name = None
 
     def __init__(self):

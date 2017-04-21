@@ -1,6 +1,9 @@
 import json
 
-import pika
+try:
+    import pika
+except ImportError:
+    pika = None
 
 from gemstone.event.transport.base import BaseEventTransport
 
@@ -19,6 +22,9 @@ class RabbitMqEventTransport(BaseEventTransport):
         :param connection_options: extra arguments that will be used in
                                    :py:class:`pika.BlockingConnection` initialization.
         """
+        if not pika:
+            raise RuntimeError("RabbitMqEventTransport requires 'pika' to run")
+
         super(RabbitMqEventTransport, self).__init__()
         self._handlers = {}
 
