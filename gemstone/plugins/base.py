@@ -29,7 +29,7 @@ class BasePlugin(abc.ABC):
     def on_service_stop(self):
         pass
 
-    def before_method_call(self, method_name, *args, **kwargs):
+    def on_method_call(self, jsonrpc_request):
         pass
 
     def on_internal_error(self, exc_instance):

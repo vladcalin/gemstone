@@ -14,11 +14,11 @@ class JsonRpcInvalidRequestError(JsonRpcError):
 
 
 class JsonRpcRequest(object):
-    def __init__(self, method=None, params=None, id=None, **kwargs):
+    def __init__(self, method=None, params=None, id=None, extra=None):
         self.method = method
         self.params = params or {}
         self.id = id
-        self.extra = kwargs
+        self.extra = extra or {}
         self.invalid = False
 
     def to_dict(self):
@@ -78,10 +78,13 @@ class JsonRpcRequest(object):
         if not isinstance(req_id, (int, str)) and req_id is not None:
             raise JsonRpcInvalidRequestError()
 
+        extras = {k: d[k] for k in d if k not in ("jsonrpc", "id", "method", "params")}
+
         instance = cls(
             id=req_id,
             method=method,
             params=params,
+            extra=extras
         )
         return instance
 

@@ -15,10 +15,12 @@ class ExamplePlugin(BasePlugin):
     def on_internal_error(self, exc_instance):
         self.microservice.logger.error("Error!!!!! {}".format(exc_instance))
 
-    def before_method_call(self, method_name, *args, **kwargs):
-        self.microservice.logger.error("Method called: name={} args={} kwargs={}".format(
-            method_name, args, kwargs
+    def on_method_call(self, jsonrpc_request):
+        self.microservice.logger.error("Method called: name={} params={}".format(
+            jsonrpc_request.method, jsonrpc_request.params
         ))
+
+        self.microservice.logger.info("Extras: {}".format(jsonrpc_request.extra))
 
     def custom_method(self):
         self.microservice.logger.warning("Custom method called!")

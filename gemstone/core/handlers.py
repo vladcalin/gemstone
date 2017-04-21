@@ -148,11 +148,9 @@ class TornadoJsonRpcHandler(RequestHandler):
         method = self.methods[request_object.method]
 
         if isinstance(request_object.params, (list, tuple)):
-            self.call_method_from_all_plugins("before_method_call", request_object.method,
-                                              *request_object.params)
+            self.call_method_from_all_plugins("on_method_call", request_object)
         else:
-            self.call_method_from_all_plugins("before_method_call", request_object.method,
-                                              **request_object.params)
+            self.call_method_from_all_plugins("on_method_call", request_object)
 
         if self._method_is_private(method):
             if not self.get_current_user():
