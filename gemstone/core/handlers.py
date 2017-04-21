@@ -51,7 +51,7 @@ class TornadoJsonRpcHandler(RequestHandler):
     def initialize(self, microservice):
         self.logger = microservice.logger
         self.methods = microservice.methods
-        self.executor = microservice._executor
+        self.executor = microservice.get_executor()
         self.response_is_sent = False
         self.microservice = microservice
 
@@ -146,6 +146,14 @@ class TornadoJsonRpcHandler(RequestHandler):
 
         # check for private access
         method = self.methods[request_object.method]
+
+        if isinstance(request_object.params, (list, tuple)):
+            self.call_method_from_all_plugins("before_method_call", request_object.method,
+                                              *request_object.params)
+        else:
+            self.call_method_from_all_plugins("before_method_call", request_object.method,
+                                              **request_object.params)
+
         if self._method_is_private(method):
             if not self.get_current_user():
                 resp = GenericResponse.ACCESS_DENIED
@@ -155,8 +163,6 @@ class TornadoJsonRpcHandler(RequestHandler):
         method = self.prepare_method_call(method, request_object.params)
 
         # before request hook
-        request_object_copy = copy.copy(request_object)
-        self.microservice.before_method_call(request_object_copy)
         _method_duration = time.time()
 
         try:
@@ -184,9 +190,9 @@ class TornadoJsonRpcHandler(RequestHandler):
                     return resp
             # generic handling for any exception (even TypeError) that
             # is not generated because of bad parameters
-            self.microservice.stats.after_method_call(request_object.method,
-                                                      time.time() - _method_duration,
-                                                      is_error=True)
+
+            self.call_method_from_all_plugins("on_internal_error", e)
+
             err = GenericResponse.INTERNAL_ERROR
             err.id = id_
             err.error["data"] = {
@@ -196,10 +202,6 @@ class TornadoJsonRpcHandler(RequestHandler):
             return err
 
         to_return_resp = JsonRpcResponse(result=result, error=error, id=id_)
-        self.microservice.stats.after_method_call(request_object.method,
-                                                  time.time() - _method_duration, is_error=False)
-
-        self.microservice.after_method_call(request_object_copy, to_return_resp)
 
         return to_return_resp
 
@@ -311,3 +313,10 @@ class TornadoJsonRpcHandler(RequestHandler):
     @staticmethod
     def _method_is_private(method):
         return getattr(method, "_exposed_private", False)
+
+    def call_method_from_all_plugins(self, method, *args, **kwargs):
+        for plugin in self.microservice.plugins:
+            method_callable = getattr(plugin, method)
+            if not method:
+                continue
+            method_callable(*args, **kwargs)

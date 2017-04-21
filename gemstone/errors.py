@@ -16,21 +16,11 @@ class CalledServiceError(RemoteServiceError):
     pass
 
 
-class MethodNotFoundError(RemoteServiceError):
-    pass
+# Plugin specific
 
-
-class InvalidParamsError(RemoteServiceError):
-    pass
-
-
-class AccessDeniedError(RemoteServiceError):
-    pass
-
-
-class InternalErrorError(RemoteServiceError):
-    pass
-
-
-class UnknownError(RemoteServiceError):
+class PluginDoesNotExistError(GemstoneError):
+    """
+    Raised when a plugin is queried but no plugin with the
+    specified name exists.
+    """
     pass

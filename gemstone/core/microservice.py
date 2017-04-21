@@ -13,9 +13,8 @@ from tornado.log import enable_pretty_logging
 
 from gemstone.config.configurable import Configurable
 from gemstone.config.configurator import CommandLineConfigurator
-from gemstone.core.stats import DefaultStatsContainer, DummyStatsContainer
 from gemstone.discovery.cache import ServiceDiscoveryCache
-from gemstone.errors import ServiceConfigurationError
+from gemstone.errors import ServiceConfigurationError, PluginDoesNotExistError
 from gemstone.core.handlers import TornadoJsonRpcHandler
 from gemstone.core.decorators import exposed_method
 from gemstone.client.remote_service import RemoteService
@@ -57,6 +56,9 @@ class MicroService(Container):
     #: created Tornado application.
     extra_handlers = []
 
+    #: A list of ``gemstone.plugins.base.BasePlugin`` implementations
+    plugins = []
+
     #: A list of service registry complete URL which will enable service auto-discovery.
     service_registry_urls = []
     #: Interval (in seconds) when the microservice will ping all the service registries.
@@ -65,9 +67,6 @@ class MicroService(Container):
 
     ]
     remote_service_cache = ServiceDiscoveryCache(3600)
-
-    #: Specifies if should record statistics
-    use_statistics = False
 
     #: A list of (callable, time_in_seconds) that will enable periodic task execution.
     periodic_tasks = []
@@ -156,9 +155,6 @@ class MicroService(Container):
         enable_pretty_logging()
         self.app.listen(self.port, address=self.host)
 
-        for k, v in self.get_current_configuration().items():
-            self.logger.debug("{}={}".format(k, v))
-
         self._start_periodic_tasks()
         # starts the event handlers
         self._initialize_event_handlers()
@@ -171,39 +167,19 @@ class MicroService(Container):
             # this method to check if the loop is running is ugly
             pass
 
-    @exposed_method()
-    def get_service_specs(self):
+    def get_plugin(self, name):
         """
-        A default exposed method that returns the current microservice specifications. The returned information is
-        in the format:
+        Returns a plugin by name and raises ``gemstone.errors.PluginDoesNotExistError`` error if
+        no plugin with such name exists.
 
-        ::
-
-            {
-                "host": "127.0.0.1",
-                "port": 9000,
-                "name": "service.example",
-                "max_parallel_blocking_tasks": 8,
-                "methods": {
-                    "get_service_specs": "...",
-                    "method1": "method1's docstring",
-                    ...
-                }
-            }
-
-        :return:
+        :param name: a string specifying a plugin name.
+        :return: the corresponding plugin instance.
         """
-        return {
-            "host": self.host,
-            "port": self.port,
-            "accessible_at": self.accessible_at,
-            "name": self.name,
-            "max_parallel_blocking_tasks": self.max_parallel_blocking_tasks,
-            "methods": {m: self.methods[m].__doc__ for m in self.methods},
-            "event_transports": [str(t) for t in self.event_transports],
-            "events_handled": {ev_name: ev_handle.__doc__ for ev_name, ev_handle in
-                               self.event_handlers.items()}
-        }
+        for plugin in self.plugins:
+            if plugin.name == name:
+                return plugin
+
+        raise PluginDoesNotExistError("Plugin '{}' not found".format(name))
 
     # region Can be overridden by user
 
@@ -213,29 +189,6 @@ class MicroService(Container):
 
         :return: ``None``
         """
-        pass
-
-    def before_method_call(self, request_object):
-        """
-        Called before every RPC method call
-
-        :param request_object: a :py:class:`gemstone.core.structs.JsonRpcRequest` instance.
-        """
-        pass
-
-    def after_method_call(self, request_object, response_object):
-        """
-        Called after every RPC **successful** method call. If ``response_object`` instance is
-        modified the response of the actual call is modified
-
-        :param request_object: a :py:class:`gemstone.core.structs.JsonRpcRequest` instance.
-        :param response_object: a :py:class:`gemstone.core.structs.JsonRpcResponse` instance.
-        :return:
-        """
-        pass
-
-    def on_failed_method_call(self, request_object, response_object):
-        # TODO: make the json rpc handler use this
         pass
 
     def authenticate_request(self, handler):
@@ -375,37 +328,20 @@ class MicroService(Container):
         self._prepare_configurators()
         self._activate_configurators()
 
+    def register_plugin(self, plugin):
+        """
+        Registers a plugin instance.
+        """
+        self.plugins.append(plugin)
+
     def _start_periodic_tasks(self):
         for periodic_task in self._periodic_task_iter():
             self.logger.debug("Starting periodic task {}".format(periodic_task))
             periodic_task.start()
 
-    def get_current_configuration(self):
-        return {
-            "name": self.name,
-            "host": self.host,
-            "port": self.port,
-            "endpoint": self.endpoint,
-            "accessible_at": self.accessible_at,
-            "autodiscovery": {
-                "service_registry_urls": self.service_registry_urls,
-                "service_registry_ping_interval": self.service_registry_ping_interval,
-            },
-            "max_parallel_blocking_tasks": self.max_parallel_blocking_tasks,
-            "webapp": {
-                "template_dir": self.template_dir,
-                "static_dirs": self.static_dirs,
-                "extra_handlers": [str(h) for h in self.extra_handlers]
-            },
-            "event": {
-                "event_transports": [str(t) for t in self.event_transports]
-            },
-            "configuration": {
-                "configurables": [str(c) for c in self.configurables],
-                "configurators": [str(c) for c in self.configurators]
-            }
-
-        }
+    def __del__(self):
+        for plugin in self.plugins:
+            self.io_loop.add_callback(plugin.on_service_stop)
 
     # endregion
 
@@ -417,12 +353,7 @@ class MicroService(Container):
         self._gather_exposed_methods()
         self._gather_event_handlers()
 
-        # initializing statistics handler
-        if self.use_statistics:
-            self.stats = DefaultStatsContainer()
-            self.methods["statistics"] = lambda: self.stats.as_json()
-        else:
-            self.stats = DummyStatsContainer()
+        self._call_on_init_plugins()
 
     def _initialize_event_handlers(self):
         for event_transport in self.event_transports:
@@ -531,11 +462,6 @@ class MicroService(Container):
             timer_milisec = timer_in_seconds * 1000
             yield PeriodicCallback(func, timer_milisec, io_loop=self.io_loop)
 
-    @classmethod
-    def _set_option_if_available(cls, args, name):
-        if hasattr(args, name) and getattr(args, name) is not None:
-            setattr(cls, name, getattr(args, name))
-
     def _prepare_configurators(self):
         for configurator in self.configurators:
             for configurable in self.configurables:
@@ -553,3 +479,8 @@ class MicroService(Container):
                     continue
 
                 setattr(self, name, value)
+
+    def _call_on_init_plugins(self):
+        for plugin in self.plugins:
+            plugin.set_microservice(self)
+            plugin.on_service_start()
