@@ -8,31 +8,7 @@ __all__ = [
     'exposed_method'
 ]
 
-
-def public_method(func):
-    """
-    Decorates a method to be exposed from a :py:class:`gemstone.PyMicroService` concrete
-    implementation. The exposed method will be public.
-
-    .. deprecated:: 0.9.0
-        Use :py:func:`exposed_method` instead.
-
-    """
-    func.__gemstone_internal_public = True
-    return func
-
-
-def private_api_method(func):
-    """
-    Decorates a method to be exposed (privately) from a :py:class:`gemstone.PyMicroService`
-    concrete implementation. The exposed method will be private.
-
-    .. deprecated:: 0.9.0
-        Use :py:func:`exposed_method` instead.
-
-    """
-    func.__gemstone_internal_private = True
-    return func
+METHOD_NAME_REGEX = re.compile(r'^[a-zA-Z][a-zA-Z0-9_.]*$')
 
 
 def event_handler(event_name):
@@ -54,38 +30,6 @@ def event_handler(event_name):
         return func
 
     return wrapper
-
-
-def requires_handler_reference(func):
-    """
-    Marks a method tha requires access to the :py:class:`gemstone.TornadoJsonRpcHandler` instance
-    when calling the request. If a method is decorated with this, when it is called it will
-    receive a ``handler`` argument as the first argument.
-
-    Useful when you need to do specific operations such as setting a cookie,
-    setting a secure cookie, get the ``current_user`` of the request, etc.
-
-    .. deprecated:: 0.9.0
-        Use :py:func:`exposed_method` instead.
-
-    """
-    func.__gemstone_internal_req_h_ref = True
-    return func
-
-
-def async_method(func):
-    """
-    Marks a function as a Tornado generator (coroutine)
-
-    .. deprecated:: 0.9.0
-        Use :py:func:`exposed_method` instead.
-
-    """
-    func.__gemstone_is_coroutine = True
-    return tornado.gen.coroutine(func)
-
-
-METHOD_NAME_REGEX = re.compile(r'^[a-zA-Z][a-zA-Z0-9_.]*$')
 
 
 def exposed_method(name=None, private=False, is_coroutine=True, requires_handler_reference=False,
@@ -130,7 +74,8 @@ def exposed_method(name=None, private=False, is_coroutine=True, requires_handler
             setattr(real_wrapper, "_exposed_public", True)
 
         if is_coroutine:
-            real_wrapper = async_method(real_wrapper)
+            real_wrapper.__gemstone_is_coroutine = True
+            real_wrapper = tornado.gen.coroutine(real_wrapper)
             setattr(real_wrapper, "_is_coroutine", True)
 
         if requires_handler_reference:
