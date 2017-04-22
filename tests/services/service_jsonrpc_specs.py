@@ -1,4 +1,4 @@
-from gemstone import MicroService, exposed_method
+from gemstone.core import MicroService, exposed_method
 
 
 class ServiceJsonRpcSpecs(MicroService):

@@ -1,4 +1,4 @@
-
+.. _reference-top:
 
 Modules
 =======
@@ -12,3 +12,5 @@ Modules
     gemstone.config.rst
     gemstone.event.rst
     gemstone.discovery.rst
+    gemstone.plugins.rst
+    gemstone.util.rst

@@ -1,6 +1,6 @@
 import time
 
-from gemstone import MicroService, exposed_method
+from gemstone.core import MicroService, exposed_method
 
 HOST, PORT = "127.0.0.1", 6799
 PORT2 = PORT + 1

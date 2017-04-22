@@ -2,7 +2,7 @@ import os.path
 
 from tornado.web import RequestHandler
 
-from gemstone import MicroService, exposed_method
+from gemstone.core import MicroService, exposed_method
 from gemstone.core.handlers import GemstoneCustomHandler
 
 

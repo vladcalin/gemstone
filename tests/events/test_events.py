@@ -2,7 +2,7 @@ import unittest.mock
 
 import pytest
 
-import gemstone
+from gemstone.core import MicroService, event_handler
 from gemstone.event.transport import BaseEventTransport
 
 
@@ -33,7 +33,7 @@ class SemiMockedEventTransport(BaseEventTransport):
 mocked_transport = MockedEventTransport()
 
 
-class TestServicePublisher(gemstone.MicroService):
+class TestServicePublisher(MicroService):
     name = "test"
 
     event_transports = [
@@ -42,7 +42,7 @@ class TestServicePublisher(gemstone.MicroService):
 
     handler = unittest.mock.MagicMock()
     # it is like a magic mock that is decorated
-    handler = gemstone.event_handler("test")(handler)
+    handler = event_handler("test")(handler)
 
 
 def test_event_handler_discovery():

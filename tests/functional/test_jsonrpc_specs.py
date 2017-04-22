@@ -60,7 +60,8 @@ def test_rpc_call_with_positional_parameters(http_client, base_url):
 @pytest.mark.gen_test
 def test_rpc_call_with_named_parameters(http_client, base_url):
     base_url += "/api"
-    body = json.dumps({"jsonrpc": "2.0", "method": "subtract", "params": {"a": 42, "b": 23}, "id": 3})
+    body = json.dumps(
+        {"jsonrpc": "2.0", "method": "subtract", "params": {"a": 42, "b": 23}, "id": 3})
     result = yield http_client.fetch(base_url, method="POST", body=body,
                                      headers={"content-type": "application/json"})
     assert result.code == 200
@@ -69,7 +70,8 @@ def test_rpc_call_with_named_parameters(http_client, base_url):
     assert response_body["result"] == 19
     assert response_body["id"] == 3
 
-    body = json.dumps({"jsonrpc": "2.0", "method": "subtract", "params": {"b": 42, "a": 23}, "id": 4})
+    body = json.dumps(
+        {"jsonrpc": "2.0", "method": "subtract", "params": {"b": 42, "a": 23}, "id": 4})
     result = yield http_client.fetch(base_url, method="POST", body=body,
                                      headers={"content-type": "application/json"})
     assert result.code == 200
@@ -218,13 +220,15 @@ def test_batch_big_batch(http_client, base_url):
         {"jsonrpc": "2.0", "method": "notify_hello", "params": [7]},  # notification
         {"jsonrpc": "2.0", "method": "subtract", "params": [42, 23], "id": "2"},  # valid
         {"foo": "boo"},  # invalid request
-        {"jsonrpc": "2.0", "method": "foo.get", "params": {"name": "myself"}, "id": "5"},  # method not found
+        {"jsonrpc": "2.0", "method": "foo.get", "params": {"name": "myself"}, "id": "5"},
+        # method not found
         {"jsonrpc": "2.0", "method": "get_data", "id": "9"}  # valid no params
     ]
     expected_results = {
         "1": {"jsonrpc": "2.0", "result": 7, "id": "1", "error": None},
         "2": {"jsonrpc": "2.0", "result": 19, "id": "2", "error": None},
-        "5": {"jsonrpc": "2.0", "error": {"code": -32601, "message": "Method not found"}, "id": "5", "result": None},
+        "5": {"jsonrpc": "2.0", "error": {"code": -32601, "message": "Method not found"}, "id": "5",
+              "result": None},
         "9": {"jsonrpc": "2.0", "result": ["hello", 5], "id": "9", "error": None}
     }
 

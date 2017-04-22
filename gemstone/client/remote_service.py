@@ -5,16 +5,15 @@ from multiprocessing.pool import ThreadPool
 import simplejson as json
 
 from gemstone.client.structs import MethodCall, Notification, Result, BatchResult, AsyncMethodCall
-from gemstone.core.structs import GenericResponse
 from gemstone.errors import CalledServiceError
 
 
 class RemoteService(object):
     RESPONSE_CODES = {
-        GenericResponse.ACCESS_DENIED.error["code"]: "access_denied",
-        GenericResponse.INTERNAL_ERROR.error["code"]: "internal_error",
-        GenericResponse.METHOD_NOT_FOUND.error["code"]: "method_not_found",
-        GenericResponse.INVALID_PARAMS.error["code"]: "invalid_params"
+        -32001: "access_denied",
+        -32603: "internal_error",
+        -32601: "method_not_found",
+        -32602: "invalid_params"
     }
 
     def __init__(self, service_endpoint, *, authentication_method=None):

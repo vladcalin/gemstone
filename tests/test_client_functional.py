@@ -6,8 +6,8 @@ import threading
 
 import pytest
 
-from gemstone.util import first_completed
-from gemstone import as_completed, MicroService, exposed_method
+from gemstone.util import first_completed, as_completed
+from gemstone.core import MicroService, exposed_method
 from gemstone.client.remote_service import RemoteService
 from gemstone.client.structs import Result, MethodCall, BatchResult, AsyncMethodCall, Notification
 

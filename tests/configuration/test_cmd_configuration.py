@@ -1,8 +1,7 @@
 import sys
 import pytest
 
-from gemstone.config.configurator import CommandLineConfigurator
-from gemstone.config.configurable import Configurable
+from gemstone.config import CommandLineConfigurator, Configurable
 
 
 def test_configurator_command_line_no_configurable(monkeypatch):

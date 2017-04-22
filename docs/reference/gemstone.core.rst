@@ -47,9 +47,17 @@ Can be overridden
         .. automethod:: gemstone.core.MicroService.authenticate_request
         .. automethod:: gemstone.core.MicroService.on_service_start
 
+The gemstone.core.Container class
+---------------------------------
+
 
     .. autoclass:: gemstone.core.Container
         :members:
+
+        .. py:attribute:: microservice
+
+Decorators
+----------
 
     .. autofunction:: gemstone.core.exposed_method
     .. autofunction:: gemstone.core.event_handler

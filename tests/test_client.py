@@ -4,7 +4,7 @@ import json
 
 import pytest
 
-from gemstone import as_completed
+from gemstone.util import as_completed
 from gemstone.client.remote_service import RemoteService
 from gemstone.client.structs import Result, MethodCall, BatchResult, AsyncMethodCall
 
