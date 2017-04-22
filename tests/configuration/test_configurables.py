@@ -1,4 +1,4 @@
-from gemstone.config.configurable import Configurable
+from gemstone.config import Configurable
 
 
 def test_configurable_just_value():

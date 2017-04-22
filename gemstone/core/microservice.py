@@ -11,18 +11,13 @@ from tornado.ioloop import IOLoop, PeriodicCallback
 from tornado.web import Application
 from tornado.log import enable_pretty_logging
 
-from gemstone.config.configurable import Configurable
-from gemstone.config.configurator import CommandLineConfigurator
+from gemstone.config import Configurable, CommandLineConfigurator
 from gemstone.discovery.cache import ServiceDiscoveryCache
 from gemstone.errors import ServiceConfigurationError, PluginDoesNotExistError
 from gemstone.core.handlers import TornadoJsonRpcHandler
 from gemstone.core.decorators import exposed_method
-from gemstone.client.remote_service import RemoteService
 from gemstone.core.container import Container
-
-__all__ = [
-    'MicroService'
-]
+from gemstone.util import get_remote_service_instance_for_url
 
 IS_WINDOWS = sys.platform.startswith("win32")
 
@@ -78,7 +73,7 @@ class MicroService(Container):
     #: be changed dynamically without changing its code.
     configurables = [
         Configurable("port",
-                     template=lambda x: random.randint(8000, 65000) if "random" else int(x)),
+                     template=lambda x: random.randint(8000, 65000) if x == "random" else int(x)),
         Configurable("host"),
         Configurable("accessible_at"),
         Configurable("endpoint")
@@ -249,7 +244,7 @@ class MicroService(Container):
             random.shuffle(endpoints)
             for url in endpoints:
                 try:
-                    service = RemoteService(url)
+                    service = get_remote_service_instance_for_url(url)
                     self.remote_service_cache.add_entry(name, service)
                     return service
                 except ConnectionError:

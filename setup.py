@@ -40,7 +40,7 @@ CLASSIFIERS = """
     Programming Language :: Python :: 3.6
 """
 URL = "https://github.com/vladcalin/gemstone"
-KEYWORDS = "microservice service gemstone jsonrpc rpc http asynchronous async tornado asyncio"
+KEYWORDS = "microservice service gemstone jsonrpc rpc http asynchronous async tornado"
 DESCRIPTION = "Build microservices with Python"
 LICENSE = "MIT"
 
@@ -79,11 +79,11 @@ setup(
     install_requires=[
         "tornado",
         "simplejson",
-        "click",
-        "redis"
+        "click"
     ],
 
     extras_require={
         "rabbitmq": ["pika"],
+        "redis": ["redis"]
     }
 )

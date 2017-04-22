@@ -1,7 +1,11 @@
 import urllib.parse
 
 import simplejson as json
-import redis
+
+try:
+    import redis
+except ImportError:
+    redis = None
 
 from gemstone.event.transport.base import BaseEventTransport
 
@@ -18,6 +22,9 @@ class RedisEventTransport(BaseEventTransport):
                             - ``unix://[:password@]/path/to/socket?db=dbnumber`` (Unix socket)
 
         """
+        if not redis:
+            raise RuntimeError("RedisEventTransport requires 'redis' to run")
+
         super(RedisEventTransport, self).__init__()
         conn_details = urllib.parse.urlparse(redis_url)
         if conn_details.scheme not in ("redis", "rediss", "unix"):

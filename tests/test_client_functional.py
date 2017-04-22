@@ -3,11 +3,12 @@ import urllib.request
 import json
 import contextlib
 import threading
+import time
 
 import pytest
 
-from gemstone.util import first_completed
-from gemstone import as_completed, MicroService, exposed_method
+from gemstone.util import first_completed, as_completed
+from gemstone.core import MicroService, exposed_method
 from gemstone.client.remote_service import RemoteService
 from gemstone.client.structs import Result, MethodCall, BatchResult, AsyncMethodCall, Notification
 
@@ -31,6 +32,7 @@ class TestMicroservice(MicroService):
 def microservice_url():
     service = TestMicroservice()
     threading.Thread(target=service.start).start()
+    time.sleep(1)  # wait for the service to start
     yield service.accessible_at
     service.get_io_loop().stop()
 

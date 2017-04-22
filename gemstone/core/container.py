@@ -30,9 +30,16 @@ class Container(abc.ABC):
         self.microservice = microservice
 
     def get_executor(self):
+        """
+        Returns the executor instance used by the microservice.
+        """
         return self.microservice.get_executor()
 
     def get_io_loop(self):
+        """
+        Returns the current IOLoop used by the microservice.
+        :return:
+        """
         return self.microservice.get_io_loop()
 
     def get_exposed_methods(self):

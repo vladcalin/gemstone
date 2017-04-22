@@ -22,12 +22,25 @@ class BaseConfigurator(abc.ABC):
 
     @abc.abstractmethod
     def get(self, name):
+        """
+        Gets the extracted value for the specified name, if available. If no value could
+        be loaded for the specified name, ``None`` must be returned.
+        """
         pass
 
     def register_configurable(self, configurable):
+        """
+        Registers a configurable instance with this configurator
+
+        :param configurable: a :py:class:`Configurable` instance
+        """
         self.configurables.append(configurable)
 
     def get_configurable_by_name(self, name):
+        """
+        Returns the registered configurable with the specified name or ``None`` if no
+        such configurator exists.
+        """
         l = [c for c in self.configurables if c.name == name]
         if l:
             return l[0]
@@ -50,9 +63,9 @@ class CommandLineConfigurator(BaseConfigurator):
 
     For the configurables
 
-        - Configurator("a")
-        - Configurator("b")
-        - Configurator("c")
+        - Configurable("a")
+        - Configurable("b")
+        - Configurable("c")
 
     the following command line interface will be exposed
 

@@ -1,4 +1,4 @@
-from gemstone import MicroService, exposed_method
+from gemstone.core import MicroService, exposed_method
 
 TEST_HOST, TEST_PORT = ("localhost", 65503)
 

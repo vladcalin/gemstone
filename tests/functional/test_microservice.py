@@ -1,4 +1,3 @@
-from tornado.testing import AsyncHTTPTestCase
 import simplejson as json
 
 import pytest

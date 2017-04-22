@@ -32,6 +32,7 @@ Installation
 ------------
 
 ::
+
     pip install gemstone
     # or
     pip install gemstone[redis] # to use the Redis features
@@ -46,14 +47,14 @@ In a script ``hello_world.py`` write the following:
 
 ::
 
-    import gemstone
+    import gemstone.core
 
-    class HelloWorldService(gemstone.MicroService):
+    class HelloWorldService(gemstone.core.MicroService):
         name = "hello_world_service"
         host = "127.0.0.1"
         port = 8000
 
-        @gemstone.exposed_method()
+        @gemstone.core.exposed_method()
         def say_hello(self, name):
             return "hello {}".format(name)
 
@@ -81,7 +82,7 @@ To run it, run script
 
 Now we have the service listening on ``http://localhost:8000/api`` (the default configuration
 for the URL endpoint). In order to test it, you have to do a HTTP ``POST`` request to
-that address with the content:
+that URL with the content:
 
 ::
 
@@ -104,7 +105,7 @@ Table of contents:
     :maxdepth: 2
 
     topics/index
-    reference/index
+    reference/modules
     changes
 
 
