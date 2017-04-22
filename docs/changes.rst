@@ -1,6 +1,13 @@
 Changes
 =======
 
+0.12.0 (22.04.2017)
+~~~~~~~~~~~~~~~~~~~
+
+- restructured modules
+- bug fixes
+- improved documentation
+- improved tests
 
 0.11.0 (08.04.2017)
 ~~~~~~~~~~~~~~~~~~~
