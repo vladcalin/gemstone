@@ -3,6 +3,7 @@ import urllib.request
 import json
 import contextlib
 import threading
+import time
 
 import pytest
 
@@ -31,6 +32,7 @@ class TestMicroservice(MicroService):
 def microservice_url():
     service = TestMicroservice()
     threading.Thread(target=service.start).start()
+    time.sleep(1)  # wait for the service to start
     yield service.accessible_at
     service.get_io_loop().stop()
 
