@@ -11,7 +11,7 @@ from tornado.ioloop import IOLoop, PeriodicCallback
 from tornado.web import Application
 from tornado.log import enable_pretty_logging
 
-from gemstone.config import Configurable, CommandLineConfigurator
+from gemstone.config import Configuration
 from gemstone.discovery.cache import ServiceDiscoveryCache
 from gemstone.errors import ServiceConfigurationError, PluginDoesNotExistError
 from gemstone.core.handlers import TornadoJsonRpcHandler
@@ -68,21 +68,6 @@ class MicroService(Container):
 
     #: A list of Event transports that will enable the Event dispatching feature.
     event_transports = []
-
-    #: A list of configurable objects that allows the service's running parameters to
-    #: be changed dynamically without changing its code.
-    configurables = [
-        Configurable("port",
-                     template=lambda x: random.randint(8000, 65000) if x == "random" else int(x)),
-        Configurable("host"),
-        Configurable("accessible_at"),
-        Configurable("endpoint")
-    ]
-    #: A list of configurator objects that will extract in order values for
-    #: the defined configurators
-    configurators = [
-        CommandLineConfigurator()
-    ]
 
     #: a list of ``gemstone.core.modules.Module`` instances
     modules = [
@@ -296,32 +281,14 @@ class MicroService(Container):
         for transport in self.event_transports:
             transport.emit_event(event_name, event_body)
 
-    def configure(self):
+    def configure(self, configuration: Configuration):
         """
-        Called to explicitly use the configurators.
-
-        Example usage ::
-
-            class MyMicroservice(MicroService):
-                name = "test"
-                host = "127.0.0.1"
-                port = 8000
-                configurables = [
-                    Configurable("host"), Configurable("port", template=lambda x: int(x))
-                ]
-                configurators = [CommandLineConfigurator()]
-
-            service = MyMicroservice()
-            print(service.host, service.port)
-            # 127.0.0.1 8000
-            sys.argv[1:] = ["--port", "80", "--host", "0.0.0.0"]
-            service.configure() # we use the defined CommandLineConfigurator()
-            print(service.host, service.port)
-            # 0.0.0.0 80
-
         """
-        self._prepare_configurators()
-        self._activate_configurators()
+        option_names = configuration.get_all_option_names()
+        for name in option_names:
+            value = configuration.get_option(name)
+            self.logger.info("Configuration: {} = {}".format(name, value))
+            setattr(self, name, value)
 
     def register_plugin(self, plugin):
         """
@@ -456,24 +423,6 @@ class MicroService(Container):
         for func, timer_in_seconds in all_periodic_tasks:
             timer_milisec = timer_in_seconds * 1000
             yield PeriodicCallback(func, timer_milisec, io_loop=self.io_loop)
-
-    def _prepare_configurators(self):
-        for configurator in self.configurators:
-            for configurable in self.configurables:
-                configurator.register_configurable(configurable)
-
-    def _activate_configurators(self):
-        for configurator in self.configurators:
-            configurator.load()
-
-        for configurator in self.configurators:
-            for configurable in self.configurables:
-                name = configurable.name
-                value = configurator.get(name)
-                if not value:
-                    continue
-
-                setattr(self, name, value)
 
     def _call_on_init_plugins(self):
         for plugin in self.plugins:
